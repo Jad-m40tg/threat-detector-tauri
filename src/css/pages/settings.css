@@ -1,0 +1,175 @@
+
+
+/* ===== /DAC SHARED CORE (CSS) ===== */
+/* ===== PAGE CSS: settings (page-owned; tokens only, CONTRACT §4/§16) =====
+   Single raw-hex exception: accent swatch previews (build spec) — see block below. */
+
+.set-wrap { max-width: 860px; margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-8); display: flex; flex-direction: column; gap: var(--space-5); }
+.set-intro h1 { margin: 0 0 var(--space-1); font-size: 1.6rem; line-height: 1.2; }
+.set-intro p { margin: 0; color: var(--text-muted); font-size: .95rem; }
+
+.set-card { display: flex; flex-direction: column; gap: var(--space-4); }
+.set-card-head { display: flex; flex-direction: column; gap: 2px; }
+.set-card-head .card-title { margin: 0; font-size: 1.05rem; }
+.set-card-sub { margin: 0; color: var(--text-muted); font-size: .88rem; }
+
+.set-field { display: flex; flex-direction: column; gap: var(--space-2); }
+.set-label { font-size: .95rem; font-weight: 600; }
+.set-help { margin: 0; color: var(--text-muted); font-size: .82rem; max-width: 62ch; }
+.set-row { flex-direction: row; align-items: center; justify-content: space-between; gap: var(--space-4); min-height: 48px; }
+.row-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.badge-muted { align-self: flex-start; font-size: .72rem; letter-spacing: .02em; color: var(--text-muted); background: var(--bg-card-2); border: 1px solid var(--border-strong); border-radius: var(--radius-pill); padding: 2px 8px; }
+
+/* Generic page focus fallback, then component specifics */
+.set-wrap :focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+/* [B] Pill hugs its buttons: .set-field is a column-flex box, so its children
+   default to align-self:stretch — pin the control to the start edge instead. */
+.set-field > .seg { align-self: flex-start; }
+
+/* ── Accent swatch previews — THE ONLY raw-hex block permitted on this page.
+   Value = each option's OWN accent per theme, mirrors CONTRACT §4.2, so a swatch
+   previews its color even though another accent is currently active. ── */
+.swatches { display: flex; flex-wrap: wrap; gap: var(--space-3); padding: 2px 0; }
+.sw { position: relative; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border-strong); background: transparent; padding: 0; cursor: pointer; }
+/* [D] selection feedback animates via transform+opacity on the pseudos only (no
+   layout shift): the ring moved from box-shadow onto .sw::before so it can
+   fade/scale in, the check mark scales/fades on .sw::after. ~180ms each. */
+.sw::before {
+  content: ""; position: absolute; inset: -5px; border-radius: 50%;
+  border: 2px solid var(--text);
+  box-shadow: inset 0 0 0 2px var(--bg-card);
+  opacity: 0; transform: scale(.7);
+  transition: transform .18s var(--ease-out), opacity .18s var(--ease-out);
+  pointer-events: none;
+}
+.sw::after {
+  content: ""; position: absolute; left: 50%; top: 50%; width: 5px; height: 9px;
+  border-right: 2px solid var(--sw-check, #FFFFFF);
+  border-bottom: 2px solid var(--sw-check, #FFFFFF);
+  opacity: 0; transform: translate(-60%, -62%) rotate(45deg) scale(.5);
+  transition: transform .18s var(--ease-out), opacity .18s var(--ease-out);
+  pointer-events: none;
+}
+.sw[aria-checked="true"]::before { opacity: 1; transform: scale(1); }
+.sw[aria-checked="true"]::after { opacity: 1; transform: translate(-60%, -62%) rotate(45deg) scale(1); }
+.sw-at[data-ac="green"] { background: #1E7D3C; --sw-check: #FFFFFF; }
+.sw-at[data-ac="blue"] { background: #1B5EA8; --sw-check: #FFFFFF; }
+.sw-at[data-ac="white"] { background: #232A31; --sw-check: #FFFFFF; }
+.sw-at[data-ac="violet"] { background: #5E35B1; --sw-check: #FFFFFF; }
+.sw-at[data-ac="amber"] { background: #7A4C00; --sw-check: #FFFFFF; }
+html[data-theme="dark"] .sw-at[data-ac="green"] { background: #8DEB6B; --sw-check: #07230D; }
+html[data-theme="dark"] .sw-at[data-ac="blue"] { background: #4D94FF; --sw-check: #031431; }
+html[data-theme="dark"] .sw-at[data-ac="white"] { background: #F2F5F7; --sw-check: #0B0E11; }
+html[data-theme="dark"] .sw-at[data-ac="violet"] { background: #B78CFF; --sw-check: #180430; }
+html[data-theme="dark"] .sw-at[data-ac="amber"] { background: #FFC24D; --sw-check: #2B1600; }
+
+/* ── Task 3 [C] — dark-background reveal (replaces the old display-based toggle).
+   A grid wrapper animates 0fr→1fr (~400ms ease-out, opacity alongside); the inner
+   field carries overflow + a 3px inner padding offset by an equal negative margin,
+   so focus outlines and the thumb shadow never clip at the animated edge. */
+.f-darkbg-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  margin-bottom: calc(-1 * var(--space-4)); /* collapsed: eats the card flex gap */
+  transition: grid-template-rows .25s var(--ease-out), opacity .25s var(--ease-out), margin-bottom .25s var(--ease-out);
+}
+.f-darkbg-reveal > .f-darkbg {
+  min-height: 0;
+  overflow: hidden;
+  padding: 3px;
+  margin: -3px;
+}
+.f-darkbg-reveal[data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-bottom: 0;
+  transition: grid-template-rows .4s var(--ease-out), opacity .4s var(--ease-out), margin-bottom .4s var(--ease-out);
+}
+/* Pills settle from translateY(-8px) with a --i-driven 40ms stagger (expand 400ms /
+   collapse 250ms). The full transition list mirrors the page micro-transition rule
+   so nothing else on these pills changes; thumb/selection rules stay untouched. */
+#set-darkbg .seg__opt {
+  transform: translateY(-8px);
+  transition: background-color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out),
+              transform .25s var(--ease-out);
+  transition-delay: 0ms, 0ms, 0ms, 0ms, calc(var(--i, 0) * 40ms);
+}
+html[data-theme="dark"] #set-darkbg .seg__opt {
+  transform: translateY(0);
+  transition-duration: var(--dur-fast), var(--dur-fast), var(--dur-fast), var(--dur-fast), .4s;
+}
+
+/* ── Task 3 [C] — "Navbar selected style" live preview: a decorative mirror of
+   html[data-nav-style], built from this page's tokens; never interactive. */
+.nav-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: fit-content;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--bg-card-2);
+  box-shadow: inset 0 0 0 1px var(--border);
+  pointer-events: none;
+  user-select: none;
+}
+.nav-preview__btn {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--navlink-bg);
+  color: var(--navlink-icon);
+  box-shadow: 0 0 0 1px var(--navlink-ring);
+  transition: background-color var(--dur-fast) var(--ease-out),
+              color var(--dur-fast),
+              box-shadow var(--dur-fast) var(--ease-out),
+              outline-color var(--dur-fast) var(--ease-out);
+}
+.nav-preview__btn svg { width: 16px; height: 16px; display: block; }
+.nav-preview__btn[data-current] {
+  color: var(--navlink-icon-current);
+  outline: 2px solid var(--navlink-ring-current);
+  outline-offset: 2px;
+  box-shadow: 0 0 10px var(--glow);
+}
+/* invert mode: the current button flips to the accent fill (a transparent outline
+   keeps box metrics stable, so nothing shifts when the mode toggles). */
+html[data-nav-style="invert"] .nav-preview__btn[data-current] {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  outline-color: transparent;
+  box-shadow: 0 0 0 1px var(--accent), 0 0 10px var(--glow);
+}
+
+/* List editors */
+.l-add { display: flex; gap: var(--space-2); }
+.l-add .input { flex: 1 1 auto; min-width: 0; min-height: 44px; }
+.l-add .btn { min-height: 44px; }
+.chip-list { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.chip-x { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; color: var(--text-muted); background: transparent; border: 0; padding: 0; cursor: pointer; position: relative; }
+.chip-x::before { content: ""; position: absolute; inset: -6px; } /* invisible 44px hit target */
+.chip-x:hover { color: var(--text); background: var(--bg-input); }
+.chip-x svg { display: block; }
+.chip-empty { color: var(--text-faint); font-size: .85rem; align-self: center; }
+
+/* Buttons */
+.set-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.set-actions .btn { min-height: 44px; }
+
+/* About card */
+.about-line { margin: 0; font-weight: 600; }
+.about-copy { margin: 0; color: var(--text-muted); max-width: 62ch; }
+
+/* Motion: micro transitions only; kill under reduced motion (OS or Settings) */
+html[data-motion="reduced"] .set-wrap *, html[data-motion="reduced"] .set-wrap *::before, html[data-motion="reduced"] .set-wrap *::after { transition: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .set-wrap *, .set-wrap *::before, .set-wrap *::after { transition: none !important; }
+}

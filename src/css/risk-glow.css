@@ -1,0 +1,100 @@
+/* ==========================================================================
+   risk-glow.css — Agent E (Task 3), reshaped overnight (allowlist B + C)
+   Edge-tinted risk glow keyed to Agent F's data-risk attribute. Applies ONLY
+   to the scored root on index.html (contract §2.2):
+     - index.html  : #result-panel[data-risk="…"]  (Analysis details card; the
+                     dark card background/border width/radius come from .card)
+                     Glow is RIGHT-SIDE-ONLY (allowlist B): right-anchored
+                     background gradients whose fade completes ~52% of the
+                     card width from the right edge, and the tinted 1px border
+                     is drawn by a masked ::after overlay that fades out
+                     leftward. The former inset box-shadow is REMOVED.
+     - history.html: the former .modal-detail glow was REMOVED entirely
+                     (allowlist C) — the history modal is unglowed again.
+   Deliberately NEVER matches: bare [data-risk], .risk-label pills, or the
+   batch mini-pills (data-risk="na") — those keep their existing rules.
+   All colors are rgb(var(--risk-rgb) / ALPHA): --risk-rgb is mapped per state
+   below, and the alphas are tokens (--risk-*-a) so the light theme lowers
+   intensity without touching the recipes. Idle / scanning / error states
+   carry no data-risk attribute and therefore keep today's unglowed look.
+   No layout properties, no border-radius change on #result-panel, no outer
+   drop glow, no animation loops.
+   ========================================================================== */
+
+:root {
+  /* Engine risk colors, dark theme (contract §2.3; mirrors --low/--medium/--high/--na) */
+  --risk-low-rgb: 61 220 132;
+  --risk-medium-rgb: 255 176 32;
+  --risk-high-rgb: 255 90 95;
+  --risk-unverified-rgb: 138 147 160;
+
+  /* Glow alphas, dark theme. Gradient interiors stay <= .25 so body text on
+     --bg-card / dark-grey keeps AA contrast; the masked border overlay hugs
+     the card edges where no body text sits. */
+  --risk-edge-a: .22;   /* right-side gradient (behind the ring side) */
+  --risk-corner-a: .10; /* top-right corner gradient (fade) */
+  --risk-border-a: .35; /* faint tinted 1px border (masked ::after overlay) */
+}
+
+:root[data-theme="light"] {
+  /* Light theme — same hue family, lower intensity (contract §2.3) */
+  --risk-low-rgb: 18 122 72;
+  --risk-medium-rgb: 180 83 9;
+  --risk-high-rgb: 194 38 59;
+  --risk-unverified-rgb: 85 96 106;
+
+  --risk-edge-a: .12;
+  --risk-corner-a: .06;
+  --risk-border-a: .25;
+}
+
+/* --- Per-state --risk-rgb mapping, scoped to the index root only --- */
+#result-panel[data-risk="low"]        { --risk-rgb: var(--risk-low-rgb); }
+#result-panel[data-risk="medium"]     { --risk-rgb: var(--risk-medium-rgb); }
+#result-panel[data-risk="high"]       { --risk-rgb: var(--risk-high-rgb); }
+#result-panel[data-risk="unverified"] { --risk-rgb: var(--risk-unverified-rgb); }
+
+/* --- INDEX: Analysis details card glow (reshaped — allowlist B) ------------
+   Keeps .card's background-color, border width/style and radius. The tint is
+   RIGHT-SIDE-ONLY: two right-anchored gradients whose fade completes ~52% of
+   the card width from the right edge (center stays --bg-card), and the tinted
+   1px border lives on a masked ::after overlay (inset:0, radius inherited,
+   fades out leftward, gone by 52% width) instead of recoloring the element's
+   own border. The former inset box-shadow is REMOVED. No layout properties
+   change; #result-panel is already position:relative (css/pages/index.css). */
+#result-panel[data-risk="low"],
+#result-panel[data-risk="medium"],
+#result-panel[data-risk="high"],
+#result-panel[data-risk="unverified"] {
+  background-image:
+    radial-gradient(90% 130% at 100% 100%, rgb(var(--risk-rgb) / var(--risk-edge-a)), transparent 58%),
+    radial-gradient(75% 120% at 100% 0%, rgb(var(--risk-rgb) / var(--risk-corner-a)), transparent 55%);
+  transition: background-color 300ms ease;
+}
+
+/* Masked border overlay: right half only (allowlist B). Defined on the bare
+   root with a transparent border so the tint cross-fades over 300ms on risk
+   change (idle scenes render it fully invisible). pointer-events:none keeps
+   the card interactive; border-radius:inherit matches the .card corners. */
+#result-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid transparent;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to left, #000, transparent 52%);
+          mask-image: linear-gradient(to left, #000, transparent 52%);
+  transition: border-color 300ms ease;
+}
+#result-panel[data-risk]::after {
+  border-color: rgb(var(--risk-rgb) / var(--risk-border-a));
+}
+
+/* --- Reduced motion: no cross-fade (codebase [data-motion="reduced"] pattern) --- */
+html[data-motion="reduced"] #result-panel[data-risk] { transition: none; }
+html[data-motion="reduced"] #result-panel::after { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  #result-panel[data-risk],
+  #result-panel::after { transition: none; }
+}

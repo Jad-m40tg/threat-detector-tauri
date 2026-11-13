@@ -1,0 +1,232 @@
+
+
+/* ===== /DAC SHARED CORE (CSS) ===== */
+/* ===== PAGE CSS — dashboard (.dash-* / ID-scoped; tokens only) ===== */
+.dash-main{display:grid;gap:var(--space-5);padding:var(--space-5) var(--space-4) var(--space-8);max-width:1360px;margin:0 auto}
+.dash-layout{display:grid;gap:var(--space-5);grid-template-columns:minmax(0,1fr)}
+.dash-layout > *{min-width:0}
+.dash-col{display:grid;gap:var(--space-5);align-content:start}
+.dash-col > *{min-width:0}
+@media (min-width:1100px){
+  /* [C] sticky within the two-column row only; a card taller than the viewport
+     scrolls internally instead of losing its top/foot to the sticky header. */
+  .dash-layout{grid-template-columns:minmax(0,1fr) 320px;gap:var(--space-6);align-items:start}
+  .dash-aside{position:sticky;top:calc(var(--navbar-h) + 16px);align-self:start;max-height:calc(100vh - var(--navbar-h) - 32px);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
+}
+
+/* Hero */
+#hero{position:relative;isolation:isolate;overflow:hidden;border-radius:var(--radius-lg);background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow);padding:var(--space-6) var(--space-5)}
+#hero::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent);box-shadow:0 0 24px var(--glow)}
+#hero .dash-hero-in{position:relative;z-index:2;max-width:52ch}
+#hero h1{margin:0 0 var(--space-2);font-size:2.05em;line-height:1.15;letter-spacing:-.01em;color:var(--text)}
+#hero .dash-hl{color:var(--accent)}
+#hero .dash-sub{margin:0;color:var(--text-muted);font-size:1em}
+#hero .hero-art{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;border-radius:inherit}
+#hero .grid-layer{position:absolute;inset:0;width:100%;height:100%;opacity:.6}
+#hero .grid-layer path{stroke:var(--border)}
+#hero .mountain-layer{position:absolute;left:0;right:0;bottom:-2px;width:100%;height:auto;display:block}
+#hero .dash-mtn-far{opacity:.85;z-index:1}
+#hero .dash-mtn-near{z-index:1}
+#hero .glitch-block{position:absolute;z-index:1;background:var(--accent-soft);border-radius:3px}
+#hero .glitch-block:nth-of-type(1){top:18%;left:58%;width:26px;height:10px;opacity:.9;transform:rotate(-4deg)}
+#hero .glitch-block:nth-of-type(2){top:34%;left:72%;width:40px;height:7px;opacity:.6;transform:rotate(3deg)}
+#hero .glitch-block:nth-of-type(3){top:46%;left:47%;width:14px;height:14px;opacity:.75}
+#hero .glitch-block:nth-of-type(4){top:62%;left:86%;width:30px;height:6px;opacity:.4;transform:rotate(-6deg)}
+#hero .glitch-block:nth-of-type(5){top:12%;left:88%;width:12px;height:12px;opacity:.5}
+#hero .dash-scroll{position:relative;z-index:2;margin-top:var(--space-4)}
+
+/* Scan card */
+#scan-card .card-title{display:inline-flex;align-items:center;gap:var(--space-2)}
+#scan-card .card-title svg{width:20px;height:20px;color:var(--accent)}
+#scan-card .seg{margin-top:var(--space-4)}
+.scan-block{position:relative;border:1px solid transparent;border-radius:var(--radius);padding:var(--space-2);margin-top:var(--space-3);transition:opacity var(--dur-fast) var(--ease-out),filter var(--dur-fast) var(--ease-out)}
+.scan-block.is-active{background:var(--bg-card-2);border-color:var(--border)}
+/* [a11y 1.4.3] no opacity dim on inactive blocks: at .5 the light theme reads at
+   ~3.4:1 (--text) / ~2.1:1 (--muted) and the placeholder below that; no compliant
+   mid-dim exists (muted needs α≥.82, faint α≈.99). Blocks stay distinguishable
+   because only .is-active gets the bg-card-2 + border treatment. */
+.block--dimmed{filter:saturate(.7);cursor:pointer}
+.block--dimmed:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+.dash-inputwrap{position:relative;margin-top:var(--space-2)}
+.dash-inputwrap .type-icon{position:absolute;left:var(--space-3);top:12px;width:20px;height:20px;color:var(--text-muted);pointer-events:none}
+#scan-input{width:100%;padding-left:42px;resize:none;overflow-y:auto;min-height:44px;max-height:160px}
+.dash-actions{display:flex;gap:var(--space-2);flex-wrap:wrap;margin-top:var(--space-3)}
+.dash-divider{display:flex;align-items:center;gap:var(--space-3);color:var(--text-faint);font-size:.85em;margin:var(--space-3) 0 0}
+.dash-divider::before,.dash-divider::after{content:"";flex:1;height:1px;background:var(--border)}
+.dash-drop-inner{display:grid;justify-items:center;gap:var(--space-1);text-align:center;padding:var(--space-5) var(--space-4)}
+.dash-drop-inner svg{width:26px;height:26px;color:var(--accent)}
+.dash-drop-b{font-weight:600;color:var(--text)}
+#csv-drop{margin-top:var(--space-3);cursor:pointer}
+.dash-filecard{margin-top:var(--space-3);border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-card-2);padding:var(--space-3) var(--space-4);display:grid;gap:var(--space-2)}
+.dash-filecard-row{display:flex;align-items:center;gap:var(--space-2);min-width:0}
+.dash-filecard-row svg{width:18px;height:18px;color:var(--accent);flex:none}
+.dash-filemeta{color:var(--text-muted)}
+.dash-progress-label{display:flex;justify-content:space-between;gap:var(--space-2)}
+.dash-footrow{display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;margin-top:var(--space-3)}
+.dash-callout{margin-top:var(--space-3)}
+.dash-callout svg{width:16px;height:16px;flex:none}
+.field-error{margin-top:var(--space-2)}
+#csv-error{margin-top:var(--space-2)}
+
+/* Result panel */
+#result-panel{position:relative}
+#scan-card, #result-panel, #scan-progress-zone{scroll-margin-top:84px} /* keep scrolled targets clear of the sticky header */
+
+/* --- Scan-in-progress progress cluster (SPEC 7.3, inside #result-panel) --- */
+.scan-progress-zone {
+  margin-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  outline: none; /* focusable scroll target for AT anchoring, not keyboard focus */
+}
+.scan-progress.is-indet .progress-bar {
+  transform-origin: center;
+  animation: scan-sweep 1.15s ease-in-out infinite; /* transform/opacity only (§12) */
+}
+@keyframes scan-sweep {
+  0%   { transform: translateX(-102%) scaleX(0.42); opacity: 0.55; }
+  55%  { opacity: 1; }
+  100% { transform: translateX(102%) scaleX(0.42); opacity: 0.55; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scan-progress.is-indet .progress-bar { animation: none !important; transform: scaleX(0.35); opacity: 0.5; }
+}
+[data-motion="reduced"] .scan-progress.is-indet .progress-bar { animation: none !important; transform: scaleX(0.35); opacity: 0.5; }
+#result-panel .result-states{position:relative;min-height:220px;transition:height var(--dur-in) var(--ease-out)}
+#result-panel .result-state{position:absolute;top:0;left:0;width:100%;padding:var(--space-4) var(--space-5);opacity:0;visibility:hidden;transition:opacity var(--dur-in) var(--ease-out),visibility 0s linear var(--dur-in)}
+#result-panel .result-state.is-active{opacity:1;visibility:visible;transition:opacity var(--dur-in) var(--ease-out)}
+#result-panel .dash-c{text-align:center}
+#result-panel .dash-c h3{margin:0 0 var(--space-1);font-size:1.15em}
+#result-panel .dash-c p{margin:0;color:var(--text-muted)}
+.dash-visual{margin:0 auto var(--space-3)}
+.dash-scan-dots span{opacity:.2;animation:dashDot 1.2s ease-in-out infinite}
+.dash-scan-dots span:nth-of-type(2){animation-delay:.2s}
+.dash-scan-dots span:nth-of-type(3){animation-delay:.4s}
+@keyframes dashDot{0%,60%,100%{opacity:.2}30%{opacity:1}}
+.scan-substatus{margin-top:var(--space-2)}
+.panel-heading{margin:0 0 var(--space-3);display:flex;align-items:baseline;gap:var(--space-3);flex-wrap:wrap}
+.panel-heading h3{margin:0;font-size:1.05em}
+.risk-label{font-weight:700}
+.risk-label[data-risk="medium"]{color:var(--medium)}
+.risk-label[data-risk="high"]{color:var(--high)}
+.risk-label[data-risk="error"]{color:var(--high)}
+.detail-rows{margin:0;display:grid;gap:var(--space-2)}
+.detail-rows .detail-dt{color:var(--text-faint);font-weight:600}
+.detail-rows .detail-dd{margin:0 0 var(--space-2);color:var(--text)}
+.dash-prewrap{white-space:pre-wrap;word-break:break-word}
+.reason-list{margin:0 0 var(--space-2);padding-left:var(--space-4);display:grid;gap:var(--space-1)}
+#result-panel .dash-threat-inner{padding-top:0}
+@media (min-width:600px){#result-panel .dash-threat-inner{padding-right:132px}#result-panel .dash-unv-inner{padding-right:132px}}
+@media (max-width:599.98px){#result-panel .dash-threat-inner{padding-top:108px}#result-panel .dash-unv-inner{padding-top:108px}}
+.ring-safe-wrap{margin:0 auto}
+.dash-batchrow{display:flex;justify-content:space-between;align-items:center;max-width:280px}
+.dash-batch-link{margin:var(--space-3) 0 0}
+.dash-safe-wrap{display:grid;justify-items:center;padding:var(--space-4) 0;text-align:center}
+.dash-safe-wrap h3{margin:0 0 var(--space-1)}
+.dash-safe-wrap p:last-child{margin:var(--space-1) 0 0;color:var(--text-muted);font-size:.92em}
+[data-motion="reduced"] #result-panel .result-states,[data-motion="reduced"] #result-panel .result-state{transition:none}
+@media (prefers-reduced-motion:reduce){#result-panel .result-states,#result-panel .result-state{transition:none}}
+html[data-motion="full"] #result-panel .reason-list li{opacity:0;animation:dashReason var(--dur-in) var(--ease-out) forwards}
+html[data-motion="full"] #result-panel .reason-list li:nth-child(2){animation-delay:80ms}
+html[data-motion="full"] #result-panel .reason-list li:nth-child(3){animation-delay:160ms}
+html[data-motion="full"] #result-panel .reason-list li:nth-child(4){animation-delay:240ms}
+@keyframes dashReason{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){#result-panel .reason-list li{opacity:1;animation:none;transform:none}}
+[data-motion="reduced"] #result-panel .reason-list li{opacity:1;animation:none;transform:none}
+[data-motion="reduced"] .dash-scan-dots{display:none}
+[data-motion="reduced"] .scan-substatus{display:none}
+@media (prefers-reduced-motion:reduce){.dash-scan-dots{display:none}.scan-substatus{display:none}}
+
+/* Table card — [D] flex head row, [B] truncating cells */
+.results-head{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap}
+#results-card{container-type:inline-size}
+#results-card .card-title{display:inline-flex;align-items:center;gap:var(--space-2)}
+#results-card .card-title svg{width:20px;height:20px;color:var(--accent);flex:none}
+.link-ghost{border:1px solid var(--border-strong);border-radius:var(--radius);padding:0 var(--space-3)}
+#table-results .type-icon{width:18px;height:18px;flex:none;color:var(--text-muted)}
+#table-results .time-cell{white-space:nowrap}
+#table-results tbody tr{cursor:pointer;transition:background var(--dur-fast) var(--ease-out)}
+#table-results tbody tr:hover{background:var(--bg-card-2)}
+#table-results tbody tr.is-highlight{background:var(--accent-soft)}
+#table-results tbody tr:focus-visible{outline:2px solid var(--focus-ring);outline-offset:-2px}
+.dash-dot{display:inline-block;width:.6em;height:.6em;border-radius:50%;background:currentColor;margin-right:var(--space-1)}
+.pill svg{width:.95em;height:.95em}
+/* [a11y 1.4.3] batch-list and recent-history pills: the rgba -soft fill can push
+   the label below 4.5:1 (measured: dark-grey --na 4.20 on card / 3.86 on card-2).
+   A solid page-surface bg (tokens only) keeps every risk combo AA in both themes. */
+#batch-list .pill, #table-results .pill{background:var(--bg)}
+.status-line svg{width:16px;height:16px;flex:none}
+/* [B] Input cell: 16-18px icon (flex:none) + one-line truncating text + title tooltip,
+   icon vertically centered. Details clamp to 2 lines. */
+#table-results td.dash-td-input{display:flex;align-items:center;gap:var(--space-2);min-width:0}
+#table-results td.dash-td-input .text-truncate{flex:1 1 auto;min-width:0}
+.text-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-width:0}
+/* [B] stacked card rows when the results card is narrow (container) … */
+@container (max-width:759.98px){
+  #table-results thead{display:none}
+  #table-results,#table-results tbody,#table-results tr,#table-results td{display:block;width:100%}
+  #table-results tr{border:1px solid var(--border);border-radius:var(--radius);padding:var(--space-3);margin-bottom:var(--space-3);background:var(--bg-card-2)}
+  #table-results td{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-1) 0}
+  /* [a11y 1.4.3] stacked-row labels: --text-faint dips to 4.29:1 vs --bg-card-2 on
+   dark-bg=grey; --text-muted passes on every surface, so labels use it here. */
+  #table-results td::before{content:attr(data-label);flex:none;width:88px;color:var(--text-muted);font-size:.75em;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+  #table-results td.dash-td-input::before{display:none}
+}
+/* … with a media-query fallback for engines without container queries */
+@media (max-width:639.98px){
+  #table-results thead{display:none}
+  #table-results,#table-results tbody,#table-results tr,#table-results td{display:block;width:100%}
+  #table-results tr{border:1px solid var(--border);border-radius:var(--radius);padding:var(--space-3);margin-bottom:var(--space-3);background:var(--bg-card-2)}
+  #table-results td{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-1) 0}
+  #table-results td::before{content:attr(data-label);flex:none;width:88px;color:var(--text-muted);font-size:.75em;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+  #table-results td.dash-td-input::before{display:none}
+}
+
+/* Summary card */
+#summary-card{position:relative;overflow:hidden;cursor:pointer}
+#summary-card .card-title{display:inline-flex;align-items:center;gap:var(--space-2)}
+#summary-card .card-title svg{width:20px;height:20px;color:var(--accent)}
+.dash-summary-visual{position:relative;display:grid;justify-items:center;padding:var(--space-5) 0 64px} /* [A2] clears the 42px wave band (bottom 8 + 42 + slack) */
+#summary-card .wave-deco{position:absolute;left:0;right:0;bottom:var(--space-2);width:100%;height:42px;margin:auto}
+#summary-card .wave-deco path{stroke:var(--accent)}
+.dash-state-title{margin:0;font-size:1.2em;font-weight:700;text-align:center}
+.dash-state-title[data-state="secure"]{color:var(--low)}
+.dash-state-title[data-state="caution"]{color:var(--medium)}
+.dash-state-title[data-state="threat"]{color:var(--high)}
+.dash-state-desc{margin:var(--space-1) 0 0;text-align:center;color:var(--text-muted)}
+/* [A1] stats: equal 3-col grid; labels never wrap; numbers share a baseline (subgrid,
+   with a min-height fallback so all three stat bottoms stay within ±1px) */
+.dash-stats{margin:var(--space-4) 0 0;padding:var(--space-3) 0 0;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-2);list-style:none}
+.dash-stat{margin:0;min-height:2lh}
+@supports (grid-template-rows: subgrid){.dash-stats{grid-template-rows:auto auto}.dash-stat{display:grid;grid-template-rows:subgrid;grid-row:span 2;min-height:0}}
+.dash-stat dt{margin:0;color:var(--text-faint);font-size:.75em;font-weight:600;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-stat dd{margin:var(--space-1) 0 0;font-size:1.35em;font-weight:700;line-height:1.15;color:var(--text);font-variant-numeric:tabular-nums}
+.dash-stat dd[data-risk="high"]{color:var(--high)}
+.dash-stat dd[data-risk="medium"]{color:var(--medium)}
+.dash-summary-foot{margin-top:var(--space-4);display:flex;justify-content:center}
+
+/* Page-load stagger (SPEC §12) */
+@media (prefers-reduced-motion:no-preference){
+  html[data-motion="full"] .dash-reveal{opacity:0;animation:dashRise var(--dur-in) var(--ease-out) forwards}
+  html[data-motion="full"] .dash-reveal:nth-child(2){animation-delay:40ms}
+  html[data-motion="full"] .dash-reveal:nth-child(3){animation-delay:80ms}
+  html[data-motion="full"] .dash-reveal:nth-child(4){animation-delay:120ms}
+  html[data-motion="full"] .dash-reveal:nth-child(5){animation-delay:160ms}
+}
+@keyframes dashRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (max-width:479.98px){#hero{padding:var(--space-5) var(--space-4)}}
+
+/* --- Download sample CSV: visible outlined secondary button (allowlist D) ---
+   Rule lives in this page-specific file (post-split). Keeps the .btn base
+   44px touch target, pill radius and focus ring; overrides color/border so
+   the button reads as an outlined secondary action with AA contrast. */
+#btn-download-sample {
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+}
+#btn-download-sample:hover:not(:disabled) {
+  background: var(--bg-card-2);
+  border-color: var(--accent);
+  color: var(--text);
+}

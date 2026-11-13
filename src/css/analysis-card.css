@@ -1,0 +1,43 @@
+/* ==========================================================================
+   css/analysis-card.css — Task 3, Agent F
+   Layout-only fixes for the "Analysis details" region:
+     - index.html  → #result-panel (the result states card)
+     - history.html → .modal-detail (the row-details modal panel)
+   Color/glow is Agent E's css/risk-glow.css: this file NEVER sets
+   background, border or box-shadow on #result-panel / .modal-detail.
+   Loads after all inline page styles, so overrides need no !important.
+   ========================================================================== */
+
+/* --- Start-aligned analysis text ------------------------------------------ */
+/* Shared core centers the state views (.state-idle/.state-scanning/.state-safe/
+   .state-unverified/.state-error) for the old hero layout. The detail-bearing
+   states now read like the threat state: every heading, label and value is
+   start-aligned. Idle / scanning / safe keep their centered look. */
+#result-panel .state-unverified,
+#result-panel .state-error { text-align: start; }
+#result-panel .state-error .panel-heading { justify-content: flex-start; }
+
+/* Long values wrap instead of forcing horizontal scroll
+   (same preference the codebase already uses on .dash-prewrap) */
+#result-panel .detail-dd { word-break: break-word; min-width: 0; }
+#result-panel .reason-list li { word-break: break-word; }
+
+/* History modal: left column holds pretextual notes under the ring */
+.modal-detail .vis-note { overflow-wrap: anywhere; }
+
+/* --- ≤600px: each label stacks above its value ---------------------------- */
+/* Core lays .detail-rows out as two grid columns (max-content 1fr), so dt and
+   dd sit side by side; that pair needs too much width at phone sizes. Tracks
+   collapse to one min(0,1fr) column → label above value, no markup change. */
+@media (max-width: 599.98px) {
+  #result-panel .detail-rows { grid-template-columns: minmax(0, 1fr); }
+}
+/* history.html already stacks .detail-pair ≤639px (page CSS); nothing to add:
+   600px is inside that range, so labels/values stack there too. */
+
+/* --- Ring header placement -------------------------------------------------- */
+/* Pre-existing hooks kept intact: .result-ring-float stays absolutely parked
+   top-right (core CSS); ≤599.98px the threat/unverified wrappers already add
+   padding-top:108px so the ring occupies its own top strip and never
+   overlaps text, long URLs included. ids #vis-ring-threat / #vis-ring-unv
+   are untouched so the V.scoreRing draw keeps working. */

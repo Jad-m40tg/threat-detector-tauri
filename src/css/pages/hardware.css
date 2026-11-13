@@ -1,0 +1,176 @@
+/* ===== Hardware Monitor page styles (hardware.html) ===== */
+/* Owner: Monitor agent. Depends on: tokens from css/pages/index.inline.css (shared
+   core tokens: --bg-card, --border, --text, --text-muted, --accent, --space-*,
+   --radius, --radius-pill, --dur-fast, --ease-out). Exposes: --state-* tokens. */
+/* Worker state colors are NEUTRAL/ACCENT tokens — deliberately NOT the risk colors. */
+
+:root {
+  /* Neutral/accent state tokens only — deliberately NOT the Low/Medium/High risk colors. */
+  --state-running: var(--accent, #35B46F);
+  --state-idle: var(--text-faint, #7A8791);
+  --state-waiting: var(--text-muted, #A6B1BB);
+}
+
+/* ---------- page scaffold ---------- */
+.hw-page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: var(--space-5);
+  padding-top: calc(var(--navbar-h, 65px) + var(--space-5));
+}
+
+.hw-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.hw-title-row h1 {
+  font-size: 1.5rem;
+  line-height: 1.2;
+  margin: 0;
+  color: var(--text);
+}
+
+.hw-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--bg-card-2);
+  color: var(--text-muted);
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+
+.hw-actions { margin-left: auto; display: flex; gap: var(--space-2); }
+
+/* Buttons reuse the shared .btn family; min touch target 44px on coarse pointers. */
+.hw-actions .btn { min-height: 40px; }
+
+/* ---------- stat cards ---------- */
+.hw-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.hw-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+}
+
+.hw-card h2 {
+  margin: 0 0 var(--space-2);
+  font-size: .82rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.hw-stat { display: flex; align-items: center; gap: var(--space-3); }
+.hw-stat__ring { width: 84px; height: 84px; flex: 0 0 auto; }
+.hw-stat__val { font-size: 1.15rem; font-weight: 700; color: var(--text); }
+
+/* ---------- sections ---------- */
+.hw-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.hw-section h2 {
+  margin: 0 0 var(--space-3);
+  font-size: .95rem;
+  color: var(--text);
+}
+
+.sparkline { width: 100%; height: 56px; display: block; }
+.sparkline__line { fill: none; stroke: var(--accent, #35B46F); stroke-width: 2; }
+.sparkline__area { fill: var(--accent-soft, rgba(53, 180, 111, .18)); stroke: none; }
+
+/* ---------- usage bars (transform-only fill) ---------- */
+.hbar {
+  position: relative;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  flex: 1 1 auto;
+}
+
+.hbar__fill {
+  position: absolute;
+  inset: 0;
+  background: var(--accent, #35B46F);
+  border-radius: inherit;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 600ms linear;
+}
+
+html[data-motion="reduced"] .hbar__fill { transition: none; }
+
+.hw-core { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-2); }
+.hw-core__name { flex: 0 0 64px; font-size: .85rem; color: var(--text-muted); }
+.hw-core__pct { flex: 0 0 44px; text-align: right; font-size: .85rem; color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* ---------- worker cards ---------- */
+.hw-workers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-3);
+}
+
+.hw-worker {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+}
+
+.hw-worker__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-2); }
+.hw-worker__name { font-weight: 600; font-size: .9rem; color: var(--text); }
+.hw-worker__task { font-size: .82rem; color: var(--text-muted); margin-bottom: var(--space-2); }
+.hw-worker__time { font-size: .78rem; color: var(--text-faint); margin-top: var(--space-2); font-variant-numeric: tabular-nums; }
+
+.hw-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  border: 1px solid transparent;
+}
+
+.hw-pill[data-state="RUNNING"] { color: var(--state-running); background: var(--state-running-bg); border-color: var(--state-running); }
+.hw-pill[data-state="IDLE"]    { color: var(--state-idle);    background: var(--state-idle-bg);    border-color: var(--state-idle); }
+.hw-pill[data-state="WAITING"] { color: var(--state-waiting); background: var(--state-waiting-bg); border-color: var(--state-waiting); }
+
+/* ---------- footer note ---------- */
+.hw-note { color: var(--text-faint); font-size: .85rem; margin-top: var(--space-4); }
+
+/* ---------- responsive: stack at 360, no horizontal scroll ---------- */
+@media (max-width: 480px) {
+  .hw-page { padding: var(--space-3); padding-top: calc(var(--navbar-h, 65px) + var(--space-3)); }
+  .hw-stats, .hw-grid { grid-template-columns: 1fr; }
+  .hw-actions { margin-left: 0; width: 100%; }
+  .hw-actions .btn { flex: 1 1 auto; min-height: 44px; }
+  .hw-title-row h1 { font-size: 1.25rem; }
+}
+
+@media (pointer: coarse) {
+  .hw-actions .btn { min-height: 44px; }
+}

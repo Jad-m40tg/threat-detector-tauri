@@ -1,0 +1,52 @@
+/* ===== Nav button style modes — selected-button "invert" treatment (Agent D) ===== */
+/* Loaded via <link> in the <head> of all three pages (after the shared core).
+
+   Ring mode (html[data-nav-style="ring"] — the default — or the attribute
+   absent) is untouched: every rule below is keyed on
+   html[data-nav-style="invert"], the value window.TDSettings (js/settings.js,
+   key td.navStyle) writes to <html> before first paint.
+
+   In invert mode the selected link drops its offset accent ring and becomes an
+   inverted-colour filled circle: in dark themes a dark circle + white icon +
+   a thin contrasting border (so it still reads against the dark navbar),
+   mirrored in light themes. Colours are the EXISTING tokens, with the
+   --navlink-bg / --navlink-icon pair swapped (in dark: #FFFFFF / #0B0E11 →
+   #0B0E11 / #FFFFFF) plus --border-strong — the token documented as the
+   ≥3:1 UI-boundary tone — so every accent and the oled/grey dark
+   backgrounds are covered without a single literal colour.
+
+   Geometry (measured with d_probe_geom.py on desktop and at 360px):
+     · ring mode outer Ø  = 44px button + 2 × (2px outline + 2px offset)  = 52px
+     · invert mode outer Ø = (44px + 2 × 2px border) × scale              = 52px
+       ⇒ scale = 52 / 48 ≈ 1.0833 — tuned so the inverted button's visual
+         footprint matches the ringed one. Transform-only: the layout box
+         stays 44×44 (no reflow); the visual grows ~4px per side into the
+         8px inter-button gap (≈4px clearance to neighbours) and stays
+         ≈4px inside the viewport edge at 360px.
+
+   Hover on unselected buttons and the legend button's aria-expanded ring are
+   intentionally not touched; keyboard :focus-visible gets the focus ring back
+   below (the resting invert state has no outer ring by design). */
+
+html[data-nav-style="invert"] .navlink[aria-current="page"],
+html[data-nav-style="invert"] .navlink.is-current {
+  background: var(--navlink-icon);             /* dark circle in dark themes, light in light */
+  color: var(--navlink-bg);                    /* swapped icon tone (white in dark themes) */
+  outline: none;                               /* kill the offset accent ring for THIS selector only */
+  box-shadow: 0 0 0 2px var(--border-strong);  /* thin contrasting border, hugging the edge */
+  transform: scale(1.0833);                    /* tuned: (44 + 2×2) × 1.0833 ≈ 52 = ring outer Ø */
+  z-index: 2;                                  /* above neighbours (nothing overlaps anyway) */
+  transition: transform 180ms var(--ease-out),
+              background-color 180ms var(--ease-out),
+              color 180ms var(--ease-out),
+              box-shadow 180ms var(--ease-out);
+}
+
+/* Keyboard focus stays distinguishable in invert mode: the global
+   :focus-visible rule below would be shadowed by the outline: none above,
+   so the cyan/blue --focus-ring is re-added for focus-visible only. */
+html[data-nav-style="invert"] .navlink[aria-current="page"]:focus-visible,
+html[data-nav-style="invert"] .navlink.is-current:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}

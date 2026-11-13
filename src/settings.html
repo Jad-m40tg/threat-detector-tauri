@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en" data-page="settings">
+<head>
+  <meta charset="utf-8">
+<script src="js/core/theme-init.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Threat Detector demo — fictional heuristic threat checks. No real analysis.">
+  <title>Threat Detector — Settings</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.5 20 5.3v5.2c0 4.8-3.2 8.7-8 10-4.8-1.3-8-5.2-8-10V5.3Z' fill='%238DEB6B'/%3E%3Crect x='9.4' y='10.6' width='5.2' height='4.4' rx='1' fill='none' stroke='%23101418' stroke-width='1.6'/%3E%3Cpath d='M10.6 10.6V9.6a1.4 1.4 0 0 1 2.8 0v1' fill='none' stroke='%23101418' stroke-width='1.6'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/base/motion-tokens.css">
+<link rel="stylesheet" href="css/components/motion-governor.css">
+<link rel="stylesheet" href="css/core.css">
+<link rel="stylesheet" href="css/pages/settings.css">
+<script src="js/settings.js"></script>
+<link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/risk-glow.css">
+<link rel="stylesheet" href="css/analysis-card.css">
+<script src="js/features/theme-fx.js"></script>
+<script src="js/theme.js"></script>
+<link rel="stylesheet" href="css/theme-transition.css">
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<main id="main-content" tabindex="-1">
+  <div class="set-wrap">
+
+    <header class="set-intro">
+      <h1>Settings</h1>
+      <p>Changes apply instantly and are saved on this device. There is no Save button.</p>
+    </header>
+
+    <!-- ===== Card: Appearance ===== -->
+    <section class="card set-card" aria-labelledby="hd-appearance">
+      <div class="set-card-head">
+        <h2 class="card-title" id="hd-appearance">Appearance</h2>
+      </div>
+
+      <div class="set-field">
+        <span class="set-label" id="lb-theme">Theme</span>
+        <div class="seg" id="set-theme" data-seg role="radiogroup" aria-labelledby="lb-theme">
+          <span class="seg__thumb" aria-hidden="true"></span>
+          <button type="button" class="seg__opt" role="radio" data-value="light" aria-checked="false" tabindex="-1">Light</button>
+          <button type="button" class="seg__opt" role="radio" data-value="dark" aria-checked="false" tabindex="-1" aria-expanded="false" aria-controls="darkbg-reveal">Dark</button>
+          <button type="button" class="seg__opt" role="radio" data-value="system" aria-checked="true" tabindex="0">System</button>
+        </div>
+        <p class="set-help" id="hint-theme">System follows your device setting.</p>
+      </div>
+
+      <!-- Expands in when the theme resolves DARK (grid 0fr→1fr reveal, see .f-darkbg-reveal;
+           inert + aria-hidden are kept in sync by page JS while collapsed) -->
+      <div class="f-darkbg-reveal" id="darkbg-reveal">
+        <div class="set-field f-darkbg">
+          <span class="set-label" id="lb-darkbg">Dark background</span>
+          <div class="seg" id="set-darkbg" data-seg role="radiogroup" aria-labelledby="lb-darkbg">
+            <span class="seg__thumb" aria-hidden="true"></span>
+            <button type="button" class="seg__opt" role="radio" data-value="oled" aria-checked="true" tabindex="0" style="--i: 0">OLED black</button>
+            <button type="button" class="seg__opt" role="radio" data-value="grey" aria-checked="false" tabindex="-1" style="--i: 1">Dark grey</button>
+          </div>
+          <p class="set-help">Pure black saves power on OLED screens.</p>
+        </div>
+      </div>
+
+      <div class="set-field">
+        <span class="set-label" id="lb-accent">Accent</span>
+        <div class="swatches" id="set-accent" role="radiogroup" aria-labelledby="lb-accent">
+          <button type="button" class="sw sw-at" role="radio" aria-checked="false" data-value="green" data-ac="green" aria-label="Green accent" tabindex="-1"></button>
+          <button type="button" class="sw sw-at" role="radio" aria-checked="false" data-value="blue" data-ac="blue" aria-label="Blue accent" tabindex="-1"></button>
+          <button type="button" class="sw sw-at" role="radio" aria-checked="false" data-value="white" data-ac="white" aria-label="White accent" tabindex="-1"></button>
+          <button type="button" class="sw sw-at" role="radio" aria-checked="false" data-value="violet" data-ac="violet" aria-label="Violet accent" tabindex="-1"></button>
+          <button type="button" class="sw sw-at" role="radio" aria-checked="false" data-value="amber" data-ac="amber" aria-label="Amber accent" tabindex="-1"></button>
+        </div>
+        <p class="set-help">Colors buttons and highlights across pages.</p>
+      </div>
+
+      <div class="set-field">
+        <span class="set-label" id="lb-textsize">Text size</span>
+        <div class="seg" id="set-textsize" data-seg role="radiogroup" aria-labelledby="lb-textsize">
+          <span class="seg__thumb" aria-hidden="true"></span>
+          <button type="button" class="seg__opt" role="radio" data-value="small" aria-label="Small text" aria-checked="false" tabindex="-1">S</button>
+          <button type="button" class="seg__opt" role="radio" data-value="medium" aria-label="Medium text" aria-checked="true" tabindex="0">M</button>
+          <button type="button" class="seg__opt" role="radio" data-value="large" aria-label="Large text" aria-checked="false" tabindex="-1">L</button>
+        </div>
+        <p class="set-help">Scales base text on all pages.</p>
+      </div>
+
+      <div class="set-field">
+        <span class="set-label" id="lb-density">Density</span>
+        <div class="seg" id="set-density" data-seg role="radiogroup" aria-labelledby="lb-density">
+          <span class="seg__thumb" aria-hidden="true"></span>
+          <button type="button" class="seg__opt" role="radio" data-value="comfortable" aria-checked="true" tabindex="0">Comfortable</button>
+          <button type="button" class="seg__opt" role="radio" data-value="compact" aria-checked="false" tabindex="-1">Compact</button>
+        </div>
+        <p class="set-help">Compact tightens spacing across pages.</p>
+      </div>
+
+      <!-- Task 3 controls: backed by window.TDSettings (td.* keys), not by DAC.settings. -->
+      <div class="set-field">
+        <span class="set-label" id="lb-speed">Progress speed</span>
+        <div class="seg" id="set-speed" data-seg role="radiogroup" aria-labelledby="lb-speed">
+          <span class="seg__thumb" aria-hidden="true"></span>
+          <button type="button" class="seg__opt" role="radio" data-value="fast" aria-checked="false" tabindex="-1">Fast</button>
+          <button type="button" class="seg__opt" role="radio" data-value="normal" aria-checked="true" tabindex="0">Normal</button>
+          <button type="button" class="seg__opt" role="radio" data-value="slow" aria-checked="false" tabindex="-1">Slow</button>
+        </div>
+        <p class="set-help">How long scans and progress animations take on the Dashboard.</p>
+      </div>
+
+      <div class="set-field">
+        <span class="set-label" id="lb-navstyle">Navbar selected style</span>
+        <div class="seg" id="set-navstyle" data-seg role="radiogroup" aria-labelledby="lb-navstyle">
+          <span class="seg__thumb" aria-hidden="true"></span>
+          <button type="button" class="seg__opt" role="radio" data-value="ring" aria-checked="true" tabindex="0">Ring</button>
+          <button type="button" class="seg__opt" role="radio" data-value="invert" aria-checked="false" tabindex="-1">Invert</button>
+        </div>
+        <!-- decorative live preview: mirrors html[data-nav-style] via CSS, never interactive -->
+        <div class="nav-preview" aria-hidden="true">
+          <span class="nav-preview__btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg></span>
+          <span class="nav-preview__btn" data-current><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.2"/><path d="M12 7.5V12l3 2"/></svg></span>
+          <span class="nav-preview__btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3.2"/><path d="M12 4.2v2.4M12 17.4v2.4M4.2 12h2.4M17.4 12h2.4M6.5 6.5l1.7 1.7M15.8 15.8l1.7 1.7M17.5 6.5l-1.7 1.7M8.2 15.8l-1.7 1.7"/></svg></span>
+        </div>
+        <p class="set-help">Marks the current page's button in the navbar.</p>
+      </div>
+
+      <div class="set-field set-row">
+        <div class="row-main">
+          <label class="set-label" id="lb-set-reduce" for="set-reduce">Reduce animations</label>
+          <p class="set-help">Also follows your device's reduced-motion setting.</p>
+        </div>
+        <button type="button" class="switch" id="set-reduce" role="switch" aria-labelledby="lb-set-reduce" aria-checked="false" data-key="reduceAnimations"><span class="switch-knob" aria-hidden="true"></span></button>
+      </div>
+
+      <div class="set-field set-row">
+        <div class="row-main">
+          <label class="set-label" id="lb-set-hero" for="set-hero">Show hero banner</label>
+          <p class="set-help">Hero artwork at the top of the Dashboard page.</p>
+        </div>
+        <button type="button" class="switch" id="set-hero" role="switch" aria-labelledby="lb-set-hero" aria-checked="false" data-key="showHero"><span class="switch-knob" aria-hidden="true"></span></button>
+      </div>
+    </section>
+
+    <!-- ===== Card: Detection ===== -->
+    <section class="card set-card" aria-labelledby="hd-detection">
+      <div class="set-card-head">
+        <h2 class="card-title" id="hd-detection">Detection</h2>
+        <p class="set-card-sub">Applies to the heuristic analysis on the Dashboard.</p>
+      </div>
+
+      <div class="set-field">
+        <span class="set-label" id="lb-sensitivity">Sensitivity</span>
+        <div class="seg" id="set-sensitivity" data-seg role="radiogroup" aria-labelledby="lb-sensitivity">
+          <span class="seg__thumb" aria-hidden="true"></span>
+          <button type="button" class="seg__opt" role="radio" data-value="relaxed" aria-checked="false" tabindex="-1">Relaxed</button>
+          <button type="button" class="seg__opt" role="radio" data-value="balanced" aria-checked="true" tabindex="0">Balanced</button>
+          <button type="button" class="seg__opt" role="radio" data-value="strict" aria-checked="false" tabindex="-1">Strict</button>
+        </div>
+        <p class="set-help">Relaxed +10 · Balanced 0 · Strict −10 on risk thresholds.</p>
+      </div>
+
+      <div class="set-field set-row">
+        <div class="row-main"><label class="set-label" id="lb-det-http" for="det-http">Insecure HTTP links</label></div>
+        <button type="button" class="switch" id="det-http" role="switch" aria-labelledby="lb-det-http" aria-checked="false" data-key="detectors" data-prop="httpInsecure"><span class="switch-knob" aria-hidden="true"></span></button>
+      </div>
+      <div class="set-field set-row">
+        <div class="row-main"><label class="set-label" id="lb-det-urgent" for="det-urgent">Urgent or pressuring language</label></div>
+        <button type="button" class="switch" id="det-urgent" role="switch" aria-labelledby="lb-det-urgent" aria-checked="false" data-key="detectors" data-prop="urgentLanguage"><span class="switch-knob" aria-hidden="true"></span></button>
+      </div>
+      <div class="set-field set-row">
+        <div class="row-main"><label class="set-label" id="lb-det-cred" for="det-cred">Credential, bank or card requests</label></div>
+        <button type="button" class="switch" id="det-cred" role="switch" aria-labelledby="lb-det-cred" aria-checked="false" data-key="detectors" data-prop="credentialRequests"><span class="switch-knob" aria-hidden="true"></span></button>
+      </div>
+      <div class="set-field set-row">
+        <div class="row-main"><label class="set-label" id="lb-det-ip" for="det-ip">IP-address hostnames</label></div>
+        <button type="button" class="switch" id="det-ip" role="switch" aria-labelledby="lb-det-ip" aria-checked="false" data-key="detectors" data-prop="ipHostname"><span class="switch-knob" aria-hidden="true"></span></button>
+      </div>
+      <div class="set-field set-row">
+        <div class="row-main"><label class="set-label" id="lb-det-short" for="det-short">URL shorteners</label></div>
+        <button type="button" class="switch" id="det-short" role="switch" aria-labelledby="lb-det-short" aria-checked="false" data-key="detectors" data-prop="shorteners"><span class="switch-knob" aria-hidden="true"></span></button>
+      </div>
+      <div class="set-field set-row">
+        <div class="row-main"><label class="set-label" id="lb-det-look" for="det-look">Lookalike domains</label></div>
+        <button type="button" class="switch" id="det-look" role="switch" aria-labelledby="lb-det-look" aria-checked="false" data-key="detectors" data-prop="lookalikes"><span class="switch-knob" aria-hidden="true"></span></button>
+      </div>
+
+      <p class="set-help">Allowlisted domains are always Low risk. Blocked domains are always High risk.</p>
+
+      <div class="set-field" id="list-trusted">
+        <label class="set-label" for="trusted-input">Trusted domains</label>
+        <form class="l-add" id="form-trusted" novalidate>
+          <input class="input" type="text" id="trusted-input" name="domain" placeholder="example.com" spellcheck="false" autocomplete="off" aria-describedby="err-trusted">
+          <button class="btn btn-secondary" type="submit" id="add-trusted">Add</button>
+        </form>
+        <p class="field-error" id="err-trusted" role="alert" hidden></p>
+        <ul class="chip-list" id="trusted-chips" aria-label="Trusted domains list"></ul>
+      </div>
+
+      <div class="set-field" id="list-blocked">
+        <label class="set-label" for="blocked-input">Blocked domains</label>
+        <form class="l-add" id="form-blocked" novalidate>
+          <input class="input" type="text" id="blocked-input" name="domain" placeholder="example.com" spellcheck="false" autocomplete="off" aria-describedby="err-blocked">
+          <button class="btn btn-secondary" type="submit" id="add-blocked">Add</button>
+        </form>
+        <p class="field-error" id="err-blocked" role="alert" hidden></p>
+        <ul class="chip-list" id="blocked-chips" aria-label="Blocked domains list"></ul>
+      </div>
+    </section>
+
+    <!-- ===== Card: Scanning ===== -->
+    <section class="card set-card" aria-labelledby="hd-scanning">
+      <div class="set-card-head">
+        <h2 class="card-title" id="hd-scanning">Scanning</h2>
+      </div>
+
+      <div class="set-field">
+        <span class="set-label" id="lb-defaultmode">Default input mode</span>
+        <div class="seg" id="set-defaultmode" data-seg role="radiogroup" aria-labelledby="lb-defaultmode">
+          <span class="seg__thumb" aria-hidden="true"></span>
+          <button type="button" class="seg__opt" role="radio" data-value="single" aria-checked="true" tabindex="0">Single</button>
+          <button type="button" class="seg__opt" role="radio" data-value="csv" aria-checked="false" tabindex="-1">CSV</button>
+        </div>
+        <p class="set-help">Pre-selected when the Dashboard opens.</p>
+      </div>
+
+      <div class="set-field">
+        <span class="set-label" id="lb-scanspeed">Simulated scan speed</span>
+        <div class="seg" id="set-scanspeed" data-seg role="radiogroup" aria-labelledby="lb-scanspeed">
+          <span class="seg__thumb" aria-hidden="true"></span>
+          <button type="button" class="seg__opt" role="radio" data-value="fast" aria-checked="false" tabindex="-1">Fast</button>
+          <button type="button" class="seg__opt" role="radio" data-value="normal" aria-checked="true" tabindex="0">Normal</button>
+          <button type="button" class="seg__opt" role="radio" data-value="slow" aria-checked="false" tabindex="-1">Slow</button>
+        </div>
+        <p class="set-help">Fast ≈ 1 s · Normal ≈ 2 s · Slow ≈ 3.5 s</p>
+      </div>
+
+      <div class="set-field set-row">
+        <div class="row-main">
+          <label class="set-label" id="lb-set-autoopen" for="set-autoopen">Auto-open details after scan</label>
+          <p class="set-help">Scrolls the result panel into view after each scan.</p>
+        </div>
+        <button type="button" class="switch" id="set-autoopen" role="switch" aria-labelledby="lb-set-autoopen" aria-checked="false" data-key="autoOpenDetails"><span class="switch-knob" aria-hidden="true"></span></button>
+      </div>
+
+      <div class="set-field">
+        <span class="set-label" id="lb-maxcsv">Max CSV entries</span>
+        <div class="seg" id="set-maxcsv" data-seg role="radiogroup" aria-labelledby="lb-maxcsv">
+          <span class="seg__thumb" aria-hidden="true"></span>
+          <button type="button" class="seg__opt" role="radio" data-value="50" aria-checked="false" tabindex="-1">50</button>
+          <button type="button" class="seg__opt" role="radio" data-value="100" aria-checked="true" tabindex="0">100</button>
+          <button type="button" class="seg__opt" role="radio" data-value="250" aria-checked="false" tabindex="-1">250</button>
+        </div>
+        <p class="set-help">Larger batches are rejected with an inline message.</p>
+      </div>
+    </section>
+
+    <!-- ===== Card: History & privacy ===== -->
+    <section class="card set-card" aria-labelledby="hd-history">
+      <div class="set-card-head">
+        <h2 class="card-title" id="hd-history">History &amp; privacy</h2>
+      </div>
+
+      <div class="set-field set-row">
+        <div class="row-main">
+          <label class="set-label" id="lb-set-savehistory" for="set-savehistory">Save scan history</label>
+          <p class="set-help">New scans are stored on this device.</p>
+        </div>
+        <button type="button" class="switch" id="set-savehistory" role="switch" aria-labelledby="lb-set-savehistory" aria-checked="false" data-key="saveHistory"><span class="switch-knob" aria-hidden="true"></span></button>
+      </div>
+
+      <div class="set-field">
+        <span class="set-label" id="lb-autodelete">Auto-delete after</span>
+        <div class="seg" id="set-autodelete" data-seg role="radiogroup" aria-labelledby="lb-autodelete">
+          <span class="seg__thumb" aria-hidden="true"></span>
+          <button type="button" class="seg__opt" role="radio" data-value="never" aria-checked="true" tabindex="0">Never</button>
+          <button type="button" class="seg__opt" role="radio" data-value="7" aria-checked="false" tabindex="-1">7 days</button>
+          <button type="button" class="seg__opt" role="radio" data-value="30" aria-checked="false" tabindex="-1">30 days</button>
+          <button type="button" class="seg__opt" role="radio" data-value="90" aria-checked="false" tabindex="-1">90 days</button>
+        </div>
+        <p class="set-help">Applies to scans you ran.</p>
+      </div>
+
+      <div class="set-field set-row">
+        <div class="row-main">
+          <label class="set-label" id="lb-set-mask" for="set-mask">Mask sensitive text</label>
+          <p class="set-help">Hides long digit runs and link paths in history.</p>
+        </div>
+        <button type="button" class="switch" id="set-mask" role="switch" aria-labelledby="lb-set-mask" aria-checked="false" data-key="maskSensitive"><span class="switch-knob" aria-hidden="true"></span></button>
+      </div>
+
+      <div class="set-actions">
+        <button type="button" class="btn btn-secondary" id="btn-export-history">Export history (CSV)</button>
+        <button type="button" class="btn btn-secondary" id="btn-clear-history2">Clear history</button>
+      </div>
+    </section>
+
+    <!-- ===== Card: Notifications ===== -->
+    <section class="card set-card" aria-labelledby="hd-notifications">
+      <div class="set-card-head">
+        <h2 class="card-title" id="hd-notifications">Notifications</h2>
+      </div>
+
+      <div class="set-field set-row">
+        <div class="row-main">
+          <label class="set-label" id="lb-set-notify" for="set-notify">Alert on high-risk result</label>
+          <p class="set-help">Shows a toast when a scan ends High risk.</p>
+        </div>
+        <button type="button" class="switch" id="set-notify" role="switch" aria-labelledby="lb-set-notify" aria-checked="false" data-key="notifyHighRisk"><span class="switch-knob" aria-hidden="true"></span></button>
+      </div>
+
+      <div class="set-field set-row">
+        <div class="row-main">
+          <label class="set-label" id="lb-set-sound" for="set-sound">Sound on alert</label>
+          <span class="badge-muted">Demo: stored only</span>
+        </div>
+        <button type="button" class="switch" id="set-sound" role="switch" aria-labelledby="lb-set-sound" aria-checked="false" data-key="soundAlert"><span class="switch-knob" aria-hidden="true"></span></button>
+      </div>
+
+      <div class="set-field set-row">
+        <div class="row-main">
+          <label class="set-label" id="lb-set-daily" for="set-daily">Daily summary</label>
+          <span class="badge-muted">Demo: stored only</span>
+        </div>
+        <button type="button" class="switch" id="set-daily" role="switch" aria-labelledby="lb-set-daily" aria-checked="false" data-key="dailySummary"><span class="switch-knob" aria-hidden="true"></span></button>
+      </div>
+    </section>
+
+    <!-- ===== Card: Regional ===== -->
+    <section class="card set-card" aria-labelledby="hd-regional">
+      <div class="set-card-head">
+        <h2 class="card-title" id="hd-regional">Regional</h2>
+      </div>
+      <div class="set-field">
+        <span class="set-label" id="lb-timeformat">Time format</span>
+        <div class="seg" id="set-timeformat" data-seg role="radiogroup" aria-labelledby="lb-timeformat">
+          <span class="seg__thumb" aria-hidden="true"></span>
+          <button type="button" class="seg__opt" role="radio" data-value="12h" aria-label="12-hour" aria-checked="true" tabindex="0">12h</button>
+          <button type="button" class="seg__opt" role="radio" data-value="24h" aria-label="24-hour" aria-checked="false" tabindex="-1">24h</button>
+        </div>
+        <p class="set-help">Applies everywhere times are shown.</p>
+      </div>
+    </section>
+
+    <!-- ===== Card: About ===== -->
+    <section class="card set-card" aria-labelledby="hd-about">
+      <div class="set-card-head">
+        <h2 class="card-title" id="hd-about">About</h2>
+      </div>
+      <p class="about-line">Threat Detector · Demo v0.1.0</p>
+      <p class="about-copy">This is a demonstration interface. No real scanning or protection is performed.</p>
+      <div class="set-actions">
+        <button type="button" class="btn btn-danger" id="btn-reset-all">Reset all settings to defaults</button>
+      </div>
+    </section>
+
+  </div>
+</main>
+<script src="js/core/core.js"></script>
+<script src="js/core/td-config.js"></script>
+<script src="js/core/events.js"></script>
+<script src="js/services/bridge.js"></script>
+<script src="js/services/analysisService.js"></script>
+<script src="js/features/motion-governor.js"></script>
+<script src="js/pages/settings.js"></script>
+</body>
+</html>

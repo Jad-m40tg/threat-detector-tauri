@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en" data-page="dashboard">
+<head>
+  <meta charset="utf-8">
+<script src="js/core/theme-init.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Threat Detector demo — fictional heuristic threat checks. No real analysis.">
+  <title>Threat Detector — Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.5 20 5.3v5.2c0 4.8-3.2 8.7-8 10-4.8-1.3-8-5.2-8-10V5.3Z' fill='%238DEB6B'/%3E%3Crect x='9.4' y='10.6' width='5.2' height='4.4' rx='1' fill='none' stroke='%23101418' stroke-width='1.6'/%3E%3Cpath d='M10.6 10.6V9.6a1.4 1.4 0 0 1 2.8 0v1' fill='none' stroke='%23101418' stroke-width='1.6'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/base/motion-tokens.css">
+<link rel="stylesheet" href="css/components/motion-governor.css">
+<link rel="stylesheet" href="css/core.css">
+<link rel="stylesheet" href="css/pages/index.css">
+<script src="js/settings.js"></script>
+<link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/risk-glow.css">
+<link rel="stylesheet" href="css/analysis-card.css">
+<script src="js/features/theme-fx.js"></script>
+<script src="js/theme.js"></script>
+<link rel="stylesheet" href="css/theme-transition.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <main id="main-content" tabindex="-1">
+    <div class="dash-main">
+      <div class="dash-layout">
+
+        <!-- ===== SPEC 7.1 HERO ===== -->
+        <div class="dash-col">
+          <section id="hero" class="dash-reveal" aria-labelledby="hero-title">
+            <div class="hero-art" aria-hidden="true">
+              <svg class="grid-layer" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid slice" focusable="false">
+                <defs>
+                  <pattern id="dash-grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                    <path d="M32 0H0V32" fill="none" stroke-width="1"></path>
+                  </pattern>
+                </defs>
+                <rect width="800" height="300" fill="url(#dash-grid)"></rect>
+              </svg>
+              <svg class="mountain-layer dash-mtn-far" viewBox="0 0 800 170" preserveAspectRatio="xMidYMax meet" focusable="false">
+                <path d="M0 170 80 96l60 44 90-84 70 56 84-62 76 48 96-72 110 74 84-40 90 54 40-14v170Z" fill="var(--bg-card-2)"></path>
+              </svg>
+              <svg class="mountain-layer dash-mtn-near" viewBox="0 0 800 120" preserveAspectRatio="xMidYMax meet" focusable="false">
+                <path d="M0 120V70l96-44 86 52 120-64 112 66 132-56 108 60 96-40 50 34v42Z" fill="var(--bg-card)"></path>
+              </svg>
+              <span class="glitch-block"></span>
+              <span class="glitch-block"></span>
+              <span class="glitch-block"></span>
+              <span class="glitch-block"></span>
+              <span class="glitch-block"></span>
+            </div>
+            <div class="dash-hero-in">
+              <h1 id="hero-title">Threat <span class="dash-hl">Detector</span></h1>
+              <p class="dash-sub">Check suspicious URLs and messages for potential threats.</p>
+            </div>
+            <div class="dash-scroll">
+              <button type="button" class="btn btn-ghost" id="btn-scroll-scan" aria-label="Scroll down to scan">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M6.5 9.5 12 15l5.5-5.5"></path></svg>
+              </button>
+            </div>
+          </section>
+
+          <!-- ===== SPEC 7.2 START A SCAN ===== -->
+          <section id="scan-card" class="card dash-reveal" aria-labelledby="scan-title">
+            <div class="card-head">
+              <h2 class="card-title" id="scan-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M13 2 6.8 13.2h4.5L10.2 22l7.6-11.2h-4.7L13 2Z"></path></svg>
+                Start a Scan
+              </h2>
+            </div>
+
+            <div id="seg-mode" class="seg" data-seg role="radiogroup" aria-label="Input mode">
+              <span class="seg__thumb" aria-hidden="true"></span>
+              <button type="button" class="seg__opt" role="radio" data-value="single" aria-checked="true" tabindex="0">Single Input</button>
+              <button type="button" class="seg__opt" role="radio" data-value="csv" aria-checked="false" tabindex="-1">CSV Batch</button>
+            </div>
+
+            <!-- Single input block -->
+            <div class="scan-block is-active" data-block="single">
+              <form id="scan-form" novalidate>
+                <label class="field-label" for="scan-input">URL or message</label>
+                <div class="dash-inputwrap">
+                  <svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><circle cx="12" cy="12" r="8.2"></circle><path d="M3.8 12h16.4"></path><path d="M12 3.8c2.5 2.3 3.9 5 3.9 8.2s-1.4 5.9-3.9 8.2c-2.5-2.3-3.9-5-3.9-8.2s1.4-5.9 3.9-8.2Z"></path></svg>
+                  <textarea id="scan-input" class="input textarea-autogrow" rows="1" placeholder="Enter a URL or suspicious message..." aria-describedby="input-error dash-hint"></textarea>
+                </div>
+                <p class="help" id="dash-hint">Tip: full URLs work best (e.g. https://example.com)</p>
+                <p id="input-error" class="field-error" role="status" aria-live="polite" hidden>Enter a URL or message to analyze</p>
+                <div class="dash-actions">
+                  <button type="submit" id="btn-analyze" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M9 6.2v11.6L18 12Z"></path></svg>
+                    Analyze
+                  </button>
+                  <button type="button" id="btn-clear" class="btn btn-secondary">Clear</button>
+                </div>
+              </form>
+            </div>
+
+            <p class="dash-divider" aria-hidden="true">OR</p>
+
+            <!-- CSV batch block -->
+            <div class="scan-block" data-block="csv">
+              <div id="csv-drop" class="drop-zone" role="button" tabindex="0" aria-label="CSV file drop zone. Press Enter to browse for a file.">
+                <div class="dash-drop-inner">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M7.4 18.4h9.4a3.6 3.6 0 0 0 .6-7.15A5.55 5.55 0 0 0 6.8 9.6a4.4 4.4 0 0 0 .6 8.8Z"></path><path d="M12 16.2v-5.5"></path><path d="m9.7 12.9 2.3-2.3 2.3 2.3"></path></svg>
+                  <span class="dash-drop-b">Drag &amp; drop a CSV file here</span>
+                  <span class="muted">or click to browse</span>
+                </div>
+                <input type="file" id="csv-file-input" accept=".csv,text/csv" tabindex="-1" aria-hidden="true" class="sr-only">
+              </div>
+              <p id="csv-error" class="field-error" role="status" aria-live="polite" hidden></p>
+
+              <div id="csv-summary" class="dash-filecard" hidden>
+                <div class="dash-filecard-row">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M13.5 3.5H7a1.5 1.5 0 0 0-1.5 1.5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8.5Z"></path><path d="M13.5 3.5v5h5"></path></svg>
+                  <span id="csv-summary-name" class="ellipsis text-truncate"></span>
+                </div>
+                <p id="csv-summary-line" class="dash-filemeta"></p>
+                <span id="csv-progress-label" class="dash-progress-label"><span>Batch progress</span><span id="csv-progress-pct" class="dash-filemeta">0% complete</span></span>
+                <div class="progress" role="progressbar" aria-labelledby="csv-progress-label" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                  <div class="progress-bar" id="csv-progress-bar" style="--fill:0"></div>
+                </div>
+              </div>
+
+              <div class="dash-footrow">
+                <button type="button" id="btn-download-sample" class="btn btn-ghost">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M12 4v10.6"></path><path d="M7.6 10.4 12 14.8l4.4-4.4"></path><path d="M5 19.8h14"></path></svg>
+                  Download sample CSV
+                </button>
+              </div>
+            </div>
+
+            <div class="callout dash-callout" data-type="info" role="note">
+              <p class="callout__text"><strong>Demo mode:</strong> The displayed results are fictional examples. No actual analysis is performed.</p>
+            </div>
+          </section>
+
+          <!-- ===== SPEC 7.3 RESULT PANEL ===== -->
+          <section id="result-panel" class="card result-panel dash-reveal" aria-label="Analysis result">
+            <p id="scan-live" class="sr-only" role="status" aria-live="polite"></p>
+            <div class="result-states">
+
+              <div class="result-state state-idle" data-state="idle">
+                <div class="dash-c dash-idle-wrap" style="padding:var(--space-6) 0">
+                  <h3>Results will appear here</h3>
+                  <p>Analyze a URL or message, or drop a CSV file, to see fictional demo results.</p>
+                </div>
+              </div>
+
+              <div class="result-state state-scanning" data-state="scanning">
+                <div class="dash-c" style="padding:var(--space-5) 0">
+                  <div class="dash-visual" id="vis-scan"></div>
+                  <h3>Scanning <span class="dash-scan-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span></h3>
+                  <p class="scan-substatus" id="scan-substatus">Checking URL structure...</p>
+                  <div class="scan-progress-zone" id="scan-progress-zone" role="status" aria-live="polite" tabindex="-1">
+                    <span id="scan-progress-label" class="dash-progress-label"><span>Progress</span><span id="scan-progress-count" class="dash-filemeta">Working…</span></span>
+                    <div class="progress scan-progress is-indet" id="scan-progress" role="progressbar" aria-labelledby="scan-progress-label" aria-valuemin="0" aria-valuemax="100">
+                      <div class="progress-bar" id="scan-progress-bar"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="result-state state-threat" data-state="threat">
+                <div class="dash-threat-inner">
+                  <div class="panel-heading">
+                    <h3>Analysis details</h3>
+                    <span class="risk-label" id="threat-risk-label" data-risk="medium">Medium risk</span>
+                  </div>
+                  <div class="ring-wrap ring-float result-ring-float" id="vis-ring-threat"></div>
+                  <dl class="detail-rows">
+                    <dt class="detail-dt">Selected input</dt>
+                    <dd class="detail-dd dash-prewrap" id="detail-input"></dd>
+                    <dt class="detail-dt">Risk score:</dt>
+                    <dd class="detail-dd"><span id="detail-score">0</span>/100</dd>
+                    <dt class="detail-dt">Detection reasons</dt>
+                    <dd class="detail-dd">
+                      <ul class="reason-list" id="detail-reasons"></ul>
+                    </dd>
+                    <dt class="detail-dt">Recommended action</dt>
+                    <dd class="detail-dd" id="detail-action"></dd>
+                  </dl>
+                </div>
+              </div>
+
+              <div class="result-state state-safe" data-state="safe">
+                <div class="dash-safe-wrap">
+                  <div class="ring-safe-wrap" id="vis-check"></div>
+                  <h3>No issues detected</h3>
+                  <p>No risk indicators found</p>
+                </div>
+              </div>
+
+              <div class="result-state state-unverified" data-state="unverified">
+                <div class="dash-unv-inner">
+                  <div class="ring-wrap ring-float result-ring-float" id="vis-ring-unv"></div>
+                  <div class="panel-heading">
+                    <h3>Unable to verify</h3>
+                  </div>
+                  <dl class="detail-rows">
+                    <dt class="detail-dt">Reason</dt>
+                    <dd class="detail-dd" id="unv-reason"></dd>
+                    <dt class="detail-dt">Recommended action</dt>
+                    <dd class="detail-dd" id="unv-action"></dd>
+                  </dl>
+                </div>
+              </div>
+
+              <div class="result-state state-error" data-state="error">
+                <div class="dash-err-inner">
+                  <div class="panel-heading">
+                    <h3>Analysis details</h3>
+                    <span class="risk-label" data-risk="error">Error</span>
+                  </div>
+                  <dl class="detail-rows">
+                    <dt class="detail-dt">Reason</dt>
+                    <dd class="detail-dd">The text does not look like a valid URL or a readable message.</dd>
+                    <dt class="detail-dt">Recommended action</dt>
+                    <dd class="detail-dd">Check the text and enter a full URL (e.g. https://example.com) or a plain message.</dd>
+                  </dl>
+                </div>
+              </div>
+
+              <div class="result-state state-batch" data-state="batch">
+                <div class="dash-batch-inner">
+                  <div class="panel-heading">
+                    <h3>Batch summary</h3>
+                  </div>
+                  <p class="muted" id="batch-meta"></p>
+                  <ul class="reason-list" id="batch-list"></ul>
+                  <p class="dash-batch-link"><a class="link-arrow" href="history.html">View in history</a></p>
+                </div>
+              </div>
+
+            </div>
+          </section>
+        </div>
+
+        <!-- ===== SPEC 7.5 THREAT SUMMARY (side column) ===== -->
+        <aside class="dash-aside" aria-label="Threat summary">
+          <section id="summary-card" class="card dash-reveal" aria-labelledby="summary-title">
+            <div class="card-head">
+              <h2 class="card-title" id="summary-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M12 2.2 20 5.1v5.4c0 4.7-3.2 8.5-8 9.8-4.8-1.3-8-5.1-8-9.8V5.1Z"></path><path d="m9.2 12.2 2.2 2.2 4-4.4"></path></svg>
+                Threat Summary
+              </h2>
+            </div>
+            <div class="dash-summary-visual">
+              <div class="shield-wrap" id="vis-shield-summary"></div>
+              <svg class="wave-deco" viewBox="0 0 300 42" preserveAspectRatio="none" focusable="false" aria-hidden="true">
+                <path d="M0 24c25-14 55-14 80 0s55 14 80 0 55-14 80 0 40 10 60 4" fill="none" stroke-width="2" stroke-opacity=".3"></path>
+              </svg>
+            </div>
+            <p class="dash-state-title" id="summary-state-title" data-state="secure">Your system is secure</p>
+            <p class="dash-state-desc" id="summary-state-desc">No active threats detected</p>
+            <dl id="stmt-stats" class="dash-stats">
+              <div class="dash-stat"><dt>Scans today</dt><dd id="stat-today">0</dd></div>
+              <div class="dash-stat"><dt>High-risk</dt><dd id="stat-high" data-risk="high">0</dd></div>
+              <div class="dash-stat"><dt>Medium-risk</dt><dd id="stat-medium" data-risk="medium">0</dd></div>
+            </dl>
+            <div class="dash-summary-foot">
+              <a id="summary-review" class="link-arrow" href="history.html#risk=low">
+                Review
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.6 6.6 18 12l-5.4 5.4"></path></svg>
+              </a>
+            </div>
+          </section>
+        </aside>
+
+      </div>
+
+        <!-- ===== SPEC 7.4 ANALYSIS RESULTS (own full-width section below the two-column row) ===== -->
+        <section id="results-card" class="card dash-reveal" aria-labelledby="results-title">
+            <div class="card-head results-head">
+              <h2 class="card-title" id="results-title">
+                <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M5 19.5V9.5"></path><path d="M12 19.5V4.5"></path><path d="M19 19.5v-6"></path><path d="M3.5 19.5h17"></path></svg>
+                Analysis Results
+              </h2>
+              <a id="btn-recent-history" class="link-arrow link-ghost" href="history.html">
+                Recent history
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.6 6.6 18 12l-5.4 5.4"></path></svg>
+              </a>
+            </div>
+            <table class="table" id="table-results">
+              <caption class="sr-only">Five most recent scan results, newest first</caption>
+              <colgroup>
+                <col>
+                <col style="width:120px">
+                <col style="width:140px">
+                <col>
+                <col style="width:130px">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th scope="col">Input</th>
+                  <th scope="col">Risk Level</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Details</th>
+                  <th scope="col">Time</th>
+                </tr>
+              </thead>
+              <tbody id="table-results-body"></tbody>
+            </table>
+          </section>
+    </div>
+  </main>
+<script src="js/core/core.js"></script>
+<script src="js/core/td-config.js"></script>
+<script src="js/core/events.js"></script>
+<script src="js/services/bridge.js"></script>
+<script src="js/services/analysisService.js"></script>
+<script src="js/features/motion-governor.js"></script>
+<script src="js/pages/index.js"></script>
+</body>
+</html>

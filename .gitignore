@@ -1,0 +1,28 @@
+# Cargo build outputs
+target/
+**/target/
+
+# Application distribution binaries
+dist/
+
+# Runtime and execution logs
+logs/
+*.log
+
+# Windows temporary / local files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# IDE / Editor artifacts
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+
+# Git worktrees for parallel agents
+wt-*/
+../wt-*/

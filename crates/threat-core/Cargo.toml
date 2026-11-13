@@ -1,0 +1,17 @@
+[package]
+name = "threat-core"
+version = "0.1.0"
+edition = "2021"
+authors = ["Jad", "Antigravity"]
+description = "Pure Rust engine for multi-threaded threat detection"
+
+[dependencies]
+url = "2.5"
+csv = "1.3"
+serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1.38", features = ["sync", "rt", "macros", "time"] }
+tokio-util = "0.7"
+thiserror = "1.0"
+
+[dev-dependencies]
+tokio = { version = "1.38", features = ["full"] }

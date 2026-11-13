@@ -1,0 +1,6 @@
+id,input_type,content,expected_risk_level,expected_category,triggered_rules_description,,
+1,URL,https://www.example.edu/courses/cs302,Low,Legitimate HTTPs URL,,
+2,UNKNOWN_TYPE,some random content,Not Verified,Unknown Type,,
+3,URL,ht!tp://malformed.invalid,Not Verified,Malformed URL,,
+4,MESSAGE,Your package is arriving today between 1 PM and 3 PM.,Low,Benign Message,,
+5,MESSAGE,,Not Verified,Empty Input,,

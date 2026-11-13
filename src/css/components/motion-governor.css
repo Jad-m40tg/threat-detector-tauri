@@ -1,0 +1,7 @@
+/* ===== Motion governor CSS (animation perf pass) ===== */
+[data-motion-paused] {
+  animation-play-state: paused !important;
+}
+html.td-switching ::view-transition-new(root) {
+  will-change: clip-path;
+}

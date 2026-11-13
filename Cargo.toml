@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "crates/threat-core",
+    "src-tauri",
+]
+resolver = "2"

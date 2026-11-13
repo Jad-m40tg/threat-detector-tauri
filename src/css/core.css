@@ -1,0 +1,1815 @@
+
+/* ===== DAC SHARED CORE (CSS) 1/2 — tokens+components — identical on all pages ===== */
+/* OWNER: Agent A (Core). CONTRACT §4 tokens · §5 shared classes · §14 shell.
+   Sections: 1 reset · 2 tokens · 3 base type · 4 shell · 5 components
+             6 result panel · 7 modal · 8 density · 9 responsive · 10 reduced motion.
+   No raw hex outside token blocks; animations use transform/opacity only. */
+
+/* ================= 1. GLOBAL RESET ================= */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html,
+body,
+h1, h2, h3, h4,
+p, ul, ol, figure { margin: 0; padding: 0; }
+
+html {
+  font-size: 16px; /* base: 16px, refines via data-text below */
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+img,
+svg { display: block; max-width: 100%; }
+
+/* [D] Icon system: functional icons are sized explicitly (hero/decorative art exempt) */
+.icon { flex: none; width: 16px; height: 16px; }
+.icon-lg { width: 20px; height: 20px; }
+.icon-xl { width: 24px; height: 24px; }
+
+button,
+input,
+select,
+textarea { font: inherit; color: inherit; }
+
+ul, ol { list-style: none; }
+
+/* [hidden] wins everywhere so JS can rely on it for state toggling */
+[hidden] { display: none !important; }
+
+/* Focus is never removed; every rule here ADDS visibility, never hides outlines */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+::selection { background: var(--accent-soft); }
+
+/* ================= 2. DESIGN TOKENS (CONTRACT §4) ================= */
+/* Theme-independent primitives */
+:root {
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --dur-fast: 150ms;
+  --dur-in: 220ms;
+  --dur-out: 160ms;
+  --dur-draw: 1000ms;
+  --dur-glow: 3s;
+  --ease-out: cubic-bezier(.22, .61, .36, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+  /* D1 result ring — consumed by .result-panel / .result-ring-float */
+  --ring-side: right;
+  --ring-side-width: var(--space-4);
+  /* [C] real sticky-header height (navbar min-height 64px + 1px border) */
+  --navbar-h: 65px;
+}
+
+/* ----- Text size: scales the rem base (15 / 16 / 17.5px) ----- */
+:root { --text-base: 16px; }
+html[data-text="small"]  { font-size: 15px;   --text-base: 15px; }
+html[data-text="large"]  { font-size: 17.5px; --text-base: 17.5px; }
+
+/* ----- DARK / OLED ----- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #000000;
+  /* Cover-tier color (snap fix 2.3c): duplicates --bg on purpose so the
+     theme-cover element can read the TARGET theme's page background from
+     a token instead of the live computed style. Keep in sync with --bg. */
+  --td-cover-bg: #000000;
+  --bg-nav: #161616;
+  --bg-card: #0E120D;
+  --bg-card-2: #141A11;
+  --bg-input: #121715;
+  --border: rgba(255, 255, 255, .08);
+  /* AA revision of pinned grey: solid tone ≥3:1 against card + bg for UI boundaries */
+  --border-strong: #6A7269;
+  --text: #F2F5F7;
+  --text-muted: #A6B1BB;
+  --text-faint: #7A8791; /* AA revision: ≥4.5:1 on card/card-2/nav */
+  --focus-ring: #7BD5FF;
+  /* Navbar icon-button states (icon vs circle verified >=4.5:1 in every state) */
+  --navlink-bg: #FFFFFF;
+  --navlink-bg-hover: #F1F4F7;
+  --navlink-bg-active: #E4E9EC;
+  --navlink-icon: #0B0E11;
+  --navlink-icon-hover: #0B0E11;
+  --navlink-icon-active: #0B0E11;
+  --navlink-icon-current: #0B0E11;
+  --navlink-icon-open: #0B0E11;
+  --navlink-ring: transparent;
+  --navlink-ring-hover: var(--accent-contrast); /* crisp on light circles in every accent */
+  --navlink-ring-active: var(--accent-contrast);
+  --navlink-ring-current: var(--accent);
+  --navlink-ring-open: var(--accent);
+  /* Switch states: OFF track + 1px edge (>=3:1 vs card) + knob (>=3:1 vs ON track) */
+  --switch-off: #55606B;
+  --switch-off-hover: #646E77;
+  --switch-edge: #8A93A0;
+  --switch-knob: #FFFFFF;
+  --high-contrast: #2A070C; /* AA text on --high fills (≥4.5:1) */
+  --shadow: 0 10px 30px rgba(0, 0, 0, .55);
+  --backdrop: rgba(0, 0, 0, .62);
+}
+
+/* ----- DARK / GREY ----- */
+:root[data-theme="dark"][data-bg="grey"] {
+  --bg: #121212;
+  /* Cover-tier color: duplicates --bg (see note in the dark/oled block). */
+  --td-cover-bg: #121212;
+  --bg-nav: #1A1A1A;
+  --bg-card: #181D18;
+  --bg-card-2: #1F241E;
+  --bg-input: #1A1F1B;
+}
+
+/* ----- RISK (always paired with text + icon, never color alone) ----- */
+:root[data-theme="dark"] {
+  --low: #3DDC84;
+  --medium: #FFB020;
+  --high: #FF5A5F;
+  --na: #8A93A0;
+  --low-soft: rgba(61, 220, 132, .14);
+  --medium-soft: rgba(255, 176, 32, .14);
+  --high-soft: rgba(255, 90, 95, .16);
+  --na-soft: rgba(138, 147, 160, .18);
+}
+
+:root[data-theme="light"] {
+  --low: #127A48;
+  /* [A1] richer amber (was a muddy brown); AA ≥4.5:1 on card/white surfaces */
+  --medium: #B45309;
+  --high: #C2263B;
+  --na: #55606A;
+  --low-soft: rgba(18, 122, 72, .12);
+  --medium-soft: rgba(138, 90, 0, .12);
+  --high-soft: rgba(194, 38, 59, .10);
+  --na-soft: rgba(85, 96, 106, .14);
+}
+
+/* ----- LIGHT ----- */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #F4F7F5;
+  /* Cover-tier color: duplicates --bg (see note in the dark/oled block). */
+  --td-cover-bg: #F4F7F5;
+  --bg-nav: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-card-2: #F7FAF7;
+  --bg-input: #FFFFFF;
+  --border: rgba(16, 24, 32, .10);
+  /* AA revision of pinned tone: ≥3:1 boundary on white/off-white */
+  --border-strong: #5D6873;
+  --text: #10161C;
+  --text-muted: #4E5A64;
+  --text-faint: #66727B; /* AA revision: ≥4.5:1 on white + bg */
+  --focus-ring: #1B5EA8;
+  /* Navbar icon-button states (icon vs circle verified >=4.5:1 in every state) */
+  --navlink-bg: #10161C;
+  --navlink-bg-hover: #1E2831;
+  --navlink-bg-active: #2A3540;
+  --navlink-icon: #FFFFFF;
+  --navlink-icon-hover: #FFFFFF;
+  --navlink-icon-active: #FFFFFF;
+  --navlink-icon-current: #FFFFFF;
+  --navlink-icon-open: #FFFFFF;
+  --navlink-ring: transparent;
+  --navlink-ring-hover: #FFFFFF; /* crisp on dark circles in every light accent */
+  --navlink-ring-active: #FFFFFF;
+  --navlink-ring-current: var(--accent);
+  --navlink-ring-open: var(--accent);
+  /* Switch states: OFF track + 1px edge (>=3:1 vs card) + knob (>=3:1 vs ON track) */
+  --switch-off: #D7DCE1;
+  --switch-off-hover: #CBD2D8;
+  --switch-edge: #5D6873;
+  --switch-knob: #FFFFFF;
+  --high-contrast: #FFFFFF; /* white passes on --high (#C2263B) in light theme */
+  --shadow: 0 8px 22px rgba(16, 24, 32, .10);
+  --backdrop: rgba(10, 16, 20, .48);
+}
+
+/* ----- ACCENTS · dark ----- */
+:root[data-theme="dark"][data-accent="green"] {
+  --accent: #8DEB6B; --accent-contrast: #07230D; --accent-strong: #96ED77;
+  --accent-soft: rgba(141, 235, 107, .12); --glow: rgba(141, 235, 107, .35);
+}
+:root[data-theme="dark"][data-accent="blue"] {
+  --accent: #4D94FF; --accent-contrast: #031431; --accent-strong: #5B9DFF;
+  --accent-soft: rgba(77, 148, 255, .12); --glow: rgba(77, 148, 255, .35);
+}
+:root[data-theme="dark"][data-accent="white"] {
+  --accent: #F2F5F7; --accent-contrast: #0B0E11; --accent-strong: #FFFFFF;
+  --accent-soft: rgba(242, 245, 247, .12); --glow: rgba(242, 245, 247, .35);
+}
+:root[data-theme="dark"][data-accent="violet"] {
+  --accent: #B78CFF; --accent-contrast: #180430; --accent-strong: #C1A0FF;
+  --accent-soft: rgba(183, 140, 255, .12); --glow: rgba(183, 140, 255, .35);
+}
+:root[data-theme="dark"][data-accent="amber"] {
+  --accent: #FFC24D; --accent-contrast: #2B1600; --accent-strong: #FFCE70;
+  --accent-soft: rgba(255, 194, 77, .12); --glow: rgba(255, 194, 77, .35);
+}
+
+/* ----- ACCENTS · light (darker accents so AA passes on white) ----- */
+:root[data-theme="light"][data-accent="green"] {
+  --accent: #1E7D3C; --accent-contrast: #FFFFFF; --accent-strong: #2D8448;
+  --accent-soft: rgba(30, 125, 60, .12); --glow: rgba(30, 125, 60, .22);
+}
+:root[data-theme="light"][data-accent="blue"] {
+  --accent: #1B5EA8; --accent-contrast: #FFFFFF; --accent-strong: #2370C4;
+  --accent-soft: rgba(27, 94, 168, .12); --glow: rgba(27, 94, 168, .22);
+}
+:root[data-theme="light"][data-accent="white"] {
+  --accent: #232A31; --accent-contrast: #FFFFFF; --accent-strong: #384249;
+  --accent-soft: rgba(35, 42, 49, .12); --glow: rgba(35, 42, 49, .22);
+}
+:root[data-theme="light"][data-accent="violet"] {
+  --accent: #5E35B1; --accent-contrast: #FFFFFF; --accent-strong: #6B45B7;
+  --accent-soft: rgba(94, 53, 177, .12); --glow: rgba(94, 53, 177, .22);
+}
+:root[data-theme="light"][data-accent="amber"] {
+  --accent: #7A4C00; --accent-contrast: #FFFFFF; --accent-strong: #8F5A00;
+  --accent-soft: rgba(122, 76, 0, .12); --glow: rgba(122, 76, 0, .22);
+}
+
+/* Switch knob per accent - knob vs ON track >=3:1 by computed contrast.
+   Dark-theme light accents (green #8DEB6B 1.6, white 1.2, violet 2.6, amber 1.6
+   vs a white knob) flip to near-black; deep blue (#4D94FF = 3.000) keeps white. */
+:root[data-theme="dark"][data-accent="green"],
+:root[data-theme="dark"][data-accent="white"],
+:root[data-theme="dark"][data-accent="violet"],
+:root[data-theme="dark"][data-accent="amber"] { --switch-knob: #0B0E11; }
+:root[data-theme="dark"][data-accent="blue"] { --switch-knob: #FFFFFF; }
+:root[data-theme="light"][data-accent="green"],
+:root[data-theme="light"][data-accent="blue"],
+:root[data-theme="light"][data-accent="white"],
+:root[data-theme="light"][data-accent="violet"],
+:root[data-theme="light"][data-accent="amber"] { --switch-knob: #FFFFFF; }
+
+/* ================= 3. BASE TYPE ================= */
+body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+h1 { font-size: 1.65rem; line-height: 1.25; font-weight: 700; }
+h2 { font-size: 1.25rem; line-height: 1.3; font-weight: 700; }
+h3 { font-size: 1.05rem; line-height: 1.35; font-weight: 600; }
+
+small { font-size: .85rem; }
+strong, b { font-weight: 600; }
+
+a { color: var(--accent); }
+a:hover { color: var(--accent-strong); }
+
+/* ================= 4. GLOBAL SHELL (CONTRACT §14) ================= */
+
+/* --- Skip link: pages place it before <main> --- */
+.skip-link {
+  position: absolute;
+  top: 0;
+  transform: translateY(-60px);
+  left: var(--space-2);
+  z-index: 100;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  transition: transform var(--dur-in) var(--ease-out);
+}
+.skip-link:focus { transform: translateY(0); }
+html[data-motion="reduced"] .skip-link { transition: none; }
+
+/* --- Screen-reader-only helpers --- */
+.sr-only,
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* --- Sticky header + navbar --- */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg-nav);
+  border-bottom: 1px solid var(--border);
+}
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 64px;
+  padding: var(--space-2) var(--space-4);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: .01em;
+  padding: var(--space-1) var(--space-1);
+  border-radius: var(--radius-sm);
+}
+.brand-logo { width: 24px; height: 24px; color: var(--accent); flex: none; }
+.brand:hover,
+.brand:focus-visible { color: var(--accent-strong); }
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* --- Circular 44px nav buttons (§5 + SPEC §5).
+     State tokens: --navlink-bg / -icon / -ring for default, hover, active,
+     current-page and legend-open. The button itself is never given opacity
+     or a filter; hover keeps the icon/circle pair untouched and signals via
+     an accent glow + crisp ring + scale, wrapped in @media(hover:hover). --- */
+.navlink {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--navlink-bg);
+  color: var(--navlink-icon);
+  box-shadow: 0 0 0 1px var(--navlink-ring);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--dur-fast) var(--ease-out),
+              color var(--dur-fast),
+              box-shadow var(--dur-fast) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
+}
+.navlink svg { width: 22px; height: 22px; }
+.navlink:active {
+  background: var(--navlink-bg-active);
+  color: var(--navlink-icon-active);
+  transform: scale(.97);
+  box-shadow: 0 0 0 1px var(--navlink-ring-active), 0 0 6px var(--glow);
+}
+
+/* Current page and legend-open: persistent accent ring + soft accent glow
+   (aria-current / aria-expanded carry the meaning; the class mirrors current).
+   The 2px offset gap keeps the ring readable even when ring and circle tones
+   would otherwise merge (e.g. the White accent). */
+.navlink[aria-current="page"],
+.navlink.is-current {
+  color: var(--navlink-icon-current);
+  outline: 2px solid var(--navlink-ring-current);
+  outline-offset: 2px;
+  box-shadow: 0 0 12px var(--glow);
+}
+
+/* Legend open (the "i" button; aria-expanded toggles it) */
+.navlink[aria-expanded="true"] {
+  color: var(--navlink-icon-open);
+  outline: 2px solid var(--navlink-ring-open);
+  outline-offset: 2px;
+  box-shadow: 0 0 12px var(--glow);
+}
+
+/* Keyboard focus always stays distinct from hover and from the resting
+   current/open rings (cyan/blue --focus-ring vs accent rings). */
+.navlink[aria-current="page"]:focus-visible,
+.navlink.is-current:focus-visible,
+.navlink[aria-expanded="true"]:focus-visible {
+  outline-color: var(--focus-ring);
+}
+
+/* Hover is pointer-only so touch devices never get stuck hover states */
+@media (hover: hover) {
+  .navlink:hover {
+    background: var(--navlink-bg-hover);
+    color: var(--navlink-icon-hover);
+    transform: scale(1.06);
+    box-shadow: 0 0 0 1px var(--navlink-ring-hover), 0 0 10px var(--glow);
+  }
+}
+
+/* --- CSS tooltips via data-tip: shown on hover AND focus-visible.
+       Never removes focus outline; positioned under the button. --- */
+.navlink[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  z-index: 90;
+  transform: translateX(-50%) translateY(-4px);
+  padding: 4px var(--space-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card-2);
+  color: var(--text);
+  font-size: .8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out),
+              visibility 0s linear var(--dur-fast);
+}
+.navlink[data-tip]:hover::after,
+.navlink[data-tip]:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+  transition-delay: 0s;
+}
+/* Keep the last button's tooltip inside the viewport */
+.nav-actions > :last-child[data-tip]::after {
+  left: auto;
+  right: 0;
+  transform: translateY(-4px);
+}
+.nav-actions > :last-child[data-tip]:hover::after,
+.nav-actions > :last-child[data-tip]:focus-visible::after { transform: translateY(0); }
+
+/* --- Risk Levels legend: D4 drop-up panel, anchored top-right under the nav --- */
+.legend {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: var(--space-3); /* aligned right, under the "i" button */
+  z-index: 60;
+  width: min(320px, calc(100vw - 24px));
+  padding: var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  /* D4 LEGEND DROP-UP — base rule closes FASTER (160ms); .is-open opens at 220ms */
+  transition: opacity var(--dur-out) var(--ease-out),
+              transform var(--dur-out) var(--ease-out);
+}
+.legend.is-open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  /* slower, springy entrance */
+  transition-duration: var(--dur-in);
+}
+
+.legend-title { font-size: 1rem; margin-bottom: var(--space-2); }
+
+.legend-list { display: grid; gap: var(--space-1); }
+
+.legend-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: .92rem;
+  padding: 2px 0;
+}
+
+.legend-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 50%;
+}
+.dot-low    { background: var(--low); }
+.dot-medium { background: var(--medium); }
+.dot-high   { background: var(--high); }
+.dot-na     { background: var(--na); }
+
+.legend-term  { font-weight: 600; min-width: 108px; }
+.legend-desc  { color: var(--text-muted); }
+
+.legend-note {
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+  color: var(--text-faint);
+  font-size: .82rem;
+}
+
+/* --- Toast region + toasts: bottom-right stack, ≤3 visible, dedupe-friendly [E] --- */
+.toast-region {
+  position: fixed;
+  right: max(var(--space-4), env(safe-area-inset-right, 0px));
+  bottom: max(var(--space-5), env(safe-area-inset-bottom, 0px));
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  width: min(360px, calc(100vw - var(--space-6)));
+  max-height: calc(100vh - var(--space-5) - env(safe-area-inset-bottom, 0px));
+  overflow: auto;
+  pointer-events: none;
+}
+.toast {
+  position: relative;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: start;
+  width: 100%;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--bg-card);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .30);
+  font-size: .92rem;
+  overflow: hidden; /* keeps the countdown bar inside the radius */
+  pointer-events: auto;
+  animation: toast-in 180ms var(--ease-out);
+}
+html[data-theme="light"] .toast { box-shadow: 0 10px 28px rgba(16, 24, 32, .14); }
+.toast.is-out {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 140ms linear, transform 140ms linear;
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* status icon: icon-only color signal (toast also carries role + copy, never color alone) */
+.toast-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+}
+.toast-ico svg { display: block; width: 20px; height: 20px; }
+.toast--success .toast-ico { color: var(--low); }
+.toast--warn    .toast-ico { color: var(--medium); }
+.toast--error   .toast-ico { color: var(--high); }
+.toast--info    .toast-ico { color: var(--accent); }
+
+.toast-body { display: block; min-width: 0; }
+.toast-title { display: block; font-size: 14px; line-height: 1.35; font-weight: 600; color: var(--text); overflow-wrap: break-word; }
+.toast-desc { display: block; margin: 2px 0 0; font-size: 13px; line-height: 1.4; color: var(--text-muted); }
+
+.toast-action {
+  margin-top: 8px;
+  min-height: 32px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--bg-card-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.toast-action:hover { background: var(--accent-soft); }
+
+.toast-close {
+  position: relative;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: -6px -8px -6px 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--dur-fast), background var(--dur-fast);
+}
+.toast-close::before { content: ""; position: absolute; inset: -10px; } /* ≥44px hit target */
+.toast-close:hover { color: var(--text); background: var(--accent-soft); }
+.toast-close svg { width: 16px; height: 16px; pointer-events: none; }
+
+/* countdown bar: 2px, status-colored, low emphasis; error toasts run none */
+.toast-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: .4;
+  transform-origin: left center;
+  animation: toast-drain var(--toast-dur, 4s) linear forwards;
+  pointer-events: none;
+}
+.toast--success .toast-bar { color: var(--low); }
+.toast--warn    .toast-bar { color: var(--medium); }
+.toast--error   .toast-bar { color: var(--high); }
+.toast--info    .toast-bar { color: var(--accent); }
+.toast.is-paused .toast-bar { animation-play-state: paused; }
+@keyframes toast-drain {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+/* under reduced motion: no enter/exit animation and no countdown */
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
+  .toast.is-out { transition: none; }
+  .toast-bar { display: none; }
+}
+
+/* --- Footer --- */
+.app-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-7);
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  border-top: 1px solid var(--border);
+}
+
+.footer-note {
+  color: var(--text-faint);
+  font-size: .84rem;
+  max-width: 62ch;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  font-size: .8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--low);
+  animation: chip-pulse var(--dur-glow) ease-in-out infinite;
+}
+@keyframes chip-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .45; }
+}
+
+/* ================= 5. COMPONENT CLASSES (CONTRACT §5) ================= */
+
+/* --- Cards --- */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.card-title { font-size: 1.05rem; font-weight: 700; }
+.card-sub { color: var(--text-muted); font-size: .9rem; margin-top: 2px; }
+
+/* --- Buttons (all ≥44px targets, pill radius) --- */
+.btn {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-5);
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  font-size: .95rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              color var(--dur-fast),
+              transform var(--dur-fast) var(--ease-out);
+}
+.btn svg { width: 18px; height: 18px; }
+.btn:active { transform: translateY(1px) scale(.99); }
+.btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary { background: var(--accent); color: var(--accent-contrast); }
+.btn-primary:hover:not(:disabled) { background: var(--accent-strong); }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.btn-secondary:hover:not(:disabled) { background: var(--bg-card-2); border-color: var(--accent); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+}
+.btn-ghost:hover:not(:disabled) { color: var(--text); background: var(--accent-soft); }
+
+/* destructive confirm button — soft red; hover fill uses AA-safe text token */
+.btn-danger {
+  background: var(--high-soft);
+  color: var(--high);
+  border-color: var(--high);
+}
+.btn-danger:hover:not(:disabled) { background: var(--high); color: var(--high-contrast); }
+
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast), transform var(--dur-fast);
+}
+.icon-btn:hover { background: var(--accent-soft); color: var(--text); }
+.icon-btn svg { width: 20px; height: 20px; }
+
+/* --- Fields --- */
+.field { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.field-label { font-size: .9rem; font-weight: 600; }
+.help { color: var(--text-muted); font-size: .84rem; }
+.field-error {
+  color: var(--high);
+  font-size: .84rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.field-error svg { width: 14px; height: 14px; flex: none; }
+
+.input,
+.select {
+  min-height: 44px;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  transition: border-color var(--dur-fast), background var(--dur-fast);
+}
+.input:hover, .select:hover { border-color: var(--text-muted); }
+.input:focus-visible, .select:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+.input::placeholder { color: var(--text-faint); }
+
+.textarea-autogrow {
+  min-height: 96px;
+  resize: none;
+  overflow: hidden;
+  line-height: 1.5;
+}
+
+/* Custom chevron is opt-in: wrap a select in .select-wrap (native arrow stays
+   available on bare .select, so controls never lose their affordance). */
+.select-wrap { position: relative; display: inline-flex; width: 100%; }
+.select-wrap::after {
+  content: "";
+  position: absolute;
+  right: var(--space-3);
+  top: 50%;
+  margin-top: -2px;
+  border: 5px solid transparent;
+  border-top-color: currentColor;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+/* --- Callouts [A]: one component, no side stripes (a thick border-left on a
+   radius paints a crescent). data-type = info|success|warning|danger; icons are
+   injected by the shared core (see callouts JS). Colors: info=--accent,
+   success=--low, warning=--medium, danger=--high. --- */
+.callout {
+  --c: var(--accent);
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: start;
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: var(--text);
+  background: var(--bg-card-2);
+  background: color-mix(in srgb, var(--c) 8%, var(--bg-card));
+  border: 1px solid var(--border);
+  border: 1px solid color-mix(in srgb, var(--c) 30%, transparent);
+}
+.callout[data-type="success"] { --c: var(--low); }
+.callout[data-type="warning"] { --c: var(--medium); }
+.callout[data-type="danger"]  { --c: var(--high); }
+.callout__icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 16%, transparent);
+}
+.callout__icon svg { width: 16px; height: 16px; flex: none; }
+.callout__text { margin: 0; padding-top: 4px; font-size: 14px; line-height: 1.5; }
+.callout__text strong { font-weight: 600; }
+
+/* --- Segmented control [B/C]: pill hugs its buttons (inline-flex + fit-content;
+   rows must not stretch it), one thumb slides between options. Colors are the
+   project's: track --bg-card-2, edge --border (inset shadow), thumb --accent,
+   text --text-muted / hover --text / checked --accent-contrast. --- */
+.seg {
+  --seg-pad: 4px;
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  flex: none;
+  padding: var(--seg-pad);
+  border-radius: var(--radius-pill);
+  background: var(--bg-card-2);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.seg__thumb {
+  position: absolute;
+  z-index: 0;
+  top: var(--seg-pad);
+  bottom: var(--seg-pad);
+  left: 0;
+  width: var(--seg-w, 0px);
+  transform: translateX(var(--seg-x, 0px));
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+  transition: transform var(--dur-slide) var(--ease-slide), width var(--dur-slide) var(--ease-slide);
+  will-change: transform;
+}
+.seg:not(.is-ready) .seg__thumb { transition: none; }
+.seg__opt {
+  position: relative;
+  z-index: 1;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color .24s ease;
+}
+.seg__opt[aria-checked="true"] { color: var(--accent-contrast); }
+.seg__opt:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+@media (hover: hover) {
+  .seg__opt[aria-checked="false"]:hover { color: var(--text); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .seg__thumb, .seg__opt { transition: none; }
+}
+/* In-app "Reduce animations" hook (same kill-list as the OS setting) */
+html[data-motion="reduced"] .seg__thumb, html[data-motion="reduced"] .seg__opt { transition: none; }
+/* Very narrow phones: trim pill paddings/type instead of scrolling */
+@media (max-width: 420px) {
+  .seg__opt { padding: 0 12px; font-size: 14px; }
+}
+
+/* --- Chips --- */
+.chip {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: .95rem;
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
+}
+.chip:hover { color: var(--text); background: var(--bg-card-2); }
+.chip.is-active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+/* --- Switch (role="switch" button; ONE shared definition).
+     Geometry: 56x32 pill, 26px knob, 3px inset on all sides,
+     travel = --w - --k - 2*--inset = 24px. The >=44px hit target is the row.
+     Tokens: --switch-off / --switch-edge / --switch-knob per theme,
+     knob per accent (knob vs ON track >=3:1). Off state keeps the same
+     geometry; only track color + knob position change. --- */
+.switch {
+  --w: 56px;
+  --h: 32px;
+  --k: 26px;
+  --inset: 3px;
+  position: relative;
+  width: var(--w);
+  height: var(--h);
+  flex: none;
+  box-sizing: border-box;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--switch-off);
+  box-shadow: inset 0 0 0 1px var(--switch-edge);
+  cursor: pointer;
+  vertical-align: middle;
+  transition: background-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out);
+}
+.switch-knob {
+  position: absolute;
+  top: var(--inset);
+  left: var(--inset);
+  width: var(--k);
+  height: var(--k);
+  border-radius: 50%;
+  background: var(--switch-knob);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .35);
+  transition: transform 200ms cubic-bezier(.4, 0, .2, 1);
+}
+.switch[aria-checked="true"] {
+  background: var(--accent);
+  box-shadow: inset 0 0 0 1px transparent;
+}
+.switch[aria-checked="true"] .switch-knob { transform: translateX(24px); }
+.switch:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.switch:disabled,
+.switch[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+@media (hover: hover) {
+  .switch:hover { background: var(--switch-off-hover); }
+  .switch[aria-checked="true"]:hover { background: var(--accent-strong); }
+}
+
+/* --- Table + sticky header --- */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.table {
+  width: 100%;
+  table-layout: fixed; /* [B] fixed columns: long cells truncate instead of widening the page */
+  border-collapse: collapse;
+  font-size: .92rem;
+}
+.table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-card-2);
+  color: var(--text-muted);
+  text-align: left;
+  font-size: .8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border-strong);
+  white-space: nowrap;
+}
+.table td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.table tbody tr { transition: background var(--dur-fast); }
+.table tbody tr:hover { background: var(--bg-card-2); }
+.table tbody tr:focus-visible,
+.table tbody tr.is-selected { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+.table tbody tr.is-selected { background: var(--accent-soft); }
+
+/* clickable rows: pages add role="button" + tabindex="0" */
+.table tbody tr[role="button"] { cursor: pointer; }
+
+.table--stack, .table--stack thead { display: block; } /* page opt-in pattern */
+.table--stack tbody { display: block; }
+.table--stack tr { display: block; padding: var(--space-3) 0; border-bottom: 1px solid var(--border); }
+.table--stack td { display: flex; gap: var(--space-2); border: 0; padding: 2px 0; }
+.table--stack td::before {
+  content: attr(data-label);
+  color: var(--text-faint);
+  font-size: .78rem;
+  font-weight: 600;
+  min-width: 96px;
+  padding-top: 2px;
+}
+.table--stack .table-head-hide { display: none; } /* head row opted out via class */
+
+/* --- Risk pills: text + color, computed AA-safe on tinted bg --- */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 3px var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: .82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pill svg { width: 12px; height: 12px; }
+.pill[data-risk="low"]    { color: var(--low);    background: var(--low-soft); }
+.pill[data-risk="medium"] { color: var(--medium); background: var(--medium-soft); }
+.pill[data-risk="high"]   { color: var(--high);   background: var(--high-soft); }
+.pill[data-risk="na"]     { color: var(--na);     background: var(--na-soft); }
+
+/* --- Status line (icon + text + color) --- */
+.status-line {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: .88rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.status-line svg { width: 16px; height: 16px; flex: none; }
+.status-line.is-ok    { color: var(--low); }
+.status-line.is-warn  { color: var(--medium); }
+.status-line.is-error { color: var(--high); }
+
+/* --- Progress bar (fills via transform; width transitions are forbidden by §12) --- */
+.progress {
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.progress-bar {
+  height: 100%;
+  width: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transform: scaleX(var(--fill, 0));
+  transform-origin: left center;
+  transition: transform 220ms linear;
+}
+
+/* --- Drop zone --- */
+.drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-5);
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--text-muted);
+  text-align: center;
+  cursor: pointer;
+  transition: background var(--dur-fast), border-color var(--dur-fast);
+}
+.drop-zone:hover { border-color: var(--accent); color: var(--text); }
+.drop-zone:focus-visible { border-color: var(--accent); outline-offset: var(--space-1); }
+.drop-zone.is-dragover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.drop-zone svg { width: 28px; height: 28px; color: var(--accent); }
+
+/* --- Links & misc --- */
+.link-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 44px;
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+}
+.link-arrow svg { width: 16px; height: 16px; }
+.link-arrow:hover { color: var(--accent-strong); text-decoration: underline; }
+
+.result-line { margin: 0; }
+
+.text-truncate,
+.ellipsis {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.type-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+  flex: none;
+}
+.type-icon svg { width: 18px; height: 18px; }
+
+/* ================= 6. RESULT PANEL (CONTRACT §5 + SPEC §7.3) ================= */
+.result-panel {
+  position: relative;
+  min-height: 320px;
+  /* D1 RESULT RING POSITION — change 'right' to 'left' here to flip the score ring (one line) */
+  --ring-side: right;
+}
+
+.result-states { position: relative; }
+
+.result-panel .result-states > * { animation: state-in var(--dur-in) var(--ease-out); }
+@keyframes state-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* state aliases: shared base; content per state is composed by page agents */
+.state-idle, .state-scanning, .state-threat, .state-safe, .state-unverified, .state-error {
+  padding: var(--space-4) 0;
+}
+.state-idle, .state-scanning, .state-safe, .state-unverified, .state-error {
+  text-align: center;
+}
+.state-error .panel-heading { justify-content: center; }
+
+.panel-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.risk-label { font-size: 1rem; font-weight: 700; }
+.risk-label[data-risk="low"]    { color: var(--low); }
+.risk-label[data-risk="medium"] { color: var(--medium); }
+.risk-label[data-risk="high"]   { color: var(--high); }
+.risk-label[data-risk="na"]     { color: var(--na); }
+
+.ring-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* D1 RESULT RING POSITION — change 'right' to 'left' here to flip the score ring (one line)
+   (.result-ring-float and .ring-float are the same hook; §5 lists both names) */
+.result-ring-float,
+.ring-float { position: absolute; top: var(--space-4); right: var(--ring-side-width, 16px); }
+
+.scan-substatus {
+  color: var(--text-muted);
+  font-size: .9rem;
+  text-align: center;
+}
+
+.reason-list { display: grid; gap: var(--space-2); }
+.reason-list li {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  color: var(--text);
+  font-size: .95rem;
+  /* staggered reveal: pages set --stagger: 0..N per <li> */
+  animation: reason-in 240ms var(--ease-out) both;
+  animation-delay: calc(var(--stagger, 0) * 40ms);
+}
+.reason-list li::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-top: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+@keyframes reason-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.detail-rows {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-1) var(--space-4);
+}
+.detail-dt { color: var(--text-muted); font-weight: 600; }
+.detail-dd { color: var(--text); margin: 0; }
+
+/* ================= 7. MODAL ================= */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: var(--backdrop);
+  animation: backdrop-in var(--dur-fast) linear;
+}
+@keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  width: min(560px, 100%);
+  max-height: calc(100vh - var(--space-8));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* radius clips the scrolling body; the scrollbar stays inside the corners */
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  animation: modal-in var(--dur-in) var(--ease-out);
+  transform: translateY(0);
+  transition: opacity var(--dur-out) linear, transform var(--dur-out) var(--ease-out);
+}
+.modal.is-closing { opacity: 0; transform: translateY(8px); }
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.modal-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card); /* matches the modal body — content never paints around the header */
+}
+.modal-title { font-size: 1.05rem; font-weight: 700; }
+.modal-close {
+  width: 44px;
+  height: 44px;
+  margin: -6px -8px -6px 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.modal-close:hover { background: var(--accent-soft); color: var(--text); }
+.modal-close svg { width: 20px; height: 20px; }
+
+.modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto; /* only the body scrolls; header and close button stay put */
+  overflow-x: hidden;
+  padding: var(--space-5);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.modal-body::-webkit-scrollbar { width: 10px; }
+.modal-body::-webkit-scrollbar-track { background: transparent; }
+.modal-body::-webkit-scrollbar-thumb {
+  border: 3px solid transparent; /* inset so the thumb never touches the rounded corners */
+  border-radius: 999px;
+  background-color: var(--border-strong);
+  background-clip: padding-box;
+}
+.modal-foot {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--border);
+}
+
+/* scroll lock while a modal is open */
+body[data-modal-open] { overflow: hidden; }
+
+/* ================= 8. COMPACT DENSITY ================= */
+html[data-density="compact"] .card { padding: var(--space-4); }
+html[data-density="compact"] .card-head { margin-bottom: var(--space-3); }
+html[data-density="compact"] { --navbar-h: 57px; }
+html[data-density="compact"] .navbar { min-height: 56px; }
+html[data-density="compact"] .btn { min-height: 40px; padding: var(--space-1) var(--space-4); }
+html[data-density="compact"] .input,
+html[data-density="compact"] .select { min-height: 40px; }
+html[data-density="compact"] .table th,
+html[data-density="compact"] .table td { padding: var(--space-2) var(--space-2); }
+html[data-density="compact"] .app-footer { margin-top: var(--space-5); padding: var(--space-3) var(--space-4) var(--space-4); }
+html[data-density="compact"] .drop-zone { padding: var(--space-4); }
+html[data-density="compact"] .stack { gap: var(--space-2) !important; }
+html[data-density="compact"] .stack-sm { gap: var(--space-1) !important; }
+
+/* ================= 9. UTILITIES ================= */
+.u-center { text-align: center; }
+.stack   { display: grid; gap: var(--space-4); }
+.stack-sm { display: grid; gap: var(--space-2); }
+.row { display: flex; align-items: center; gap: var(--space-3); }
+.row-between { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.grow { flex: 1 1 auto; min-width: 0; }
+.muted { color: var(--text-muted); }
+.mt-1 { margin-top: var(--space-1); }
+.mt-2 { margin-top: var(--space-2); }
+.gap-1 { gap: var(--space-1); }
+.gap-2 { gap: var(--space-2); }
+
+/* ================= 10. RESPONSIVE (360 / 768 / 1024 / 1440) ================= */
+@media (max-width: 360px) {
+  .navbar { padding: var(--space-2); gap: var(--space-1); }
+  .brand-name { display: none; }
+  .nav-actions { gap: var(--space-1); }
+  .card { padding: var(--space-4); }
+  .detail-rows { grid-template-columns: 1fr; }
+  .detail-dt { padding-top: 2px; }
+}
+
+@media (max-width: 767px) {
+  .app-footer { justify-content: center; text-align: center; }
+}
+/* [E] mobile toasts: bottom-center, full-width */
+@media (max-width: 640px) {
+  .toast-region {
+    left: var(--space-2);
+    right: var(--space-2);
+    bottom: max(var(--space-3), env(safe-area-inset-bottom, 0px));
+    width: auto;
+    align-items: stretch;
+  }
+}
+
+@media (min-width: 768px) {
+  .navbar { padding: var(--space-2) var(--space-5); }
+}
+
+@media (min-width: 1024px) {
+  .card { padding: var(--space-6); }
+}
+
+@media (min-width: 1440px) {
+  h1 { font-size: 1.8rem; }
+}
+
+/* Tables → stacked cards below 640px whenever a page opts in via .table--stack
+   and td[data-label]; otherwise .table-wrap keeps horizontal scrolling local
+   (never a page-level horizontal scroll). */
+@media (max-width: 639px) {
+  .table--stack { min-width: 0; }
+  .table--stack th { position: static; }
+  .table--stack tr[role="button"] { border-radius: var(--radius); }
+}
+
+/* ================= 11. REDUCED MOTION (OS setting OR settings toggle) ================= */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Settings toggle sets data-motion="reduced" in <html> — instant final states */
+html[data-motion="reduced"] {
+  scroll-behavior: auto;
+}
+html[data-motion="reduced"] *,
+html[data-motion="reduced"] *::before,
+html[data-motion="reduced"] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+
+/* ===== DAC SHARED CORE (CSS) 2/2 — animated visuals — identical on all pages ===== */
+/* OWNER: Agent C (Visuals). Animated-visual classes per CONTRACT §5/§11, animation style per SPEC §12
+   (transform / opacity / stroke-dashoffset ONLY — never layout properties).
+   Colors come exclusively from design tokens (var(--low|--medium|--high|--na|--accent|--border|--text|...) —
+   no literal colors of any kind. Sizes are relative (--ring-size, em), so every block is layout-neutral:
+   it centers its own SVG and inherits its size from context/page styles. */
+
+/* ============================================================
+   1. SCORE RING  (.ring-wrap > .ring-svg > (.ring-track + .ring-arc)) , .ring-num
+   Rendered by DAC.visuals.scoreRing(container, score, risk). The container may already
+   be a .ring-wrap (reused) or any element (a .ring-wrap is created inside it).
+   SIZING: override --ring-size (or font-size) on the wrap. NEVER set a raw width on
+   .ring-svg directly — box and stroke widths are computed from the same var so the
+   ring stays proportional at any size. Strokes are written in viewBox user units so
+   they keep the same on-screen size the em widths produced, while dash geometry
+   (computed in user space) stays exact at every scale — vector-effect was removed
+   because it moved dash patterns into screen space and truncated drawn arcs.
+   ============================================================ */
+.ring-wrap {
+  --ring-size: 5em;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+/* [D1] The relative above (needed to centre .ring-num) comes later in the cascade than
+   the D1 float and shadowed its absolute positioning, so the score ring fell back into
+   flow at the card's left. Re-pin float hooks; D1's top/right values stay in force. */
+.result-ring-float,
+.ring-float { position: absolute; }
+.ring-svg {
+  display: block;
+  inline-size: var(--ring-size);
+  block-size: var(--ring-size);
+}
+.ring-track,
+.ring-arc {
+  fill: none;
+}
+.ring-track {
+  stroke: var(--border-strong);
+  stroke-width: 12px; /* = 0.10 × 120 viewBox units — same on-screen size the em calc produced */
+}
+.ring-arc {
+  stroke: var(--low); /* JS sets var(--low|--medium|--high|--na) via inline style per risk */
+  stroke-width: 15.6px; /* = 0.13 × 120 viewBox units */
+  stroke-linecap: round;
+}
+.ring-num {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--ring-size) * 0.26);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* ============================================================
+   2. NO-THREAT CHECK CIRCLE  (.ring-safe-wrap > svg (.safe-track + .safe-circle + .safe-check))
+   Rendered by DAC.visuals.checkCircle(container). Draw stages are stroke-dashoffset
+   values written by JS; .is-pop adds the subtle scale pop. The page supplies the
+   surrounding copy ("No issues detected" / "It's all safe").
+   ============================================================ */
+.ring-safe-wrap {
+  --ring-size: 8.5em;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--low);
+}
+.ring-safe-wrap::before {
+  content: "";
+  position: absolute;
+  inset: -15%;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--low) 16%, transparent), transparent 70%);
+  opacity: 0.16;
+  pointer-events: none;
+  z-index: 0;
+}
+html[data-theme="light"] .ring-safe-wrap::before {
+  opacity: 0.10;
+  background: radial-gradient(circle, color-mix(in srgb, var(--low) 10%, transparent), transparent 70%);
+}
+.safe-svg {
+  display: block;
+  inline-size: var(--ring-size);
+  block-size: var(--ring-size);
+  position: relative;
+  z-index: 1;
+  background: radial-gradient(circle, color-mix(in srgb, var(--low) 8%, transparent), transparent 65%);
+  border-radius: 50%;
+}
+.ring-safe-wrap circle,
+.ring-safe-wrap path {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.safe-track { opacity: 0.25; stroke-width: 5.28px; } /* = 0.055 × 96 viewBox units */
+.safe-circle { stroke-width: 7.6px; }              /* = 0.09 × 96 viewBox units — ring width unchanged */
+.safe-check { stroke-width: 5.18px; }               /* 0.6× of the ring-side 9.6 equiv. — thinner than the ring */
+.ring-safe-wrap.is-pop > svg {
+  animation: dac-pop 240ms var(--ease-spring) both;
+  transform-origin: 50% 50%;
+}
+@keyframes dac-pop {
+  from { transform: scale(0.88); }
+  to { transform: scale(1); }
+}
+
+/* ============================================================
+   3. SCANNER  (.scan-ring > svg (.scan-track + .scan-arc))
+   Rendered by DAC.visuals.scanner(container). The JS adds .is-spinning only when motion
+   is allowed; CSS then rotates the svg 1s linear infinite (transform only).
+   ============================================================ */
+.scan-ring {
+  --ring-size: 3.4em;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+.scan-ring > svg {
+  display: block;
+  inline-size: var(--ring-size);
+  block-size: var(--ring-size);
+}
+.scan-ring circle {
+  fill: none;
+  stroke-linecap: round;
+}
+.scan-track {
+  stroke: var(--border-strong);
+  stroke-width: 8.64px; /* = 0.09 × 96 viewBox units */
+}
+.scan-arc {
+  stroke: currentColor;
+  stroke-width: 8.64px; /* = 0.09 × 96 viewBox units */
+}
+.scan-ring.is-spinning > svg {
+  animation: dac-spin 1s linear infinite; /* continuous 1s rotation (SPEC §12) */
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+@keyframes dac-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   4. THREAT-SUMMARY SHIELD  (.shield-wrap[data-state] > .shield-glow + .pulse-ring + svg.shield-svg)
+   Rendered by DAC.visuals.shield(container, state). State drives color + inner glyph via
+   tokens: secure=var(--low) check, caution=var(--medium) warning mark, threat=var(--high).
+   .is-pulsing (added by JS only when motion is allowed) runs the ~3s glow/pulse loop
+   (scale + opacity on the ring, opacity on the glow).
+   ============================================================ */
+/* [A2] concentric by construction: square wrapper (aspect-ratio 1); glow, pulse ring
+   and glyph all occupy the SAME single grid cell (1/1) and center within it, so they
+   can never stray from the shared center. (Root cause of the old offset: the glow was
+   larger than the shrink-wrapped wrapper, over-constraining inset/margin auto.) */
+.shield-wrap {
+  --ring-size: 7em;
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  place-items: center;
+  inline-size: var(--ring-size);
+  block-size: var(--ring-size);
+  aspect-ratio: 1;
+  color: var(--low);
+}
+.shield-wrap[data-state="caution"] { color: var(--medium); }
+.shield-wrap[data-state="threat"] { color: var(--high); }
+.shield-glow {
+  grid-area: 1 / 1;
+  inline-size: calc(var(--ring-size) * 0.7);
+  block-size: calc(var(--ring-size) * 0.7);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, currentColor 0%, transparent 72%);
+  opacity: 0.12;
+  transform-origin: center;
+  pointer-events: none;
+}
+.shield-svg {
+  grid-area: 1 / 1;
+  display: block;
+  inline-size: calc(var(--ring-size) * 0.52);
+  block-size: calc(var(--ring-size) * 0.52);
+  fill: none;
+}
+.pulse-ring {
+  grid-area: 1 / 1;
+  inline-size: calc(var(--ring-size) * 0.62);
+  block-size: calc(var(--ring-size) * 0.62);
+  border: calc(var(--ring-size) * 0.022) solid currentColor;
+  border-radius: 50%;
+  opacity: 0;
+  transform: scale(0.88);
+  transform-origin: center;
+  pointer-events: none;
+}
+.shield-wrap.is-pulsing .pulse-ring { animation: dac-pulse 3s var(--ease-out) infinite; }
+.shield-wrap.is-pulsing .shield-glow { animation: dac-glow 3s ease-in-out infinite; }
+@keyframes dac-pulse {
+  0% { transform: scale(0.88); opacity: 0; }
+  10% { opacity: 0.4; }
+  75% { transform: scale(1.18); opacity: 0; }
+  100% { transform: scale(1.18); opacity: 0; }
+}
+@keyframes dac-glow {
+  0%, 100% { opacity: 0.08; }
+  50% { opacity: 0.22; }
+}
+
+/* ============================================================
+   5. WAVE DECORATION  (.wave-deco > inline page svg)
+   Subtle decorative wave band. Pages drop their own outline SVG inside; it is styled
+   here (token colors, faint). .is-drifting is an opt-in gentle sway (transform only).
+   ============================================================ */
+.wave-deco {
+  position: absolute;
+  inset: auto 0 0 0;
+  pointer-events: none;
+  color: var(--low);
+  opacity: 0.25;
+}
+.wave-deco > svg {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.wave-deco.is-drifting > svg { animation: dac-drift 7s ease-in-out infinite alternate; }
+@keyframes dac-drift {
+  from { transform: translateX(-1.6%); }
+  to { transform: translateX(1.6%); }
+}
+
+/* ============================================================
+   6. HERO ART  (.hero-art with .grid-layer / .mountain-layer / .glitch-block children)
+   Base look only — pages may restyle freely. Layers abs-position inside .hero-art;
+   pages provide the actual SVG shapes (mountain silhouettes) and any layer modifiers.
+   ============================================================ */
+.hero-art {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: var(--radius-lg);
+  background: var(--bg-card-2);
+}
+.grid-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.5;
+  /* fade the grid toward the bottom using alpha-only masks (no colors needed) */
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, currentColor 80%);
+  mask-image: linear-gradient(180deg, transparent 0%, currentColor 80%);
+}
+.mountain-layer {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  pointer-events: none;
+  color: var(--border); /* silhouette fill = currentColor in page-authored paths */
+}
+.mountain-layer > svg { display: block; inline-size: 100%; block-size: auto; fill: currentColor; }
+.mountain-layer--back { color: var(--bg-card-2); z-index: 0; }
+.mountain-layer--front { color: var(--low); opacity: 0.12; z-index: 2; }
+.glitch-block {
+  position: absolute;
+  inline-size: 1.4em;
+  block-size: 0.6em;
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: 0.12;
+  pointer-events: none;
+  z-index: 1;
+}
+.hero-art .glitch-block { animation: dac-flicker 3.6s ease-in-out infinite; }
+.hero-art .glitch-block:nth-child(2) { animation-delay: 0.9s; }
+.hero-art .glitch-block:nth-child(3) { animation-delay: 1.9s; }
+.hero-art .glitch-block:nth-child(4) { animation-delay: 2.6s; }
+@keyframes dac-flicker {
+  0%, 100% { opacity: 0.12; }
+  6% { opacity: 0.4; }
+  9% { opacity: 0.1; }
+  14% { opacity: 0.34; }
+  17% { opacity: 0.12; }
+  28% { opacity: 0.26; }
+  40% { opacity: 0.12; }
+}
+
+/* ============================================================
+   7. [data-anim-draw] STAMP  (CONTRACT §5)
+   Marks line-draw shapes. Base CSS is intentionally empty because draw values
+   (dasharray/dashoffset lengths) live in each element's attributes; pages may add
+   their own draw transitions on the stamp. Under reduced motion the stamp is forced
+   to its drawn/end state and any transition/loop is disabled. NOTE: the score-ring
+   .ring-arc deliberately does NOT carry the stamp (its end offset is partial, not 0).
+   ============================================================ */
+[data-motion="reduced"] [data-anim-draw] {
+  animation: none !important;
+  transition: none !important;
+  stroke-dashoffset: 0 !important;
+  opacity: 1 !important;
+}
+
+/* ============================================================
+   8. REDUCED MOTION  (CONTRACT §16)
+   Same kill-list twice: once for the OS setting, once for the html[data-motion="reduced"]
+   attribute (Settings toggle). Everything animated here degrades to an instant final
+   state: no loops, no draws, no pops — static ring, static ring visible on pulse elements.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .scan-ring.is-spinning > svg,
+  .shield-wrap.is-pulsing .pulse-ring,
+  .shield-wrap.is-pulsing .shield-glow,
+  .wave-deco.is-drifting > svg,
+  .hero-art .glitch-block {
+    animation: none !important;
+  }
+  .ring-safe-wrap.is-pop > svg { animation: none !important; transform: none; }
+  .shield-wrap.is-pulsing .pulse-ring { opacity: 0.25; transform: scale(1.05); }
+  .shield-wrap.is-pulsing .shield-glow { opacity: 0.12; }
+  .wave-deco.is-drifting > svg { opacity: 0.25; }
+  .hero-art .glitch-block { opacity: 0.12; }
+  [data-anim-draw] {
+    animation: none !important;
+    transition: none !important;
+    stroke-dashoffset: 0 !important;
+    opacity: 1 !important;
+  }
+}
+[data-motion="reduced"] .scan-ring.is-spinning > svg,
+[data-motion="reduced"] .shield-wrap.is-pulsing .pulse-ring,
+[data-motion="reduced"] .shield-wrap.is-pulsing .shield-glow,
+[data-motion="reduced"] .wave-deco.is-drifting > svg,
+[data-motion="reduced"] .hero-art .glitch-block {
+  animation: none !important;
+}
+[data-motion="reduced"] .ring-safe-wrap.is-pop > svg { animation: none !important; transform: none; }
+[data-motion="reduced"] .shield-wrap.is-pulsing .pulse-ring { opacity: 0.25; transform: scale(1.05); }
+[data-motion="reduced"] .shield-wrap.is-pulsing .shield-glow { opacity: 0.12; }
+[data-motion="reduced"] .hero-art .glitch-block { opacity: 0.12; }

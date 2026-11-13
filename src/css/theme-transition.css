@@ -1,0 +1,73 @@
+/* ===== TDTheme — theme/background switch animations (Agent G) ===== */
+/* Loaded via <link> in the <head> of all three pages; pairs with
+   js/theme.js (window.TDTheme, CONTRACT §2.4).
+
+   Path A — view transitions: the root pseudo-elements get exactly one
+   circular reveal of the NEW snapshot, expanding from the toggle pointer.
+   Origin coordinates arrive as inline style vars --td-vt-cx/--td-vt-cy
+   that js/theme.js sets on <html> before document.startViewTransition();
+   with no origin event (keyboard activation / theme="system") the 50%/50%
+   defaults below resolve to the viewport center. The platform's default
+   cross-fade animation is disabled so only the reveal runs. */
+
+/* Single source of truth for theme-switch durations (allowlist A: +40%).
+   js/theme.js reads --td-fade-duration with a 560ms fallback. */
+:root {
+  --td-vt-duration: 700ms;
+  --td-fade-duration: 560ms;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  /* WAAPI drives the reveal (see js/theme.js); CSS keeps animation:none. */
+}
+
+/* Snap fix 2.3a: while a switch runs, freeze the gestures that can resize
+   the viewport mid-transition (Android toolbar collapse, overscroll).
+   Scoped to td-switching (added/removed by js/theme.js), reversible, and
+   it never changes layout. Removed automatically with the class. */
+html.td-switching {
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+/* td-vt-reveal keyframes removed: WAAPI now animates clip-path on
+   ::view-transition-new(root) directly. --td-vt-cx/--td-vt-cy vars are no
+   longer needed. */
+
+/* Path B — fallback when document.startViewTransition is unavailable:
+   <html> carries td-theme-fading for ~560ms (added/removed by js/theme.js,
+   single persistent timer, safe under rapid toggling). ONLY paint
+   properties transition — never transform/opacity/width/height — so scan
+   progress bars, result rings, batch pills and layout cannot jitter on a
+   theme switch. The html element itself is covered by the first selector:
+   it paints --bg directly, so its background-color must transition too. */
+:where(html.td-theme-fading, html.td-theme-fading *,
+       html.td-theme-fading *::before, html.td-theme-fading *::after) {
+  transition: background-color var(--td-fade-duration, 560ms) ease,
+              color var(--td-fade-duration, 560ms) ease,
+              border-color var(--td-fade-duration, 560ms) ease,
+              fill var(--td-fade-duration, 560ms) ease,
+              stroke var(--td-fade-duration, 560ms) ease;
+}
+
+/* Belt and braces, CSS-side: if reduced motion is requested while the
+   animated paths still run (js/theme.js already gates on the same query
+   plus html[data-motion="reduced"]), flatten everything to zero. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-new(root) {
+    animation: none;
+  }
+
+  html.td-theme-fading,
+  html.td-theme-fading *,
+  html.td-theme-fading *::before,
+  html.td-theme-fading *::after {
+    transition-duration: 0ms !important;
+  }
+}

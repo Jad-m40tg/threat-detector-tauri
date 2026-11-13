@@ -1,0 +1,184 @@
+
+
+/* ===== /DAC SHARED CORE (CSS) ===== */
+    /* ===== PAGE CSS: history (Agent E) — colors/spacing via tokens only ===== */
+
+    /* Page head */
+    .history-page-head { max-width: 1200px; margin: 0 auto; padding: var(--space-6) var(--space-5) 0; }
+    .history-h1 { font-size: 1.75rem; line-height: 1.2; margin: 0; }
+    .history-subtitle { margin: var(--space-2) 0 0; color: var(--text-muted); }
+
+    /* Summary tiles */
+    .tiles-row {
+      max-width: 1200px; margin: var(--space-5) auto 0; padding: 0 var(--space-5);
+      display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-3);
+    }
+    .tile {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: var(--space-4); min-width: 0;
+    }
+    .tile-num { display: block; font-size: 1.6rem; font-weight: 700; line-height: 1.1; color: var(--text); }
+    .tile-label { display: block; margin-top: var(--space-1); color: var(--text-muted); font-size: 0.875rem; }
+    .tile-high .tile-num { color: var(--high); }
+    .tile-medium .tile-num { color: var(--medium); }
+    .tile-low .tile-num { color: var(--low); }
+    .tile-na .tile-num { color: var(--na); }
+
+    /* Main card */
+    .history-card { max-width: 1200px; margin: var(--space-5) auto 0; container-type: inline-size; }
+
+/* [B] stacked card rows when the history card is narrow (container query; the
+   @media (max-width: 639px) block below remains the media fallback) */
+@container (max-width: 759.98px) {
+  #table-history { table-layout: auto; }
+  #table-history thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  #table-history, #table-history tbody, #table-history tr, #table-history td { display: block; width: 100%; }
+  #table-history tbody tr { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-card-2); margin-bottom: var(--space-3); padding: var(--space-2); cursor: default; }
+  #table-history td { display: grid; grid-template-columns: minmax(96px, 30%) 1fr; gap: var(--space-2); align-items: baseline; padding: var(--space-2) var(--space-1); border-bottom: 1px solid var(--border); }
+  #table-history td:last-child { border-bottom: 0; }
+  #table-history td::before { content: attr(data-label); color: var(--text-muted); font-size: 0.8125rem; font-weight: 600; }
+  #table-history td:first-child::before { content: none; }
+  #table-history td:first-child { border-bottom: 0; }
+  .status-line, .history-time, .details-text { white-space: normal; }
+}
+
+    /* Toolbar — sticky (desktop), falls under the sticky navbar via fallback --nav-h */
+    .history-toolbar {
+      display: flex; flex-direction: column; gap: var(--space-3);
+      padding-bottom: var(--space-3); border-bottom: 1px solid var(--border);
+    }
+    .toolbar-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); }
+    .field-search { flex: 1 1 240px; min-width: 200px; }
+    .toolbar-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+    .reset-slot { display: inline-flex; }
+
+    /* Risk chips */
+    .chips-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+    .chips-row .chip { min-height: 44px; padding-left: var(--space-4); padding-right: var(--space-4); }
+
+    /* Risk pills: icon + text + color (never color alone) */
+    .pill-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: currentColor; margin-right: var(--space-1); }
+    /* [a11y 1.4.3] pills render over bg-card (rows) and bg-card-2 (hover / stacked
+       rows): the rgba -soft fill can drop the label below 4.5:1 there (measured:
+       dark-grey --na 3.86/4.20, light --low 4.36 on card-2). Solid page-surface
+       bg (tokens only) keeps every risk combo AA in both themes. */
+    #table-history .pill { background: var(--bg); }
+
+    /* Danger-toned ghost (page-scoped modifier, uses risk token only) */
+
+    /* Sticky toolbar (min-width 768): --nav-h falls back if the shell core does not define it */
+    @media (min-width: 768px) {
+      .history-toolbar {
+        position: sticky; top: var(--nav-h, 72px); z-index: 5;
+        background: var(--bg-card); border-radius: 0 0 var(--radius) var(--radius);
+      }
+    }
+
+    /* Table layout (fixed columns so truncation never widens the page) */
+    .table-wrap { overflow-x: auto; }
+    #table-history { width: 100%; table-layout: fixed; border-collapse: collapse; }
+    #table-history .th-btn {
+      display: inline-flex; align-items: center; gap: var(--space-1); min-height: 44px;
+      padding: 0 var(--space-2); background: none; border: 0; color: var(--text-muted);
+      font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap;
+    }
+    #table-history .th-btn:hover { color: var(--text); }
+    #table-history .th-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+    .sort-glyph { width: 14px; height: 14px; flex: 0 0 auto; opacity: 0; transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+    .th-btn.is-sorted { color: var(--text); }
+    .th-btn.is-sorted .sort-glyph { opacity: 0.8; }
+    .th-btn.is-desc .sort-glyph { transform: rotate(180deg); }
+
+    #table-history tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; }
+    #table-history tbody tr:hover { background: var(--bg-card-2); }
+    #table-history tbody tr:focus-within { background: var(--bg-card-2); }
+    #table-history td { padding: var(--space-3) var(--space-2); vertical-align: middle; }
+    .cell-input { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+    .type-icon { flex: 0 0 auto; color: var(--text-muted); display: inline-flex; }
+    .type-icon svg { width: 16px; height: 16px; }
+    .input-open {
+      background: none; border: 0; padding: 0; margin: 0; color: var(--text); font: inherit;
+      text-align: left; cursor: pointer; flex: 1 1 auto; min-width: 0;
+    }
+    .input-open:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+    .cell-score { color: var(--text); font-variant-numeric: tabular-nums; }
+    /* [a11y 1.4.3] "no score" dash: --text-faint is 4.29:1 vs stacked-row
+       --bg-card-2 on dark-bg=grey; --text-muted passes everywhere. */
+    .score-na { color: var(--text-muted); }
+    .status-line { display: inline-flex; align-items: center; gap: var(--space-1); white-space: nowrap; }
+    .status-line svg { width: 15px; height: 15px; flex: 0 0 auto; }
+    .details-text { display: block; color: var(--text-muted); }
+    .history-time { display: block; white-space: nowrap; color: var(--text-muted); }
+
+    /* Pagination */
+    .pagination-row {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: var(--space-3); padding-top: var(--space-4);
+    }
+    .field-inline { display: inline-flex; align-items: center; gap: var(--space-2); }
+    .field-inline .field-label { margin: 0; }
+    .pager { display: inline-flex; align-items: center; gap: var(--space-1); flex-wrap: wrap; }
+    .page-numbers { display: inline-flex; align-items: center; gap: var(--space-1); flex-wrap: wrap; }
+    .page-btn {
+      min-width: 44px; min-height: 44px; padding: 0 var(--space-3); border: 1px solid var(--border-strong);
+      border-radius: var(--radius-pill); background: none; color: var(--text); font: inherit; font-weight: 600;
+      cursor: pointer;
+      transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast);
+    }
+    .page-btn:hover { background: var(--bg-card-2); border-color: var(--accent); }
+    .page-btn:active { transform: translateY(1px); }
+    .page-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+    .page-btn.is-current { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
+    .page-btn:disabled, #btn-prev:disabled, #btn-next:disabled { opacity: 0.45; cursor: not-allowed; }
+    .page-ellipsis { color: var(--text-faint); padding: 0 var(--space-1); user-select: none; }
+    .results-meta { margin: 0; color: var(--text-muted); }
+
+    /* Empty state */
+    #empty-state { border: 1px dashed var(--border); border-radius: var(--radius); text-align: center; padding: var(--space-7) var(--space-5); }
+    .empty-art { color: var(--text-faint); }
+    .empty-art svg { width: 44px; height: 44px; }
+    .empty-message { margin: var(--space-3) 0 0; color: var(--text-muted); }
+    .empty-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-4); }
+
+    /* Details modal body (same concept as the dashboard result panel) */
+    .modal-detail { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: var(--space-5); }
+    .detail-main { flex: 1 1 auto; min-width: 0; }
+    .modal-visual { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
+    .modal-ring { width: 132px; height: 132px; }
+    .modal-shield { width: 52px; height: 52px; color: var(--low); }
+    .modal-shield.state-caution { color: var(--medium); }
+    .modal-shield.state-threat { color: var(--high); }
+    .vis-note { margin: 0; text-align: center; color: var(--text-muted); font-size: 0.875rem; max-width: 150px; }
+    .risk-label.risk-low { color: var(--low); }
+    .risk-label.risk-medium { color: var(--medium); }
+    .risk-label.risk-high { color: var(--high); }
+    .risk-label.risk-na { color: var(--na); }
+    .detail-list { margin: var(--space-3) 0 0; display: grid; gap: 0; }
+    .detail-pair { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: var(--space-3); padding: var(--space-2) 0; border-bottom: 1px solid var(--border); }
+    .detail-pair:last-child { border-bottom: 0; }
+    .detail-dt { color: var(--text-muted); font-weight: 600; overflow-wrap: anywhere; }
+    .detail-dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+    .sel-input { display: block; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: var(--space-2) var(--space-3); }
+    .reason-list { margin: 0; padding-left: var(--space-4); display: grid; gap: var(--space-1); color: var(--text-muted); }
+    .modal-foot { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--border); }
+
+    /* Responsive — 640px: table becomes stacked cards */
+    @media (max-width: 639px) {
+      .tiles-row { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0 var(--space-4); }
+      .history-page-head { padding: var(--space-5) var(--space-4) 0; }
+      .history-card { margin-left: var(--space-4); margin-right: var(--space-4); }
+      #table-history { table-layout: auto; }
+      #table-history thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+      #table-history, #table-history tbody, #table-history tr, #table-history td { display: block; width: 100%; }
+      #table-history tbody tr { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-card-2); margin-bottom: var(--space-3); padding: var(--space-2); cursor: default; }
+      #table-history td { display: grid; grid-template-columns: minmax(96px, 30%) 1fr; gap: var(--space-2); align-items: baseline; padding: var(--space-2) var(--space-1); border-bottom: 1px solid var(--border); }
+      #table-history td:last-child { border-bottom: 0; }
+      /* each cell shows its column label above the value; the input cell keeps its icon+button row */
+      #table-history td::before { content: attr(data-label); color: var(--text-faint); font-size: 0.8125rem; font-weight: 600; }
+      #table-history td:first-child::before { content: none; }
+      #table-history td:first-child { border-bottom: 0; }
+      .status-line, .history-time, .details-text { white-space: normal; }
+      .modal-detail { grid-template-columns: 1fr; align-items: stretch; }
+      .modal-visual { flex-direction: row; justify-content: center; }
+      .detail-pair { grid-template-columns: 1fr; }
+    }
