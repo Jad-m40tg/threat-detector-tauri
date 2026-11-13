@@ -700,6 +700,11 @@
     fileInput.value = ''; /* allows re-selecting the same file */
   });
 
+  /* Dropping a file outside the CSV zone must never navigate the window to
+     that file (default WebView/browser behavior would) — swallow it instead. */
+  document.addEventListener('dragover', function (e) { e.preventDefault(); });
+  document.addEventListener('drop', function (e) { e.preventDefault(); });
+
   /* ===== TAURI BATCH EVENTS (Rust → TD.events, republished by the adapter) =====
      Every handler is guarded by batchActive: after Clear the UI stays reset even
      though the backend may still deliver a few in-flight results (decision D5). */
