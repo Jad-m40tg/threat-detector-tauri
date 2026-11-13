@@ -232,6 +232,16 @@
         <p class="set-help">Fast ≈ 1 s · Normal ≈ 2 s · Slow ≈ 3.5 s</p>
       </div>
 
+      <div class="set-field">
+        <span class="set-label" id="lb-resulttiming">Result timing</span>
+        <div class="seg" id="set-resulttiming" data-seg role="radiogroup" aria-labelledby="lb-resulttiming">
+          <span class="seg__thumb" aria-hidden="true"></span>
+          <button type="button" class="seg__opt" role="radio" data-value="fixed" aria-checked="true" tabindex="0">After animation</button>
+          <button type="button" class="seg__opt" role="radio" data-value="instant" aria-checked="false" tabindex="-1">Instant</button>
+        </div>
+        <p class="set-help">Show the result when the scan animation completes, or the moment the engine answers.</p>
+      </div>
+
       <div class="set-field set-row">
         <div class="row-main">
           <label class="set-label" id="lb-set-autoopen" for="set-autoopen">Auto-open details after scan</label>
@@ -244,11 +254,11 @@
         <span class="set-label" id="lb-maxcsv">Max CSV entries</span>
         <div class="seg" id="set-maxcsv" data-seg role="radiogroup" aria-labelledby="lb-maxcsv">
           <span class="seg__thumb" aria-hidden="true"></span>
-          <button type="button" class="seg__opt" role="radio" data-value="50" aria-checked="false" tabindex="-1">50</button>
-          <button type="button" class="seg__opt" role="radio" data-value="100" aria-checked="true" tabindex="0">100</button>
-          <button type="button" class="seg__opt" role="radio" data-value="250" aria-checked="false" tabindex="-1">250</button>
+          <button type="button" class="seg__opt" role="radio" data-value="100" aria-checked="false" tabindex="-1">100</button>
+          <button type="button" class="seg__opt" role="radio" data-value="1000" aria-checked="false" tabindex="-1">1,000</button>
+          <button type="button" class="seg__opt" role="radio" data-value="5000" aria-checked="true" tabindex="0">5,000</button>
         </div>
-        <p class="set-help">Larger batches are rejected with an inline message.</p>
+        <p class="set-help">Batches above the limit are rejected with an inline message (the Rust backend enforces the same cap).</p>
       </div>
     </section>
 

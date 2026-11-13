@@ -42,14 +42,47 @@
         endings, size/row limits, per-row `NotVerified`), all fixtures.
   - [x] Worker C scope (engine): `engine.rs` fixed this session — see bug log —
         plus 4 `engine_test.rs` tests. `docs/CONCURRENCY.md` now matches the code.
-  - [ ] **Worker D scope NOT STARTED:** frontend is still byte-identical to the
-        original. No `tauri` adapter, `index.js` still calls `DAC.analyze` with a
-        simulated batch loop.
+  - [x] Worker D scope (frontend adapter) — **2026-11-13, this session:** backend
+        selector auto-detects Tauri (`td-config.js`); `analysisService.js` gained a
+        full `tauri` adapter (`analyze_item`, `pick_csv`, `analyze_csv`,
+        `analyze_csv_content` per D7, `cancel_batch`, batch events republished onto
+        `TD.events`, results passed through WITHOUT the lossy normalizeResult);
+        `index.js` calls the real backend for single scans (D9 `resultTiming`
+        fixed/instant, scanRun guard so Clear/restart invalidates in-flight
+        answers) and for CSV batches (pick_csv native dialog for browse,
+        analyze_csv_content for drag-and-drop, progress/item-done/batch-done event
+        handlers, Clear = cancel per SPEC 7.2, D4 `min_item_duration_ms` demo knob);
+        `core.js` DEFAULTS: `maxCsvEntries` 100→5000 (D8) + new `resultTiming`
+        setting; Settings page gained the Result timing segmented control and the
+        CSV-limit options are now 100/1,000/5,000. All 5 edited JS files pass
+        `node --check`. Legacy mock/file:// behavior is untouched.
 
-- [ ] **Phase 4: Tauri Shell & Quick Binary (CP2 & CP3)** — NOT STARTED
-  - `src-tauri/src/lib.rs` is still the vanilla scaffold (no `commands.rs`,
-    `state.rs`, `sink.rs`, no `invoke_handler`). `rfd` is already a dependency
-    for the future `pick_csv` file dialog.
+- [x] **Phase 4: Tauri Shell & Quick Binary (CP2 & CP3)** — code complete,
+      **compile- and test-verified 2026-11-13**
+  - `commands.rs`: all five commands — `analyze_item` (D2 inputType mapping,
+    unknown/null → auto-detect), `analyze_csv` (file parsed off-thread),
+    `analyze_csv_content` (D7 drag-and-drop), `cancel_batch` (returns bool),
+    `pick_csv` (rfd dialog off-thread). Batches share `run_csv_batch`
+    (D4 min_item_duration_ms, concurrency clamped 1–32, default 8).
+  - `sink.rs`: `TauriSink` implements `EventSink` → `analysis:item-start /
+    item-done / progress / batch-done` exactly per the frozen contract;
+    emit failures are logged, never panicked.
+  - `state.rs`: `BatchRegistry` (batchId → CancellationToken) with cleanup
+    after each batch; unit-tested cancel semantics.
+  - `lib.rs`: `invoke_handler` wired, `BatchRegistry` managed; `run()` now
+    returns `Result` and the scaffold's `.expect()` was removed from
+    `main.rs`/`lib.rs` (AGENTS rule 3).
+  - Capabilities/dependency minimization (AGENTS rule 4): removed the unused
+    `tauri-plugin-opener` (+ its capability) and unused `serde_json`.
+  - CSV parser upgraded (Worker B territory, orchestrator edit): dual dialect
+    (dataset `id,input_type,content` + app sample `input,label`), optional
+    header recognition, headerless files keep row 1 (was silently discarded),
+    >5000 rows now a **typed error** instead of silent truncation,
+    public `parse_csv_text` for D7; 8 new unit tests.
+  - Full workspace gates (real output): `cargo test --workspace` 24/24,
+    `cargo clippy --workspace -- -D warnings` clean, `cargo fmt --check` clean.
+  - [ ] **CP2: Jad launches `run-dev.bat`** (window has still never been
+        launched — the only remaining unverified piece of this phase).
 
 - [ ] **Phase 5b/6/6b/9** — not started. `docs/MANUAL_TEST.md` already written and
       corrected this session (rule listings now match the code; new-rule tests added).
@@ -57,6 +90,18 @@
 ---
 
 ## Verification Log
+
+**2026-11-13 Phase 4 shell (second verification pass):**
+
+- `cargo test --workspace` → **24/24 tests pass** (16 lib unit tests — 8 url
+  rules + 8 csv parser — plus dataset, 4 engine tests, 2 invariant sweeps, and
+  the new BatchRegistry test).
+- `cargo clippy --workspace -- -D warnings` → clean.
+- `cargo fmt --check` → clean (rustfmt reformatted two long test asserts).
+- `cargo check` full workspace: 1m 24s (only the shell was new).
+- Frontend: all 5 edited JS files pass `node --check`.
+- The full cold `cargo build` from the interrupted session completed
+  successfully (12m 12s) before Phase 4 started.
 
 **2026-11-13 resume session** (first-ever compile of this codebase):
 
@@ -114,15 +159,27 @@
 - **D6 (Non-standard Port, 2026-11-13):** explicit port is non-standard unless it
   equals the scheme default (http/ws→80, https/wss→443, ftp→21); unknown scheme +
   explicit port → non-standard.
+- **D7 (CSV Picking, 2026-11-13, Jad's choice):** BOTH mechanisms — native Windows
+  dialog (`pick_csv` from Rust) for the browse button, plus the new
+  `analyze_csv_content` command (documented in IPC_CONTRACT §1.5) so drag-and-drop
+  keeps working. Drag-and-drop pre-checks only name/size in JS; the backend parses.
+- **D8 (CSV Row Limit, 2026-11-13, Jad's choice):** the backend's 5,000-row cap is
+  the single source of truth; UI default raised from 100 to 5,000 (both DEFAULTS
+  blocks in core.js, settings seg now 100/1,000/5,000). For the Tauri path the
+  frontend performs no row-limit pre-check at all.
+- **D9 (Result Timing, 2026-11-13, Jad's choice):** new Settings option
+  `resultTiming` — `"fixed"` (default) keeps the scanSpeed animation and swaps in
+  the real result at the gate; `"instant"` shows the result the moment the backend
+  answers. Read once per scan; a `scanRun` counter invalidates in-flight answers
+  when the user clears or restarts.
 
 ## Open Questions for Jad
 
-1. **File picking:** contract has `pick_csv` (native dialog from Rust), but the UI
-   also supports drag-and-drop, which gives the WebView a `File` object with no path.
-   Options: (a) native dialog only, (b) add `analyze_csv_content` command for
-   dropped content (contract deviation), (c) both.
-2. **CSV entry limit:** UI setting `maxCsvEntries` defaults to 100; backend allows
-   5,000. `stress_500.csv` would be rejected by the current frontend guard.
-3. Single-scan animation: keep the fixed `scanSpeed` animation duration and swap in
-   the real result when it arrives (recommended), or drive duration from actual
-   backend latency?
+None — D7, D8 and D9 were answered by Jad on 2026-11-13 and are recorded above.
+
+### Pre-existing quirk noted (not fixed, out of Worker D scope)
+- `core.js` history `normalizeResult` maps a missing score to `5` (and unknown
+  risk to `medium`) when persisting rows. Backend results always carry
+  well-formed fields so this never triggers for Tauri data, and nothing renders
+  that fallback score in the UI — but it is a latent invariant hazard worth
+  tightening in a later pass.

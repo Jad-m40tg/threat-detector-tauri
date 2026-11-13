@@ -70,7 +70,8 @@
     defaultInputMode: "single",
     scanSpeed: "normal",
     autoOpenDetails: true,
-    maxCsvEntries: 100,
+    maxCsvEntries: 5000,
+    resultTiming: "fixed",
     saveHistory: true,
     autoDeleteDays: "never",
     maskSensitive: false,
@@ -1134,7 +1135,7 @@
     detectors: { httpInsecure: true, urgentLanguage: true, credentialRequests: true, ipHostname: true, shorteners: true, lookalikes: true },
     trustedDomains: ['google.com', 'developer.mozilla.org', 'github.com'],
     blockedDomains: ['bank-security.example', 'prize-claim.example', 'secure-login.example'],
-    maxCsvEntries: 100,
+    maxCsvEntries: 5000,
     saveHistory: true,
     autoDeleteDays: 'never'
   };

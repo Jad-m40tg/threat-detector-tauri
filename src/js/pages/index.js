@@ -59,13 +59,48 @@
       scannerH = null, ringT = null, ringU = null, checkH = null,
       shieldH = null,
       batchActive = false, batchEntries = null,
-      counts = null, activeMode = 'single', lastRes = null;
+      counts = null, activeMode = 'single', lastRes = null, scanRun = 0;
 
   var subMsgs = ['Checking URL structure...', 'Analyzing language...', 'Comparing known patterns...'];
   var RISK_LABEL = { low: 'Low risk', medium: 'Medium risk', high: 'High risk', unverified: 'Not verified', error: 'Error' };
   var PILL_LABEL = { low: 'Low', medium: 'Medium', high: 'High', unverified: 'N/A', error: 'N/A' };
   var STATUS_LABEL = { verified: 'Verified', not_verified: 'Not Verified', error: 'Error' };
   var SPEED_MS = { fast: 1000, normal: 2000, slow: 3500 };
+  /* D4: per-item demo delay (ms) passed to the Rust engine so batch progress
+     stays visually inspectable even though the rules themselves run instantly. */
+  var BATCH_ITEM_MS = { fast: 15, normal: 60, slow: 150 };
+
+  /* Tauri backend: TD.services.analysis only exposes the streaming CSV commands
+     when the Rust backend is active (auto-detected in td-config.js). */
+  var A = (window.TD && TD.services && TD.services.analysis) || null;
+  function usingTauri() { return !!(A && A.backend === 'tauri'); }
+
+  /* Backend IPC result (docs/IPC_CONTRACT.md) → UI result shape. Pure field
+     rename: the backend owns the NotVerified invariants, no re-scoring here. */
+  function ipcToUi(r) {
+    return {
+      id: r.id,
+      input: r.input,
+      type: r.inputType,
+      risk: r.risk,
+      score: r.score,
+      status: r.status,
+      details: r.details,
+      reasons: r.reasons,
+      recommendation: r.recommendation,
+      ts: r.ts
+    };
+  }
+  /* IPC/transport failure → typed error result (never Low, never "safe"). */
+  function ipcFailure(text, err) {
+    var msg = String((err && err.message) || err || 'Analysis failed');
+    return { id: 'local', input: text, type: 'url', risk: 'error', score: 0, status: 'error',
+      details: 'The analysis service reported an error.',
+      reasons: [msg], recommendation: 'Check the input and try again. If it persists, restart the app.', ts: Date.now() };
+  }
+  function readableErr(err) {
+    return String((err && err.message) || err || 'The file could not be analyzed.');
+  }
 
   function reducedMotion() {
     if (typeof V.reduceMotion === 'function') return V.reduceMotion();
@@ -134,7 +169,7 @@
       }
     } else if (res.risk === 'unverified') {
       setPanelRisk('unverified');
-      $('unv-reason').textContent = 'Connection timeout.';
+      $('unv-reason').textContent = res.details || 'Connection timeout.';
       $('unv-action').textContent = res.recommendation || 'Unable to verify. Treat as untrusted and try again later.';
       setState('unverified');
       if (typeof V.scoreRing === 'function') {
@@ -159,7 +194,8 @@
       return;
     }
     inputError.hidden = true;
-    var res = analyzeSafe(text);
+    var tauri = usingTauri();
+    var res = tauri ? null : analyzeSafe(text);
     /* capture ONCE per run — settings flips mid-run must not change this run (CONTRACT §2.1) */
     var tdMult = (window.TDSettings && typeof TDSettings.progressMultiplier === "function") ? TDSettings.progressMultiplier() : 1.4;
 
@@ -186,9 +222,35 @@
       }, Math.max(1, Math.round(600 * tdMult)));
     }
     var dur = Math.max(1, Math.round((SPEED_MS[S.get('scanSpeed') || 'normal'] || 2000) * tdMult));
-    scanTimer = window.setTimeout(function () { finishScan(res); }, dur);
+    if (!tauri) {
+      scanTimer = window.setTimeout(function () { finishScan(res); }, dur);
+      return;
+    }
+    /* Real backend (D9): wait for BOTH the animation gate and the backend answer.
+       'fixed' shows the result when the animation completes (or later, if the
+       backend is slower); 'instant' shows it the moment the answer arrives.
+       scanRun invalidates the answer if the user clears or restarts mid-run. */
+    var run = ++scanRun;
+    var gateDone = (S.get('resultTiming') === 'instant');
+    var pending = null;
+    var maybeFinish = function () { if (gateDone && pending) finishScan(pending); };
+    if (!gateDone) {
+      scanTimer = window.setTimeout(function () { scanTimer = null; gateDone = true; maybeFinish(); }, dur);
+    }
+    A.analyze(text).then(function (ipc) {
+      if (run !== scanRun) return; /* cleared or replaced mid-run */
+      pending = ipcToUi(ipc);
+      maybeFinish();
+    }, function (err) {
+      if (run !== scanRun) return;
+      pending = ipcFailure(text, err);
+      maybeFinish();
+    });
   }
   function finishScan(res) {
+    /* The real backend can answer before the animation gate: clear the pending
+       timer so finishScan runs exactly once per scan. */
+    if (scanTimer) { window.clearTimeout(scanTimer); }
     scanTimer = null;
     if (subTimer) { window.clearInterval(subTimer); subTimer = null; }
     setBusy(false);
@@ -372,6 +434,15 @@
   function showCsvError(msg) { csvError.textContent = msg; csvError.hidden = false; }
   function openPicker() {
     if (batchActive || btnAnalyze.disabled) return; /* re-entry guard */
+    if (usingTauri()) {
+      /* D7: native Windows dialog opened by the Rust backend (pick_csv). */
+      A.pickCsvFile().then(function (path) {
+        if (!path) return; /* dialog cancelled */
+        startBatchTauri(String(path).split(/[\\/]/).pop() || 'selected.csv');
+        A.analyzeCsvFile(path, csvBatchOptions()).catch(batchStartFailed);
+      }).catch(function (err) { showCsvError(readableErr(err)); });
+      return;
+    }
     fileInput.click();
   }
   function handleFile(file) {
@@ -383,7 +454,19 @@
     if (!isCsv) { showCsvError('Unsupported file type — choose a .csv file.'); return; }
     if (file.size === 0) { showCsvError('The file is empty.'); return; }
     if (file.size > 1024 * 1024) { showCsvError('The file is larger than 1 MB.'); return; }
-    var max = S.get('maxCsvEntries') || 100;
+    if (usingTauri()) {
+      /* D7/D8: the Rust backend parses the content and enforces the row limit
+         (5,000) itself — the frontend only pre-checks the cheap failure modes. */
+      var tfr = new FileReader();
+      tfr.onerror = function () { showCsvError('The file could not be read. Try again.'); };
+      tfr.onload = function () {
+        startBatchTauri(name);
+        A.analyzeCsvContent(name, String(tfr.result || ''), csvBatchOptions()).catch(batchStartFailed);
+      };
+      tfr.readAsText(file, 'utf-8');
+      return;
+    }
+    var max = S.get('maxCsvEntries') || 5000;
     var fr = new FileReader();
     fr.onerror = function () { showCsvError('The file could not be read. Try again.'); };
     fr.onload = function () {
@@ -423,6 +506,42 @@
     window.requestAnimationFrame(function () { updateBatchUI(done, total); });
     if (done < total) scheduleRow(done, total, mult);
     else finishBatch(total);
+  }
+  /* D4: per-item demo delay passed to the Rust engine with every batch. */
+  function csvBatchOptions() {
+    var speed = S.get('scanSpeed') || 'normal';
+    return { minItemDurationMs: BATCH_ITEM_MS[speed] || 60 };
+  }
+  function batchStartFailed(err) {
+    batchActive = false;
+    batchEntries = null;
+    setBusy(false);
+    resetCsvUi();
+    setState('idle');
+    showCsvError(readableErr(err));
+    announce('Batch failed');
+  }
+  /* Tauri batch: the total is unknown until the backend reports it, so the UI
+     opens in a "reading" state and the progress events drive every number. */
+  function startBatchTauri(name) {
+    batchActive = true;
+    counts = { low: 0, medium: 0, high: 0, unverified: 0, error: 0 };
+    setBusy(true);
+    csvError.hidden = true;
+    csvError.textContent = '';
+    csvSummary.hidden = false;
+    csvName.textContent = name;
+    csvName.title = name;
+    csvLine.textContent = 'Reading file…';
+    progressBar.style.setProperty('--fill', '0');
+    progressPct.textContent = 'Reading…';
+    if (progressBox) progressBox.setAttribute('aria-valuenow', '0');
+    scanBar.style.setProperty('--fill', '0');
+    scanProgress.classList.remove('is-indet'); /* batch run = determinate "X of N" */
+    scanProgress.setAttribute('aria-valuenow', '0');
+    scanCount.textContent = '…';
+    setState('scanning');
+    announce('Batch scanning started — reading file');
   }
   function startBatch(name, entries) {
     /* capture ONCE per run — settings flips mid-run must not change this run (CONTRACT §2.1) */
@@ -513,6 +632,10 @@
     fileInput.value = '';
   }
   function resetAll() {
+    if (batchActive && usingTauri()) {
+      A.cancelBatch().catch(function () {}); /* SPEC 7.2: Clear = cancel (best effort) */
+    }
+    scanRun++; /* invalidate any in-flight single-scan answer */
     clearTimers();
     batchActive = false;
     batchEntries = null;
@@ -576,6 +699,33 @@
     handleFile(fileInput.files && fileInput.files[0]);
     fileInput.value = ''; /* allows re-selecting the same file */
   });
+
+  /* ===== TAURI BATCH EVENTS (Rust → TD.events, republished by the adapter) =====
+     Every handler is guarded by batchActive: after Clear the UI stays reset even
+     though the backend may still deliver a few in-flight results (decision D5). */
+  if (window.TD && TD.events) {
+    TD.events.on('analysis:progress', function (p) {
+      if (!batchActive || !p) return;
+      updateBatchUI(p.done, p.total);
+    });
+    TD.events.on('analysis:item-done', function (p) {
+      if (!batchActive || !p || !p.result) return;
+      var ui = ipcToUi(p.result);
+      if (!(ui.risk in counts)) ui.risk = 'unverified'; /* contract-violation guard */
+      pushRow(ui);
+      if (DAC.history && typeof DAC.history.addDeferred === 'function') DAC.history.addDeferred(ui);
+      else if (DAC.history && typeof DAC.history.add === 'function') DAC.history.add(ui);
+      counts[ui.risk]++;
+    });
+    TD.events.on('analysis:batch-done', function (p) {
+      if (!batchActive || !p) return;
+      /* Count = results actually delivered (D5): smaller than the total after a
+         cancel; rows were already streamed via item-done, so this only closes. */
+      var delivered = (typeof p.count === 'number') ? p.count
+        : counts.low + counts.medium + counts.high + counts.unverified + counts.error;
+      finishBatch(delivered);
+    });
+  }
 
   $('btn-download-sample').addEventListener('click', function () {
     if (DAC.csv && typeof DAC.csv.downloadSample === 'function') DAC.csv.downloadSample();

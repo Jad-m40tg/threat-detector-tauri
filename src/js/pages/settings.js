@@ -16,14 +16,15 @@
   var SET_LABEL = {
     theme: 'Theme', darkBg: 'Background', accent: 'Accent', textSize: 'Text size',
     density: 'Density', sensitivity: 'Sensitivity', defaultInputMode: 'Default input',
-    scanSpeed: 'Scan speed', maxCsvEntries: 'CSV limit', autoDeleteDays: 'Auto-delete',
+    scanSpeed: 'Scan speed', resultTiming: 'Result timing', maxCsvEntries: 'CSV limit', autoDeleteDays: 'Auto-delete',
     timeFormat: 'Time format'
   };
   var SET_VALUE_TXT = {
     oled: 'OLED black', grey: 'Dark grey', small: 'Small', medium: 'Medium', large: 'Large',
     comfortable: 'Comfortable', compact: 'Compact', relaxed: 'Relaxed', balanced: 'Balanced',
     strict: 'Strict', single: 'Single URL', csv: 'CSV', fast: 'Fast', normal: 'Normal',
-    slow: 'Slow', never: 'Never', '12h': '12-hour', '24h': '24-hour'
+    slow: 'Slow', fixed: 'After animation', instant: 'Instant',
+    never: 'Never', '12h': '12-hour', '24h': '24-hour'
   };
   var SWITCH_TXT = {
     reduceAnimations: 'Reduce animations', showHero: 'Hero banner', autoOpenDetails: 'Auto-open details',
@@ -207,6 +208,7 @@
     ['set-sensitivity', 'sensitivity', null],
     ['set-defaultmode', 'defaultInputMode', null],
     ['set-scanspeed', 'scanSpeed', null],
+    ['set-resulttiming', 'resultTiming', null],
     ['set-maxcsv', 'maxCsvEntries', function (v) { return parseInt(v, 10); }],
     ['set-autodelete', 'autoDeleteDays', null],
     ['set-timeformat', 'timeFormat', null]

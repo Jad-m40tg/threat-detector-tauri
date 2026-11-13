@@ -72,6 +72,25 @@ Opens the native Windows file picker (`IFileDialog`) from Rust. The frontend nee
 
 ---
 
+### 1.5 `analyze_csv_content` *(added by decision D7)*
+Analyzes CSV content supplied directly by the frontend: drag-and-drop gives the
+WebView a `File` object with no filesystem path, so the bytes are read in JS and
+sent as text. Identical streaming behavior and limits as `analyze_csv` (1 MB /
+5,000 rows, typed rejections).
+
+- **Parameters:**
+  ```json
+  {
+    "name": "stress_500.csv",
+    "content": "url\nhttps://example.com\n...",
+    "options": { "minItemDurationMs": 60, "concurrency": 8 }
+  }
+  ```
+- **Returns:** the same `{ "batchId": "...", "total": N }` shape as `analyze_csv`.
+- **Errors:** typed rejection on empty content, size > 1 MB, or more than 5,000 rows.
+
+---
+
 ## 2. Real-Time Streaming Events
 
 Emitted from backend to frontend and bridged to `TD.events`:
