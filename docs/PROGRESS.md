@@ -183,3 +183,12 @@ None — D7, D8 and D9 were answered by Jad on 2026-11-13 and are recorded above
   well-formed fields so this never triggers for Tauri data, and nothing renders
   that fallback score in the UI — but it is a latent invariant hazard worth
   tightening in a later pass.
+
+### Known limitation (recorded 2026-11-13, after first live run)
+- Settings that tune the *legacy JS engine* — Detectors switches, Trusted/
+  Blocked domains, Sensitivity thresholds — are **not read by the Rust
+  backend**: the Rust rules always run with fixed thresholds and no domain
+  lists. They still work in mock/file:// mode. Wiring them into the Tauri
+  path needs an `AnalysisRequest`/options contract amendment (Jad to decide).
+- The displayed score is a normalized rule-points score (points × 15, capped
+  99; clean baseline 12), **not** a probability that content is malicious.
