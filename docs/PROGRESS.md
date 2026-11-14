@@ -235,7 +235,40 @@
   item prevent `grid-template-rows: 0fr` from collapsing to true zero; resolved by keeping
   `.reveal-inner` unstyled and wrapping panel contents in `.scan-surface`.
 
-## Open Questions for Jad
+## Verification Correction (2026-11-15, second-agent audit)
+
+The 2026-11-14 verification log above claimed the mock-browser batch run produced
+"2 Low, 2 Medium, 4 High, 2 Not Verified" for `project_test_dataset.csv`. That is
+**not** what the mock path produces, and the claim should be read as referring to
+the real Tauri/Rust path (the `csv_parser.rs` dual-dialect parser + engine), whose
+dataset acceptance test (`dataset_test::test_ten_row_dataset_acceptance`) and the
+real app's batch flow do produce that distribution.
+
+In the browser mock path, `DAC.csv.parseText` deliberately extracts only the first
+column of each line (matching the app's own `threat_samples.csv` `input,label`
+contract). Fed `project_test_dataset.csv` (`id,input_type,content,...`) it
+therefore analyzes the `id` column ("1".."10" + "id" header) and scores all 11
+entries as Low. This is by design, not a bug: the mock parser is a preview
+stand-in; multi-column scoring is the Rust backend's job. Mock-mode verification
+of per-risk rendering was instead performed with the single-column `threat_samples`
+fixture (5 Low / 1 High / 1 Not Verified / 1 Error in this mock engine's scoring),
+exercising `.row-check`, lazy `.ring-wrap`, `.unv-ring`, and the shared
+details modal for every risk type.
+
+Additional finding and fix during this audit:
+- **Task 2a gap (mock path):** `startScan()` in mock mode had no scan-token guard,
+  so a newer scan could be overwritten by an older scan's pending `setTimeout`.
+  `startScan()` now bumps `scanRun`, calls `clearTimers()`, and the mock timer
+  checks `if (run !== scanRun) return;` before `finishScan`. Clear (`resetAll`)
+  already bumped `scanRun`. Commit `b5b406c`. All automated gates still pass.
+
+Environment note: the headless browser window never renders, so CSS transitions,
+`requestAnimationFrame`-driven `countUp`, and rAF-chunked `renderBatchRows`
+freeze at their initial values in that environment. End states were verified by
+forcing instant settle (inline `transition:none` + reflow) and, for chunked
+rendering, via a temporary synchronous-rAF shim in the page. The desktop window
+(`run-dev.bat` / `cargo tauri dev`) is still unlaunched (CP1/CP2 pending) and
+must be used for the visual/transition/screenshot checks in verification #9-#10.
 
 None — D7, D8 and D9 were answered by Jad on 2026-11-13 and are recorded above.
 
