@@ -812,7 +812,8 @@
       ind.appendChild(errRing);
     } else { /* low: static check — no ring, no score, no glow. Scaled to the
                 same drawn size as the batch % wheels (r+half-stroke = 11.6/24
-                ≈ the wheel's 58/60 in its 120 box); stroke matches arc weight. */
+                ≈ the wheel's 58/60 in its 120 box); stroke a touch lighter
+                than the wheel's arc weight (user preference). */
       ind.classList.add('row-check');
       var chk = document.createElementNS(NSVG, 'svg');
       chk.setAttribute('viewBox', '0 0 24 24');
@@ -820,7 +821,7 @@
       chk.setAttribute('focusable', 'false');
       chk.setAttribute('fill', 'none');
       chk.setAttribute('stroke', 'currentColor');
-      chk.setAttribute('stroke-width', '3.1');
+      chk.setAttribute('stroke-width', '2.8');
       chk.setAttribute('stroke-linecap', 'round');
       chk.setAttribute('stroke-linejoin', 'round');
       var cc = document.createElementNS(NSVG, 'circle');

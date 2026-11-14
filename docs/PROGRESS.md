@@ -412,3 +412,20 @@ since).
 - Verified live (mock): high verdict (wheel top-right 33/33/80, card glow
   right-anchored), unverified verdict (logo 33/33/80 absolute, 0 ring-num),
   7-row batch (all rows `to left`, check 46.4 == wheel 46.4); console clean.
+
+### User-review round 3 (2026-11-14, check stroke + idle centering)
+- **Check stroke a touch lighter:** batch Low check `stroke-width` 3.1 → 2.8
+  (user preference; size unchanged at the 2.9em slot, measured 46.4px ==
+  wheels).
+- **Idle state text vertically centered:** root cause — all `.result-state`s
+  are absolutely positioned (index.css:103) top-anchored, while the wrapper
+  has slack (min-height 220px floor / JS-set height / stretched card), so the
+  idle text floated at the top with dead space below. Fix: scoped
+  `#result-panel .state-idle{bottom:0;display:flex;flex-direction:column;
+  justify-content:center}` — `top:0;bottom:0` spans the wrapper's USED height
+  (percentage `height:100%` does not resolve against the wrapper's
+  auto+min-height; `top+bottom` always does). Measured: content block gaps
+  32px above / 24px below in the 220px wrapper (was 64 top / ~130 dead
+  space). Idle-only scope; threat/batch/scanning states stay top-anchored.
+- Verified live (mock): idle centered, 7-row batch stroke 2.8px + size 46.4;
+  console clean; `node --check` clean.

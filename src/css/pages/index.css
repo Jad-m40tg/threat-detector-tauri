@@ -101,6 +101,10 @@
 [data-motion="reduced"] .scan-progress.is-indet .progress-bar { animation: none !important; transform: scaleX(0.35); opacity: 0.5; }
 #result-panel .result-states{position:relative;min-height:220px;transition:height var(--dur-in) var(--ease-out)}
 #result-panel .result-state{position:absolute;top:0;left:0;width:100%;padding:var(--space-4) var(--space-5);opacity:0;visibility:hidden;transition:opacity var(--dur-in) var(--ease-out),visibility 0s linear var(--dur-in)}
+/* [D1] Idle text floats mid-panel: the state spans the wrapper's full used
+   height (top:0+bottom:0 — percentage heights don't resolve against the
+   wrapper's auto+min-height) and centers its content vertically. */
+#result-panel .state-idle{bottom:0;display:flex;flex-direction:column;justify-content:center}
 #result-panel .result-state.is-active{opacity:1;visibility:visible;transition:opacity var(--dur-in) var(--ease-out)}
 #result-panel .dash-c{text-align:center}
 #result-panel .dash-c h3{margin:0 0 var(--space-1);font-size:1.15em}
