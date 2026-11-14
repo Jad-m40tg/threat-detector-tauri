@@ -72,61 +72,70 @@
 
             <div id="seg-mode" class="seg" data-seg role="radiogroup" aria-label="Input mode">
               <span class="seg__thumb" aria-hidden="true"></span>
-              <button type="button" class="seg__opt" role="radio" data-value="single" aria-checked="true" tabindex="0">Single Input</button>
-              <button type="button" class="seg__opt" role="radio" data-value="csv" aria-checked="false" tabindex="-1">CSV Batch</button>
+              <button type="button" class="seg__opt" role="radio" data-value="single" aria-checked="true" tabindex="0" aria-controls="panel-single">Single Input</button>
+              <button type="button" class="seg__opt" role="radio" data-value="csv" aria-checked="false" tabindex="-1" aria-controls="panel-csv">CSV Batch</button>
             </div>
 
-            <!-- Single input block -->
-            <div class="scan-block is-active" data-block="single">
-              <form id="scan-form" novalidate>
-                <label class="field-label" for="scan-input">URL or message</label>
-                <div class="dash-inputwrap">
-                  <svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><circle cx="12" cy="12" r="8.2"></circle><path d="M3.8 12h16.4"></path><path d="M12 3.8c2.5 2.3 3.9 5 3.9 8.2s-1.4 5.9-3.9 8.2c-2.5-2.3-3.9-5-3.9-8.2s1.4-5.9 3.9-8.2Z"></path></svg>
-                  <textarea id="scan-input" class="input textarea-autogrow" rows="1" placeholder="Enter a URL or suspicious message..." aria-describedby="input-error dash-hint"></textarea>
-                </div>
-                <p class="help" id="dash-hint">Tip: full URLs work best (e.g. https://example.com)</p>
-                <p id="input-error" class="field-error" role="status" aria-live="polite" hidden>Enter a URL or message to analyze</p>
-                <div class="dash-actions">
-                  <button type="submit" id="btn-analyze" class="btn btn-primary">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M9 6.2v11.6L18 12Z"></path></svg>
-                    Analyze
-                  </button>
-                  <button type="button" id="btn-clear" class="btn btn-secondary">Clear</button>
-                </div>
-              </form>
-            </div>
-
-            <p class="dash-divider" aria-hidden="true">OR</p>
-
-            <!-- CSV batch block -->
-            <div class="scan-block" data-block="csv">
-              <div id="csv-drop" class="drop-zone" role="button" tabindex="0" aria-label="CSV file drop zone. Press Enter to browse for a file.">
-                <div class="dash-drop-inner">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M7.4 18.4h9.4a3.6 3.6 0 0 0 .6-7.15A5.55 5.55 0 0 0 6.8 9.6a4.4 4.4 0 0 0 .6 8.8Z"></path><path d="M12 16.2v-5.5"></path><path d="m9.7 12.9 2.3-2.3 2.3 2.3"></path></svg>
-                  <span class="dash-drop-b">Drag &amp; drop a CSV file here</span>
-                  <span class="muted">or click to browse</span>
-                </div>
-                <input type="file" id="csv-file-input" accept=".csv,text/csv" tabindex="-1" aria-hidden="true" class="sr-only">
-              </div>
-              <p id="csv-error" class="field-error" role="status" aria-live="polite" hidden></p>
-
-              <div id="csv-summary" class="dash-filecard" hidden>
-                <div class="dash-filecard-row">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M13.5 3.5H7a1.5 1.5 0 0 0-1.5 1.5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8.5Z"></path><path d="M13.5 3.5v5h5"></path></svg>
-                  <span id="csv-summary-name" class="ellipsis text-truncate"></span>
-                </div>
-                <p id="csv-summary-line" class="dash-filemeta"></p>
-                <span id="csv-progress-label" class="dash-progress-label"><span>Batch progress</span><span id="csv-progress-pct" class="dash-filemeta">0% complete</span></span>
-                <div class="progress" role="progressbar" aria-labelledby="csv-progress-label" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                  <div class="progress-bar" id="csv-progress-bar" style="--fill:0"></div>
+            <!-- [T1] scan panels: ONE visible at a time — each block is the shared
+                 .reveal component (core.css grid-rows height reveal); index.js
+                 toggles data-open + inert/aria-hidden when the segment switches.
+                 The collapsed panel contributes zero height, so the old OR
+                 divider between the blocks is gone. -->
+            <div class="scan-panels">
+              <!-- Single input panel -->
+              <div class="scan-block reveal is-active" data-block="single" id="panel-single" data-open="true" role="group" aria-label="Single input">
+                <div class="reveal-inner">
+                  <form id="scan-form" novalidate>
+                    <label class="field-label" for="scan-input">URL or message</label>
+                    <div class="dash-inputwrap">
+                      <svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><circle cx="12" cy="12" r="8.2"></circle><path d="M3.8 12h16.4"></path><path d="M12 3.8c2.5 2.3 3.9 5 3.9 8.2s-1.4 5.9-3.9 8.2c-2.5-2.3-3.9-5-3.9-8.2s1.4-5.9 3.9-8.2Z"></path></svg>
+                      <textarea id="scan-input" class="input textarea-autogrow" rows="1" placeholder="Enter a URL or suspicious message..." aria-describedby="input-error dash-hint"></textarea>
+                    </div>
+                    <p class="help" id="dash-hint">Tip: full URLs work best (e.g. https://example.com)</p>
+                    <p id="input-error" class="field-error" role="status" aria-live="polite" hidden>Enter a URL or message to analyze</p>
+                    <div class="dash-actions">
+                      <button type="submit" id="btn-analyze" class="btn btn-primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M9 6.2v11.6L18 12Z"></path></svg>
+                        Analyze
+                      </button>
+                      <button type="button" id="btn-clear" class="btn btn-secondary">Clear</button>
+                    </div>
+                  </form>
                 </div>
               </div>
 
-              <div class="dash-footrow">
-                <button type="button" id="btn-download-sample" class="btn btn-ghost">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M12 4v10.6"></path><path d="M7.6 10.4 12 14.8l4.4-4.4"></path><path d="M5 19.8h14"></path></svg>
-                  Download sample CSV
-                </button>
+              <!-- CSV batch panel -->
+              <div class="scan-block reveal" data-block="csv" id="panel-csv" data-open="false" inert aria-hidden="true" role="group" aria-label="CSV batch">
+                <div class="reveal-inner">
+                  <div id="csv-drop" class="drop-zone" role="button" tabindex="0" aria-label="CSV file drop zone. Press Enter to browse for a file.">
+                    <div class="dash-drop-inner">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M7.4 18.4h9.4a3.6 3.6 0 0 0 .6-7.15A5.55 5.55 0 0 0 6.8 9.6a4.4 4.4 0 0 0 .6 8.8Z"></path><path d="M12 16.2v-5.5"></path><path d="m9.7 12.9 2.3-2.3 2.3 2.3"></path></svg>
+                      <span class="dash-drop-b">Drag &amp; drop a CSV file here</span>
+                      <span class="muted">or click to browse</span>
+                    </div>
+                    <input type="file" id="csv-file-input" accept=".csv,text/csv" tabindex="-1" aria-hidden="true" class="sr-only">
+                  </div>
+                  <p id="csv-error" class="field-error" role="status" aria-live="polite" hidden></p>
+
+                  <div id="csv-summary" class="dash-filecard" hidden>
+                    <div class="dash-filecard-row">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M13.5 3.5H7a1.5 1.5 0 0 0-1.5 1.5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8.5Z"></path><path d="M13.5 3.5v5h5"></path></svg>
+                      <span id="csv-summary-name" class="ellipsis text-truncate"></span>
+                    </div>
+                    <p id="csv-summary-line" class="dash-filemeta"></p>
+                    <span id="csv-progress-label" class="dash-progress-label"><span>Batch progress</span><span id="csv-progress-pct" class="dash-filemeta">0% complete</span></span>
+                    <div class="progress" role="progressbar" aria-labelledby="csv-progress-label" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                      <div class="progress-bar" id="csv-progress-bar" style="--fill:0"></div>
+                    </div>
+                  </div>
+
+                  <div class="dash-footrow">
+                    <button type="button" id="btn-download-sample" class="btn btn-ghost">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M12 4v10.6"></path><path d="M7.6 10.4 12 14.8l4.4-4.4"></path><path d="M5 19.8h14"></path></svg>
+                      Download sample CSV
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 

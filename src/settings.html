@@ -47,10 +47,10 @@
         <p class="set-help" id="hint-theme">System follows your device setting.</p>
       </div>
 
-      <!-- Expands in when the theme resolves DARK (grid 0fr→1fr reveal, see .f-darkbg-reveal;
+      <!-- Expands in when the theme resolves DARK (shared .reveal component, core.css;
            inert + aria-hidden are kept in sync by page JS while collapsed) -->
-      <div class="f-darkbg-reveal" id="darkbg-reveal">
-        <div class="set-field f-darkbg">
+      <div class="f-darkbg-reveal reveal" id="darkbg-reveal">
+        <div class="set-field f-darkbg reveal-inner">
           <span class="set-label" id="lb-darkbg">Dark background</span>
           <div class="seg" id="set-darkbg" data-seg role="radiogroup" aria-labelledby="lb-darkbg">
             <span class="seg__thumb" aria-hidden="true"></span>

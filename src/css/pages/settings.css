@@ -64,28 +64,32 @@ html[data-theme="dark"] .sw-at[data-ac="white"] { background: #F2F5F7; --sw-chec
 html[data-theme="dark"] .sw-at[data-ac="violet"] { background: #B78CFF; --sw-check: #180430; }
 html[data-theme="dark"] .sw-at[data-ac="amber"] { background: #FFC24D; --sw-check: #2B1600; }
 
-/* ── Task 3 [C] — dark-background reveal (replaces the old display-based toggle).
-   A grid wrapper animates 0fr→1fr (~400ms ease-out, opacity alongside); the inner
-   field carries overflow + a 3px inner padding offset by an equal negative margin,
-   so focus outlines and the thumb shadow never clip at the animated edge. */
+/* ── Task 3 [C] — dark-background reveal. UI pass 1 [T1]: the grid 0fr→1fr
+   technique and its timings moved to the shared .reveal / .reveal-inner
+   component (core.css) — this wrapper now carries class="f-darkbg-reveal reveal"
+   and this file only adds what is specific to the field: the collapsed state
+   eats the card flex gap via a negative bottom margin (animated with the same
+   reveal durations), and the inner field keeps a 3px padding offset by an equal
+   negative margin, so focus outlines and the thumb shadow never clip at the
+   animated edge. NOTE: the transition lists below restate the shared rows+opacity
+   transitions — a later-in-cascade `transition` would otherwise REPLACE the
+   component's list (transition is not additive), so the three properties must
+   travel together. The global reduced-motion kill-switches flatten everything. */
 .f-darkbg-reveal {
-  display: grid;
-  grid-template-rows: 0fr;
-  opacity: 0;
   margin-bottom: calc(-1 * var(--space-4)); /* collapsed: eats the card flex gap */
-  transition: grid-template-rows .25s var(--ease-out), opacity .25s var(--ease-out), margin-bottom .25s var(--ease-out);
-}
-.f-darkbg-reveal > .f-darkbg {
-  min-height: 0;
-  overflow: hidden;
-  padding: 3px;
-  margin: -3px;
+  transition: grid-template-rows var(--dur-reveal-out, .25s) var(--ease-out),
+              opacity var(--dur-reveal-out, .25s) var(--ease-out),
+              margin-bottom var(--dur-reveal-out, .25s) var(--ease-out);
 }
 .f-darkbg-reveal[data-open="true"] {
-  grid-template-rows: 1fr;
-  opacity: 1;
   margin-bottom: 0;
-  transition: grid-template-rows .4s var(--ease-out), opacity .4s var(--ease-out), margin-bottom .4s var(--ease-out);
+  transition: grid-template-rows var(--dur-reveal-in, .4s) var(--ease-out),
+              opacity var(--dur-reveal-in, .4s) var(--ease-out),
+              margin-bottom var(--dur-reveal-in, .4s) var(--ease-out);
+}
+.f-darkbg-reveal > .f-darkbg {
+  padding: 3px;
+  margin: -3px;
 }
 /* Pills settle from translateY(-8px) with a --i-driven 40ms stagger (expand 400ms /
    collapse 250ms). The full transition list mirrors the page micro-transition rule

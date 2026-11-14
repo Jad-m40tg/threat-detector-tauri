@@ -939,6 +939,37 @@ html[data-motion="reduced"] .seg__thumb, html[data-motion="reduced"] .seg__opt {
   .seg__opt { padding: 0 12px; font-size: 14px; }
 }
 
+/* --- Reveal (shared grid-rows height reveal) --- */
+/* [T1] One component for "show/hide a panel with height" — extracted from the
+   settings dark-background field so the dashboard scan panels use the same
+   technique and timing. data-open="true" drives the state: collapse runs at
+   --dur-reveal-out (.25s), expand at --dur-reveal-in (.4s), both var(--ease-out).
+   The child (.reveal-inner) must carry min-height:0 + overflow:hidden so the
+   0fr track actually clips; page CSS puts the panel surface (background/border/
+   padding/margins) on the inner element, so a collapsed block contributes zero
+   height. The global reduced-motion kill-switches (section 11) flatten both
+   transitions to instant. Animate grid-template-rows/opacity only — the
+   codebase's sanctioned height-reveal exception. */
+.reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--dur-reveal-out, .25s) var(--ease-out),
+    opacity var(--dur-reveal-out, .25s) var(--ease-out);
+}
+.reveal > .reveal-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+.reveal[data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows var(--dur-reveal-in, .4s) var(--ease-out),
+    opacity var(--dur-reveal-in, .4s) var(--ease-out);
+}
+
 /* --- Chips --- */
 .chip {
   min-height: 44px;

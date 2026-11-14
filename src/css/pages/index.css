@@ -39,20 +39,18 @@
 #scan-card .card-title{display:inline-flex;align-items:center;gap:var(--space-2)}
 #scan-card .card-title svg{width:20px;height:20px;color:var(--accent)}
 #scan-card .seg{margin-top:var(--space-4)}
-.scan-block{position:relative;border:1px solid transparent;border-radius:var(--radius);padding:var(--space-2);margin-top:var(--space-3);transition:opacity var(--dur-fast) var(--ease-out),filter var(--dur-fast) var(--ease-out)}
-.scan-block.is-active{background:var(--bg-card-2);border-color:var(--border)}
-/* [a11y 1.4.3] no opacity dim on inactive blocks: at .5 the light theme reads at
-   ~3.4:1 (--text) / ~2.1:1 (--muted) and the placeholder below that; no compliant
-   mid-dim exists (muted needs α≥.82, faint α≈.99). Blocks stay distinguishable
-   because only .is-active gets the bg-card-2 + border treatment. */
-.block--dimmed{filter:saturate(.7);cursor:pointer}
-.block--dimmed:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+/* [T1] scan panels: ONE visible at a time — each .scan-block is the shared
+   .reveal component (core.css, grid-rows height reveal driven by data-open);
+   the inner element carries the panel surface (bg/border/padding), so a
+   collapsed block contributes zero height and the old "OR" divider is gone.
+   [a11y 1.4.3] the old inactive-dim rules are gone with it: a collapsed panel
+   is inert + invisible, so there is no low-contrast visible content left. */
+.scan-panels{display:grid}
+.scan-block > .reveal-inner{margin-top:var(--space-3);background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--radius);padding:var(--space-2)}
 .dash-inputwrap{position:relative;margin-top:var(--space-2)}
 .dash-inputwrap .type-icon{position:absolute;left:var(--space-3);top:12px;width:20px;height:20px;color:var(--text-muted);pointer-events:none}
 #scan-input{width:100%;padding-left:42px;resize:none;overflow-y:auto;min-height:44px;max-height:160px}
 .dash-actions{display:flex;gap:var(--space-2);flex-wrap:wrap;margin-top:var(--space-3)}
-.dash-divider{display:flex;align-items:center;gap:var(--space-3);color:var(--text-faint);font-size:.85em;margin:var(--space-3) 0 0}
-.dash-divider::before,.dash-divider::after{content:"";flex:1;height:1px;background:var(--border)}
 .dash-drop-inner{display:grid;justify-items:center;gap:var(--space-1);text-align:center;padding:var(--space-5) var(--space-4)}
 .dash-drop-inner svg{width:26px;height:26px;color:var(--accent)}
 .dash-drop-b{font-weight:600;color:var(--text)}

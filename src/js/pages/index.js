@@ -872,31 +872,31 @@
     });
   }
 
-  /* ============ MODE TOGGLE + BLOCKS ============ */
-  function setBlock(block, active, dimLabel) {
-    block.classList.toggle('is-active', active);
-    block.classList.toggle('block--dimmed', !active);
-    if (active) {
-      block.removeAttribute('role');
-      block.removeAttribute('aria-label');
-      block.removeAttribute('tabindex');
+  /* ============ MODE TOGGLE + PANELS (T1) ============
+     One panel visible at a time: each .scan-block is the shared .reveal
+     component (core.css grid-rows height reveal, data-open="true" = expanded).
+     The collapsed panel gets inert + aria-hidden — it leaves the tab order and
+     the a11y tree entirely (replaces the old dimmed-block tabindex juggling;
+     the static tabindex="-1" on #csv-file-input keeps the programmatic picker
+     out of tab order even when its panel is open). The seg radios'
+     aria-controls point at the panel ids (same pattern as settings.html). */
+  function setPanel(block, open) {
+    block.classList.toggle('is-active', open);
+    if (open) {
+      block.setAttribute('data-open', 'true');
+      block.removeAttribute('inert');
+      block.removeAttribute('aria-hidden');
     } else {
-      block.setAttribute('role', 'button');
-      block.setAttribute('tabindex', '0');
-      block.setAttribute('aria-label', dimLabel);
-    }
-    var fs = block.querySelectorAll('button, input, textarea, a');
-    for (var j = 0; j < fs.length; j++) {
-      if (fs[j] === fileInput) { fs[j].setAttribute('tabindex', '-1'); continue; }
-      if (active) fs[j].removeAttribute('tabindex');
-      else fs[j].setAttribute('tabindex', '-1');
+      block.setAttribute('data-open', 'false');
+      block.setAttribute('inert', '');
+      block.setAttribute('aria-hidden', 'true');
     }
   }
   function setMode(mode, fromUser) {
     activeMode = (mode === 'csv') ? 'csv' : 'single';
-    if (seg._segSet) { seg._segSet(activeMode); } /* [B] thumb owns pill state; blocks follow */
-    setBlock(blocks.single, activeMode === 'single', 'Switch to single input (URL or message)');
-    setBlock(blocks.csv, activeMode === 'csv', 'Switch to CSV batch input');
+    if (seg._segSet) { seg._segSet(activeMode); } /* [B] thumb owns pill state; panels follow */
+    setPanel(blocks.single, activeMode === 'single');
+    setPanel(blocks.csv, activeMode === 'csv');
     if (fromUser) {
       if (activeMode === 'single') inputEl.focus();
       else dropZone.focus();
@@ -950,22 +950,10 @@
   seg.addEventListener('seg-change', function (e) {
     setMode(e && e.detail ? e.detail.value : 'single', true);
   });
-  /* Dimmed block click/keys switch the mode (SPEC 7.2) */
-  function blockSwitch(block, other) {
-    block.addEventListener('click', function (e) {
-      if (!block.classList.contains('block--dimmed')) return;
-      e.preventDefault();
-      setMode(other, true);
-    });
-    block.addEventListener('keydown', function (e) {
-      if ((e.key === 'Enter' || e.key === ' ') && block.classList.contains('block--dimmed')) {
-        e.preventDefault();
-        setMode(other, true);
-      }
-    });
-  }
-  blockSwitch(blocks.single, 'csv');
-  blockSwitch(blocks.csv, 'single');
+  /* [T1] the old dimmed-block click/keys-to-switch wiring is gone: the seg
+     radios are the only switcher, and a collapsed panel is inert (not clickable
+     at all) — rapid clicks can never leave a half-open state because both panels
+     are driven from one setMode call (data-open mirrors is-active). */
 
   /* Drop zone interactions */
   dropZone.addEventListener('click', openPicker);
