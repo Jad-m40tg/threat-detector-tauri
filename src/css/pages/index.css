@@ -135,7 +135,7 @@
    off-screen rows of a 5,000-row batch cost little. Indicators: scored ring
    (lazy), static green check for Low, dashed neutral ring for Not Verified /
    Error — never a green tint or a percentage on a row that was not verified. */
-.batch-list{list-style:none;margin:var(--space-3) 0 0;padding:0;display:grid;gap:var(--space-2);max-height:21em;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent}
+.batch-list{list-style:none;margin:var(--space-3) 0 0;padding:0;display:grid;grid-template-columns:minmax(0,1fr);gap:var(--space-2);max-height:21em;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent}
 .batch-list::-webkit-scrollbar{width:10px}
 .batch-list::-webkit-scrollbar-track{background:transparent}
 .batch-list::-webkit-scrollbar-thumb{border:3px solid transparent;border-radius:999px;background-color:var(--border-strong);background-clip:padding-box}
@@ -148,6 +148,7 @@
 .batch-row{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3);border:1px solid color-mix(in srgb, var(--border) 75%, rgb(var(--risk-rgb, 138 147 160)) 25%);border-radius:var(--radius);background-color:var(--bg-card);background-image:linear-gradient(to right, rgb(var(--risk-rgb, 138 147 160) / .10), transparent 65%);content-visibility:auto;contain-intrinsic-size:auto 5em}
 .batch-row-main{flex:1 1 auto;min-width:0}
 .batch-row-top{display:flex;align-items:baseline;gap:var(--space-3);min-width:0}
+.batch-row .risk-label{white-space:nowrap}
 .batch-row-input{flex:1 1 auto;min-width:0;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .batch-row-sub{margin:2px 0 0;color:var(--text-faint);font-size:.9em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .batch-row-ind{flex:none;width:2.9em;height:2.9em;display:inline-flex;align-items:center;justify-content:center}

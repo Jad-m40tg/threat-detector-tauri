@@ -287,3 +287,89 @@ None — D7, D8 and D9 were answered by Jad on 2026-11-13 and are recorded above
   path needs an `AnalysisRequest`/options contract amendment (Jad to decide).
 - The displayed score is a normalized rule-points score (points × 15, capped
   99; clean baseline 12), **not** a probability that content is malicious.
+
+## fix-2: batch summary header redesign + bordered gradient rows (2026-11-14)
+
+Restore point: tag `before-ui-fix-2` at commit `4167c4c`. Implementation commit
+`3a69de9`, plus two follow-up CSS root-cause fixes (grid track + label nowrap)
+verified live in the browser and committed after this entry.
+
+### What changed
+- `src/index.html`: the old header (`.panel-heading` + `#batch-counts` pill
+  list) replaced by `.batch-head` (title + muted count on the left,
+  `.batch-tally` on the right) and a `.batch-divider` hr. The pill list is gone
+  from markup, JS and CSS (`grep` clean for `batch-counts`/`dash-batchrow`).
+- `src/js/pages/index.js`: `renderTally()` renders compact dot + bold number +
+  muted label per non-zero risk (`--risk-*-rgb` tokens); tally cleared in
+  `startBatch`/`startBatchTauri`/`resetAll`, populated in `finishBatch`;
+  "View details" is now a real `<button>` outline pill with an SVG arrow
+  (`GLYPH`-style inline path), `.btn-label` collapses to icon-only at ≤480px
+  with `aria-label` retained.
+- `src/css/pages/index.css`: rows are bordered blocks — 1px `color-mix(in srgb,
+  var(--border) 75%, rgb(var(--risk-rgb)) 25%)` border, `var(--radius)`, left
+  gradient `rgb(var(--risk-rgb)/.10) → transparent 65%`; `.batch-row[data-risk]`
+  maps `--risk-rgb` from `risk-glow.css` `:root` tokens (same colors as the
+  single verdict card); `.batch-list` gains `overflow-x:hidden` (safety net),
+  `grid-template-columns:minmax(0,1fr)` (track root-cause fix, below);
+  `contain-intrinsic-size:auto 5em` kept for `content-visibility:auto`.
+
+### Root causes fixed
+1. **Sideways overflow:** `.batch-list` was `display:grid` with an implicit
+   auto track — row max-content (nowrap input) could exceed the container when
+   the panel is squeezed narrow (measured: rows 476px in a 209px list).
+   Fixed with `grid-template-columns:minmax(0,1fr)`, which pins the track to
+   the container width so the ellipsis chain (`.batch-row-input`) always
+   constrains. `overflow-x:hidden` stays as the safety net.
+2. **Missing gradient:** `--risk-rgb` was only mapped for `#result-panel` and
+   `.modal-detail`; `.batch-row[data-risk]` had no mapping and no background
+   rule. Fixed with the per-row mapping + gradient above (token reuse, no new
+   colors).
+3. **Label wrap at ultra-narrow widths:** `.batch-row .risk-label` now
+   `white-space:nowrap` so the label never folds to two lines when the panel
+   is squeezed (rows back to 2 lines / ~65px).
+
+### Verification (headless Chromium, mock backend over HTTP)
+All checks were run with stylesheets force-refreshed (sync XHR inline; the
+browser's HTTP cache otherwise serves the pre-fix `index.css`) and, for width
+checks, with the result panel scrolled into view so `content-visibility:auto`
+does not substitute estimated sizes:
+
+- Width battery 360 / 768 / 1280 / 1920px (iframe layout at real widths, 7-row
+  batch incl. a ~1900-char URL): no horizontal overflow of list or rows at any
+  width, "View details" always visible (icon-only ≤480px with aria-label),
+  input truncates with full URL in `title`, header single-line ≥640px
+  (27px tall) and wraps only below 640px (allowed exception), grid track =
+  container width in all cases.
+- 500-row batch (`stress_500.csv` shape): completes with "Analyzing X of 500"
+  running state (progress line, % + bar), final header "500 entries analyzed"
+  + tally "500 Low"; no overflow at the 209px-squeezed panel; uniform 2.9em
+  indicator slots (63/63 sampled); low rows carry the green check and never a
+  % ring; scroll resets to top and seek-to-bottom works; theme flip recalc
+  ~150-175ms proxy with `content-visibility:auto`.
+- Header/tally: tally counts always equal the rendered rows' `data-risk`
+  counts (7-row batch: Low 4 / High 2 / Not verified 1, Medium omitted at
+  zero; 500-row batch: Low 500). Dots use the exact verdict-card tokens
+  (dark: 255·90·95 red; light: 194·38·59 darker red for contrast).
+- Themes: dark/OLED, dark/grey and light all render border + gradient + dots
+  from the same tokens; borders are `color-mix` toward the risk color.
+- Cancel/T2a re-check: Clear mid-run → idle state, `data-risk` removed from
+  the panel (no stale tint), tally cleared, no resurrection of the killed
+  batch after 3s (scanRun guard).
+- "View in history" link renders transparent/no-border (no stray grey box).
+- Console: zero messages on dashboard through all of the above; history and
+  settings pages load clean (0 console messages, unchanged UI).
+- Real rendered screenshots captured (headless now paints): finished card at
+  ~364px viewport shows header + tally + divider + bordered gradient rows +
+  icon-only buttons + "View in history". Wide-viewport screenshots still
+  require the desktop window (headless tab viewport is fixed ~364px; zoom
+  does not re-evaluate media queries).
+
+Automated gates: `node --check` clean on all touched JS; `cargo
+test --workspace` 24/24, clippy + fmt clean at `3a69de9` (no Rust changes
+since).
+
+### Out-of-scope observations (not fixed)
+- At ~364px the page header (`.nav-actions`) can overflow the document by
+  ~23px — pre-existing nav behavior below ~375px, unrelated to the batch card.
+- At the 209px-squeezed panel the threat-summary column and result panel
+  share a tight two-column grid — page-layout artifact, pre-existing.
