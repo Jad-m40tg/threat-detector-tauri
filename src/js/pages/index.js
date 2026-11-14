@@ -214,6 +214,10 @@
     var res = tauri ? null : analyzeSafe(text);
     /* capture ONCE per run — settings flips mid-run must not change this run (CONTRACT §2.1) */
     var tdMult = (window.TDSettings && typeof TDSettings.progressMultiplier === "function") ? TDSettings.progressMultiplier() : 1.4;
+    /* [T2a] invalidate any in-flight scan: bump the token and cancel its timers so a
+       stale result cannot overwrite a newer one (mock path had no guard before). */
+    var run = ++scanRun;
+    clearTimers();
 
     setBusy(true);
     setPanelRisk(null); /* T2a: no stale verdict tint while the new scan runs */
@@ -240,15 +244,15 @@
     }
     var dur = Math.max(1, Math.round((SPEED_MS[S.get('scanSpeed') || 'normal'] || 2000) * tdMult));
     if (!tauri) {
-      scanTimer = window.setTimeout(function () { finishScan(res); }, dur);
+      scanTimer = window.setTimeout(function () { if (run !== scanRun) return; finishScan(res); }, dur);
       return;
     }
     /* Real backend (D9): wait for BOTH the animation gate and the backend answer.
        'fixed' shows the result when the animation completes (or later, if the
        backend is slower); 'instant' shows it the moment the answer arrives.
        scanRun invalidates the answer if the user clears or restarts mid-run. */
-    var run = ++scanRun;
     var gateDone = (S.get('resultTiming') === 'instant');
+    /* reuse the token bumped above instead of incrementing a second time */
     var pending = null;
     var maybeFinish = function () { if (gateDone && pending) finishScan(pending); };
     if (!gateDone) {
