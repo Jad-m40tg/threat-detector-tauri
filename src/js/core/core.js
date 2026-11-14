@@ -392,6 +392,11 @@
       ]
   };
 
+  /* Exposed for reuse (e.g. the settings-page navbar-style preview) so any page
+     drawing a nav icon uses the same source as the navbar builder itself. */
+  DAC.glyphs = GLYPH;
+  DAC.svgGlyph = svgGlyph;
+
   var PAGE_MAP = { index: "nav-dashboard", history: "nav-history", settings: "nav-settings", hardware: "nav-hardware" };
 
   /* ---------------- toast [E]: bottom-right stack, ≤3 visible, key-dedupe ----------------
