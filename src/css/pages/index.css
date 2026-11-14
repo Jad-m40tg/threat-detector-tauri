@@ -123,6 +123,11 @@
 .dash-prewrap{white-space:pre-wrap;word-break:break-word}
 .reason-list{margin:0 0 var(--space-2);padding-left:var(--space-4);display:grid;gap:var(--space-1)}
 #result-panel .dash-threat-inner{padding-top:0}
+/* [D1] Float rings park top-right like the threat wheel. .unv-ring's
+   position:relative (core.css, later in the cascade) otherwise beats
+   .result-ring-float's absolute and drops the Not Verified logo into
+   flow at the left; top/right still come from the shared float hook. */
+#result-panel .result-ring-float{position:absolute}
 @media (min-width:600px){#result-panel .dash-threat-inner{padding-right:132px}#result-panel .dash-unv-inner{padding-right:132px}}
 @media (max-width:599.98px){#result-panel .dash-threat-inner{padding-top:108px}#result-panel .dash-unv-inner{padding-top:108px}}
 .ring-safe-wrap{margin:0 auto}
@@ -145,7 +150,7 @@
 .batch-row[data-risk="high"]{--risk-rgb:var(--risk-high-rgb)}
 .batch-row[data-risk="unverified"]{--risk-rgb:var(--risk-unverified-rgb)}
 .batch-row[data-risk="na"]{--risk-rgb:var(--risk-unverified-rgb)}
-.batch-row{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3);border:1px solid color-mix(in srgb, var(--border) 75%, rgb(var(--risk-rgb, 138 147 160)) 25%);border-radius:var(--radius);background-color:var(--bg-card);background-image:linear-gradient(to right, rgb(var(--risk-rgb, 138 147 160) / .10), transparent 65%);content-visibility:auto;contain-intrinsic-size:auto 5em}
+.batch-row{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3);border:1px solid color-mix(in srgb, var(--border) 75%, rgb(var(--risk-rgb, 138 147 160)) 25%);border-radius:var(--radius);background-color:var(--bg-card);background-image:linear-gradient(to left, rgb(var(--risk-rgb, 138 147 160) / .10), transparent 65%);content-visibility:auto;contain-intrinsic-size:auto 5em}
 .batch-row-main{flex:1 1 auto;min-width:0}
 .batch-row-top{display:flex;align-items:baseline;gap:var(--space-3);min-width:0}
 .batch-row .risk-label{white-space:nowrap}

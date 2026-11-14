@@ -394,3 +394,21 @@ since).
 - Verified live (mock): unverified single scan, high single scan (left-anchored
   red gradients computed `at 0% 100%` / `at 0% 0%`, mask `to right`), 7-row
   CSV batch (check==wheel px, all row gradients `to right`); console clean.
+
+### User-review round 2 (2026-11-14, direction + logo position)
+- **Card gradient reverted** to the original RIGHT-side glow: risk-glow.css
+  restored wholesale from `6df6c20` (radials `at 100% 100%` / `at 100% 0%`,
+  border mask fades leftward). The earlier left-flip was user-rejected.
+- **Batch rows follow the card direction:** `.batch-row` background-image
+  flipped `to right` → `to left`, so the row tint now anchors the right edge
+  and fades leftward exactly like the verdict card.
+- **Not Verified logo parked where the wheels sit:** root cause — `.unv-ring`
+  (core.css:1609) sets `position:relative` LATER in the cascade than the
+  shared `.result-ring-float` hook (core.css:1512 absolute), so the logo
+  dropped into flow at the left. Fix: scoped `#result-panel
+  .result-ring-float{position:absolute}` (index.css) restores the shared
+  top/right parking; no core.css change. Measured: unv logo and 90% wheel
+  both 80px, identical 33px top/right insets against the panel.
+- Verified live (mock): high verdict (wheel top-right 33/33/80, card glow
+  right-anchored), unverified verdict (logo 33/33/80 absolute, 0 ring-num),
+  7-row batch (all rows `to left`, check 46.4 == wheel 46.4); console clean.

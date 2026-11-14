@@ -1,17 +1,14 @@
 /* ==========================================================================
-   risk-glow.css — Agent E (Task 3), reshaped overnight (allowlist B + C),
-   direction flipped LEFT-SIDE per user review (2026-11-14, fix-2 follow-up):
-   the tint now starts at the LEFT edge and fades rightward, matching the
-   batch rows' left-to-right gradient.
+   risk-glow.css — Agent E (Task 3), reshaped overnight (allowlist B + C)
    Edge-tinted risk glow keyed to Agent F's data-risk attribute. Applies ONLY
    to the scored root on index.html (contract §2.2):
      - index.html  : #result-panel[data-risk="…"]  (Analysis details card; the
                      dark card background/border width/radius come from .card)
-                     Glow is LEFT-SIDE: left-anchored background gradients
-                     whose fade completes ~52% of the card width from the
-                     left edge, and the tinted 1px border is drawn by a
-                     masked ::after overlay that fades out rightward. The
-                     former inset box-shadow is REMOVED.
+                     Glow is RIGHT-SIDE-ONLY (allowlist B): right-anchored
+                     background gradients whose fade completes ~52% of the
+                     card width from the right edge, and the tinted 1px border
+                     is drawn by a masked ::after overlay that fades out
+                     leftward. The former inset box-shadow is REMOVED.
      - details modal (.modal-detail — history.html AND the dashboard batch
      "view details" modal, both share DAC.ui.detailsCard): UI pass 1 re-adds
      a SUBTLE tint (Task 2c, per approved sketch). This deliberately reverses
@@ -38,8 +35,8 @@
   /* Glow alphas, dark theme. Gradient interiors stay <= .25 so body text on
      --bg-card / dark-grey keeps AA contrast; the masked border overlay hugs
      the card edges where no body text sits. */
-  --risk-edge-a: .22;   /* left-side gradient (entry side) */
-  --risk-corner-a: .10; /* top-left corner gradient (fade) */
+  --risk-edge-a: .22;   /* right-side gradient (behind the ring side) */
+  --risk-corner-a: .10; /* top-right corner gradient (fade) */
   --risk-border-a: .35; /* faint tinted 1px border (masked ::after overlay) */
 }
 
@@ -61,12 +58,12 @@
 #result-panel[data-risk="high"]       { --risk-rgb: var(--risk-high-rgb); }
 #result-panel[data-risk="unverified"] { --risk-rgb: var(--risk-unverified-rgb); }
 
-/* --- INDEX: Analysis details card glow (reshaped — allowlist B, flipped) ---
+/* --- INDEX: Analysis details card glow (reshaped — allowlist B) ------------
    Keeps .card's background-color, border width/style and radius. The tint is
-   LEFT-SIDE: two left-anchored gradients whose fade completes ~52% of
-   the card width from the left edge (center stays --bg-card), and the tinted
+   RIGHT-SIDE-ONLY: two right-anchored gradients whose fade completes ~52% of
+   the card width from the right edge (center stays --bg-card), and the tinted
    1px border lives on a masked ::after overlay (inset:0, radius inherited,
-   fades out rightward, gone by 52% width) instead of recoloring the element's
+   fades out leftward, gone by 52% width) instead of recoloring the element's
    own border. The former inset box-shadow is REMOVED. No layout properties
    change; #result-panel is already position:relative (css/pages/index.css). */
 #result-panel[data-risk="low"],
@@ -74,13 +71,12 @@
 #result-panel[data-risk="high"],
 #result-panel[data-risk="unverified"] {
   background-image:
-    radial-gradient(90% 130% at 0% 100%, rgb(var(--risk-rgb) / var(--risk-edge-a)), transparent 58%),
-    radial-gradient(75% 120% at 0% 0%, rgb(var(--risk-rgb) / var(--risk-corner-a)), transparent 55%);
+    radial-gradient(90% 130% at 100% 100%, rgb(var(--risk-rgb) / var(--risk-edge-a)), transparent 58%),
+    radial-gradient(75% 120% at 100% 0%, rgb(var(--risk-rgb) / var(--risk-corner-a)), transparent 55%);
   transition: background-color 300ms ease;
 }
 
-/* Masked border overlay: left half only (mirrors the batch rows' left-to-right
-   fade). Defined on the bare
+/* Masked border overlay: right half only (allowlist B). Defined on the bare
    root with a transparent border so the tint cross-fades over 300ms on risk
    change (idle scenes render it fully invisible). pointer-events:none keeps
    the card interactive; border-radius:inherit matches the .card corners. */
@@ -91,8 +87,8 @@
   border-radius: inherit;
   border: 1px solid transparent;
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(to right, #000, transparent 52%);
-          mask-image: linear-gradient(to right, #000, transparent 52%);
+  -webkit-mask-image: linear-gradient(to left, #000, transparent 52%);
+          mask-image: linear-gradient(to left, #000, transparent 52%);
   transition: border-color 300ms ease;
 }
 #result-panel[data-risk]::after {
