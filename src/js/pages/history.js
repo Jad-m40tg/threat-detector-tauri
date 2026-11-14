@@ -262,39 +262,11 @@
         if (!r) { return; }
         destroyModalVis();
 
-        var maskShown = utils.mask(r.input);
-        var plainRisk = r.risk === 'low' || r.risk === 'medium' || r.risk === 'high';
-        /* [F] data-risk on the modal-detail root (contract §2.2); 'error' rows carry NO attribute */
-        var riskAttr = (plainRisk || r.risk === 'unverified') ? ' data-risk="' + r.risk + '"' : '';
-        var sN = String(r.score), sPadded = sN.length < 2 ? '0' + sN : sN;
-        var card = document.createElement('div'); /* plain body wrapper: columns + footer row */
-
-        var reasons = (r.reasons && r.reasons.length)
-          ? '<ul class="reason-list">' + r.reasons.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'
-          : '';
-        card.innerHTML =
-          '<div class="modal-detail"' + riskAttr + '>' +
-            '<div class="detail-main">' +
-            '<p class="risk-label ' + RISK_CLS[r.risk] + '">' + esc(RISK_LABEL[r.risk]) + '</p>' +
-            '<dl class="detail-list">' +
-              '<div class="detail-pair"><dt class="detail-dt">Selected input</dt>' +
-                '<dd class="detail-dd"><span class="sel-input">' + esc(maskShown) + '</span></dd></div>' +
-              (plainRisk
-                ? '<div class="detail-pair"><dt class="detail-dt">Risk score:</dt><dd class="detail-dd">' + esc(sPadded) + '/100</dd></div>'
-                : '') +
-              (reasons
-                ? '<div class="detail-pair"><dt class="detail-dt">Detection reasons</dt><dd class="detail-dd">' + reasons + '</dd></div>'
-                : '') +
-              '<div class="detail-pair"><dt class="detail-dt">Recommended action</dt><dd class="detail-dd">' + esc(r.recommendation) + '</dd></div>' +
-            '</dl>' +
-          '</div>' +
-          '<aside class="modal-visual">' +
-            '<span id="vis-shield-modal" class="modal-shield" aria-hidden="true"' + (plainRisk ? '' : ' hidden') + '></span>' +
-            '<span class="modal-ring" id="modal-ring"></span>' +
-            '<p class="vis-note" id="modal-note">' + (plainRisk ? '' : esc(r.details)) + '</p>' +
-          '</aside>' +
-          '</div>' +
-          '<div class="modal-foot"></div>';
+        /* Shared builder (core.js): identical classes + shell for the history
+           modal and the dashboard batch "view details" modal. Per-type visuals
+           (check circle for Low, dashed ring for Not Verified …) live there. */
+        var h = ui.detailsCard(r);
+        var card = h.card;
 
         /* footer action: Copy input -> clipboard fallback inside utils, always acknowledge */
         var foot = card.querySelector('.modal-foot');
@@ -311,22 +283,9 @@
         });
         foot.appendChild(copyBtn);
 
-        /* animated visuals (CONTRACT §11): ring for every row, shield only for risk rows;
-           guarded so a pending visuals peer degrades to static text instead of throwing */
-        var ringEl = card.querySelector('#modal-ring');
-        var ringText = document.createElement('span');
-        ringText.className = 'sr-only';
-        ringText.textContent = plainRisk ? ('Risk score ' + sPadded + ' out of 100') : 'Not verified';
-        if (vis && typeof vis.scoreRing === 'function') {
-          modalVis.push(vis.scoreRing(ringEl, r.score, r.risk));
-        } else {
-          ringEl.appendChild(ringText);
-        }
-        if (plainRisk) {
-          var shieldEl = card.querySelector('#vis-shield-modal');
-          shieldEl.classList.add('state-' + SHIELD_STATE[r.risk]);
-          if (vis && typeof vis.shield === 'function') { modalVis.push(vis.shield(shieldEl, SHIELD_STATE[r.risk])); }
-        }
+        /* animated visuals (CONTRACT §11) attach via the shared helper; every
+           handle is collected in modalVis and destroyed on close */
+        ui.attachDetailVisuals(h, r, function (handle) { modalVis.push(handle); });
 
         ui.modal.open({ title: 'Analysis details \u2014 ' + RISK_LABEL[r.risk], body: card, onClose: destroyModalVis });
       }

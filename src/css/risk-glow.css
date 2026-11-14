@@ -9,8 +9,12 @@
                      card width from the right edge, and the tinted 1px border
                      is drawn by a masked ::after overlay that fades out
                      leftward. The former inset box-shadow is REMOVED.
-     - history.html: the former .modal-detail glow was REMOVED entirely
-                     (allowlist C) — the history modal is unglowed again.
+     - details modal (.modal-detail — history.html AND the dashboard batch
+     "view details" modal, both share DAC.ui.detailsCard): UI pass 1 re-adds
+     a SUBTLE tint (Task 2c, per approved sketch). This deliberately reverses
+     the old "allowlist C" removal: one soft bottom-right radial in the risk
+     color, alpha capped at --risk-corner-a (.10 dark / .06 light) so body
+     text keeps AA contrast over the modal surface.
    Deliberately NEVER matches: bare [data-risk], .risk-label pills, or the
    batch mini-pills (data-risk="na") — those keep their existing rules.
    All colors are rgb(var(--risk-rgb) / ALPHA): --risk-rgb is mapped per state
@@ -97,4 +101,21 @@ html[data-motion="reduced"] #result-panel::after { transition: none; }
 @media (prefers-reduced-motion: reduce) {
   #result-panel[data-risk],
   #result-panel::after { transition: none; }
+}
+
+/* --- DETAILS MODAL TINT (Task 2c) -------------------------------------------
+   .modal-detail is the shared details body (history page AND dashboard batch
+   "view details" — one builder, one look). Only a soft bottom-right radial:
+   --risk-corner-a is the highest alpha in play (.10 dark / .06 light), well
+   inside AA over the modal surface. Not Verified rows tint with the neutral
+   grey (--risk-unverified-rgb) — never green, never a verdict color. Error
+   rows carry NO data-risk attribute (contract §2.2) and stay unglowed. */
+.modal-detail[data-risk="low"]        { --risk-rgb: var(--risk-low-rgb); }
+.modal-detail[data-risk="medium"]     { --risk-rgb: var(--risk-medium-rgb); }
+.modal-detail[data-risk="high"]       { --risk-rgb: var(--risk-high-rgb); }
+.modal-detail[data-risk="unverified"] { --risk-rgb: var(--risk-unverified-rgb); }
+
+.modal-detail[data-risk] {
+  background-image:
+    radial-gradient(85% 120% at 100% 100%, rgb(var(--risk-rgb) / var(--risk-corner-a)), transparent 60%);
 }

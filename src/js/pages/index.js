@@ -64,7 +64,12 @@
          reply filters progress/done events of an OLD batch; cancelRequested lets
          the current batch's own NotVerified(BatchCancelled) rows through while
          dropping stragglers from a previous, already-cleared run. */
-      activeBatchId = null, cancelRequested = false;
+      activeBatchId = null, cancelRequested = false,
+      /* [T2b] batch rows: results stream into batchRows during the run (both the
+         mock and the Tauri path) and render as a scrollable verdict list when the
+         batch closes. batchRenderOrder mirrors the rendered sort (file order);
+         rowRingIO builds each row's score ring lazily when it scrolls into view. */
+      batchRows = [], batchRenderOrder = [], rowRingIO = null;
 
   var subMsgs = ['Checking URL structure...', 'Analyzing language...', 'Comparing known patterns...'];
   var RISK_LABEL = { low: 'Low risk', medium: 'Medium risk', high: 'High risk', unverified: 'Not verified', error: 'Error' };
@@ -554,7 +559,9 @@
     if (progressBox) progressBox.setAttribute('aria-valuenow', String(pct));
     scanBar.style.setProperty('--fill', String(pct / 100));
     scanProgress.setAttribute('aria-valuenow', String(pct));
-    scanCount.textContent = done + ' of ' + total;
+    /* [T2b] batch runs speak in entries: "Analyzing X of Y" (single scans show
+       "Working…"; this line is only driven by updateBatchUI for batches) */
+    scanCount.textContent = 'Analyzing ' + done + ' of ' + total;
   }
   function scheduleRow(i, total, mult) {
     batchTimer = window.setTimeout(function () { batchTimer = null; processRow(i, total, mult); }, Math.max(1, Math.round((80 + ((i * 37) % 66)) * mult)));
@@ -563,6 +570,7 @@
     if (!batchActive) { resetCsvUi(); setState('idle'); return; } /* cleared mid-run */
     var entry = String(batchEntries[i]).trim();
     var res = analyzeSafe(entry);
+    batchRows.push(res); /* [T2b] rendered as a verdict row when the batch closes */
     pushRow(res, true);
     counts[res.risk]++;
     var done = i + 1;
@@ -600,6 +608,7 @@
     batchActive = true;
     cancelRequested = false; /* this run has not been asked to cancel */
     counts = { low: 0, medium: 0, high: 0, unverified: 0, error: 0 };
+    batchRows = []; /* [T2b] fresh verdict list per batch */
     setBusy(true);
     setPanelRisk(null); /* T2a: no stale verdict tint while the batch runs */
     csvError.hidden = true;
@@ -625,6 +634,7 @@
     batchEntries = entries;
     cancelRequested = false; /* this run has not been asked to cancel */
     counts = { low: 0, medium: 0, high: 0, unverified: 0, error: 0 };
+    batchRows = []; /* [T2b] fresh verdict list per batch */
     setBusy(true);
     setPanelRisk(null); /* T2a: no stale verdict tint while the batch runs */
     csvSummary.hidden = false;
@@ -642,8 +652,9 @@
     batchEntries = null;
     setBusy(false);
     updateSummary();
-    var list = $('batch-list');
-    list.textContent = '';
+    /* per-risk pills (unchanged summary — now in #batch-counts) */
+    var countsList = $('batch-counts');
+    countsList.textContent = '';
     var NAMES = { low: 'Low', medium: 'Medium', high: 'High', unverified: 'Not verified', error: 'Error' };
     var order = ['low', 'medium', 'high', 'unverified', 'error'];
     for (var j = 0; j < order.length; j++) {
@@ -659,11 +670,206 @@
       var num = document.createElement('strong');
       num.textContent = String(counts[k]);
       li.appendChild(pill); li.appendChild(num);
-      list.appendChild(li);
+      countsList.appendChild(li);
     }
     $('batch-meta').textContent = total + ' entries analyzed';
+    renderBatchRows(); /* [T2b] scrollable per-row verdicts, file order */
     setState('batch');
     announce('Batch complete — ' + counts.high + ' high risk, ' + counts.medium + ' medium risk results found');
+  }
+
+  /* ============ BATCH ROWS (T2b): one compact verdict per CSV row ============
+     Results stream into batchRows during the run and render here in file order
+     (numeric result id; the mock engine's ids are not numeric, and its arrival
+     order is already file order — a stable sort keeps both correct). Rendering
+     is chunked through rAF (40 rows per frame) so a 5,000-row batch never
+     blocks the frame; each scored row's ring is built lazily by an
+     IntersectionObserver only when the row scrolls into view. The list scrolls
+     internally (max-height) so the result panel keeps a bounded height. */
+  var batchListEl = $('batch-list');
+  var rowRingRecs = new WeakMap(); /* ring host → record, consumed by the IO */
+
+  function rowNum(r) {
+    var n = parseInt(r && r.id, 10);
+    return isFinite(n) ? n : 0;
+  }
+  function rowInputShown(rec) {
+    var t = String(rec.input == null ? '' : rec.input);
+    if (t.replace(/\s/g, '') === '') return '(empty input)';
+    return mask(t);
+  }
+  function rowSub(rec) {
+    var r = rec.risk;
+    if (r === 'low') return 'No issues detected';
+    if (r === 'unverified' || r === 'error') return String(rec.details || 'This item could not be analyzed.');
+    var reasons = Array.isArray(rec.reasons) ? rec.reasons : [];
+    return reasons.length ? reasons[0] : 'No risk indicators triggered.';
+  }
+  /* static dashed neutral ring for errored rows — no glyph, no claim, no color */
+  function naRingSvg() {
+    var svg = document.createElementNS(NSVG, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('class', 'unv-svg');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    var c = document.createElementNS(NSVG, 'circle');
+    c.setAttribute('class', 'unv-track');
+    c.setAttribute('cx', '12');
+    c.setAttribute('cy', '12');
+    c.setAttribute('r', '9.4');
+    svg.appendChild(c);
+    return svg;
+  }
+  function lazyRing(host, rec) {
+    rowRingRecs.set(host, rec);
+    if (!rowRingIO && typeof IntersectionObserver === 'function') {
+      rowRingIO = new IntersectionObserver(function (entries) {
+        for (var i = 0; i < entries.length; i++) {
+          var en = entries[i];
+          if (!en.isIntersecting) continue;
+          rowRingIO.unobserve(en.target);
+          var r = rowRingRecs.get(en.target) || null;
+          rowRingRecs.delete(en.target);
+          if (r && typeof V.scoreRing === 'function') V.scoreRing(en.target, r.score, r.risk);
+        }
+      }, { root: batchListEl, rootMargin: '90px 0px' });
+    }
+    if (rowRingIO) rowRingIO.observe(host);
+    else if (typeof V.scoreRing === 'function') V.scoreRing(host, rec.score, rec.risk); /* no IO support: draw now */
+  }
+  function batchRowDom(rec, i) {
+    var risk = rec.risk;
+    var rowRisk = (risk === 'unverified' || risk === 'error') ? 'na' : risk;
+    var li = document.createElement('li');
+    li.className = 'batch-row';
+    li.setAttribute('data-risk', rowRisk);
+    li.style.setProperty('--row-i', String(i < 20 ? i : 20)); /* capped stagger */
+
+    var main = document.createElement('div');
+    main.className = 'batch-row-main';
+    var top = document.createElement('div');
+    top.className = 'batch-row-top';
+    var lbl = document.createElement('span');
+    lbl.className = 'risk-label';
+    lbl.setAttribute('data-risk', rowRisk);
+    lbl.textContent = RISK_LABEL[risk] || 'Not verified';
+    var input = document.createElement('span');
+    input.className = 'batch-row-input ellipsis text-truncate';
+    var shown = rowInputShown(rec);
+    input.textContent = shown;
+    if (shown !== '(empty input)') input.title = String(rec.input); /* hover shows the full input, like the table */
+    top.appendChild(lbl);
+    top.appendChild(input);
+    var sub = document.createElement('p');
+    sub.className = 'batch-row-sub';
+    sub.textContent = rowSub(rec);
+    main.appendChild(top);
+    main.appendChild(sub);
+
+    var ind = document.createElement('span');
+    ind.className = 'batch-row-ind';
+    ind.setAttribute('aria-hidden', 'true');
+    if (risk === 'medium' || risk === 'high') {
+      var ringHost = document.createElement('span');
+      ringHost.className = 'ring-wrap batch-row-ring';
+      ind.appendChild(ringHost);
+      lazyRing(ringHost, rec);
+    } else if (risk === 'unverified') {
+      var unv = document.createElement('span');
+      if (typeof V.unverifiedRing === 'function') V.unverifiedRing(unv);
+      else { unv.className = 'unv-ring'; unv.appendChild(naRingSvg()); }
+      ind.appendChild(unv);
+    } else if (risk === 'error') {
+      var errRing = document.createElement('span');
+      errRing.className = 'unv-ring';
+      errRing.appendChild(naRingSvg());
+      ind.appendChild(errRing);
+    } else { /* low: static small check — no ring, no score, no glow */
+      ind.classList.add('row-check');
+      var chk = document.createElementNS(NSVG, 'svg');
+      chk.setAttribute('viewBox', '0 0 24 24');
+      chk.setAttribute('aria-hidden', 'true');
+      chk.setAttribute('focusable', 'false');
+      chk.setAttribute('fill', 'none');
+      chk.setAttribute('stroke', 'currentColor');
+      chk.setAttribute('stroke-width', '2');
+      chk.setAttribute('stroke-linecap', 'round');
+      chk.setAttribute('stroke-linejoin', 'round');
+      var cc = document.createElementNS(NSVG, 'circle');
+      cc.setAttribute('cx', '12');
+      cc.setAttribute('cy', '12');
+      cc.setAttribute('r', '8.6');
+      var cp = document.createElementNS(NSVG, 'path');
+      cp.setAttribute('d', 'M8.3 12.3l2.5 2.5 4.9-5.2');
+      chk.appendChild(cc);
+      chk.appendChild(cp);
+      ind.appendChild(chk);
+    }
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-ghost batch-row-open';
+    btn.textContent = 'View details';
+    btn.setAttribute('data-idx', String(i));
+
+    li.appendChild(main);
+    li.appendChild(ind);
+    li.appendChild(btn);
+    return li;
+  }
+  function renderBatchRows() {
+    if (!batchListEl) return;
+    batchListEl.textContent = '';
+    batchListEl.scrollTop = 0; /* scroll resets per batch */
+    var rows = batchRows.slice(0).sort(function (a, b) { return rowNum(a) - rowNum(b); });
+    batchRenderOrder = rows;
+    var CH = 40, done = 0;
+    function chunk() {
+      var frag = document.createDocumentFragment();
+      var end = Math.min(done + CH, rows.length);
+      for (var j = done; j < end; j++) frag.appendChild(batchRowDom(rows[j], j));
+      batchListEl.appendChild(frag);
+      done = end;
+      syncHeight(); /* the panel height follows the list until it hits max-height */
+      if (done < rows.length) window.requestAnimationFrame(chunk);
+    }
+    if (rows.length) window.requestAnimationFrame(chunk);
+  }
+  /* one delegated listener opens the shared details modal for any row */
+  if (batchListEl) {
+    batchListEl.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('.batch-row-open') : null;
+      if (!btn || !batchListEl.contains(btn)) return;
+      openBatchDetail(batchRenderOrder[parseInt(btn.getAttribute('data-idx'), 10)]);
+    });
+  }
+  function openBatchDetail(rec) {
+    if (!rec || !DAC.ui || typeof DAC.ui.detailsCard !== 'function') return;
+    var h = DAC.ui.detailsCard(rec);
+    var vis = [];
+    var foot = h.card.querySelector('.modal-foot');
+    var copyBtn = document.createElement('button');
+    copyBtn.type = 'button';
+    copyBtn.className = 'btn btn-secondary';
+    copyBtn.textContent = 'Copy input';
+    copyBtn.addEventListener('click', function () {
+      money.clipboardCopy(rec.input).then(function (ok) {
+        if (DAC.ui && typeof DAC.ui.toast === 'function') {
+          DAC.ui.toast(ok ? 'Copied to clipboard' : 'Copy failed', { type: ok ? 'success' : 'warn', key: 'copy' });
+        }
+      });
+    });
+    foot.appendChild(copyBtn);
+    DAC.ui.attachDetailVisuals(h, rec, function (handle) { if (handle) vis.push(handle); });
+    DAC.ui.modal.open({
+      title: 'Analysis details \u2014 ' + (RISK_LABEL[rec.risk] || 'Not verified'),
+      body: h.card,
+      onClose: function () {
+        for (var i = 0; i < vis.length; i++) {
+          if (vis[i] && typeof vis[i].destroy === 'function') vis[i].destroy();
+        }
+      }
+    });
   }
 
   /* ============ MODE TOGGLE + BLOCKS ============ */
@@ -718,6 +924,7 @@
     clearTimers();
     batchActive = false;
     batchEntries = null;
+    batchRows = []; batchRenderOrder = []; /* [T2b] drop the cleared batch's verdict list */
     scannerH = destroyVisual(scannerH);
     setBusy(false);
     inputEl.value = '';
@@ -800,6 +1007,7 @@
       if (p.result.error && p.result.error.kind === 'BatchCancelled' && !cancelRequested) return;
       var ui = ipcToUi(p.result);
       if (!(ui.risk in counts)) ui.risk = 'unverified'; /* contract-violation guard */
+      batchRows.push(ui); /* [T2b] rendered as a verdict row when the batch closes */
       pushRow(ui, true);
       counts[ui.risk]++;
     });

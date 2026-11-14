@@ -914,6 +914,188 @@
     }
   };
 
+  /* ---------------- shared details card (modal body) ----------------
+     One builder for the history page's row-details modal AND the dashboard
+     batch rows' "view details" modal — same classes (.modal-detail …), same
+     shell (DAC.ui.modal), so both look and animate identically. The caller
+     opens the modal and registers visuals via attachDetailVisuals so every
+     handle is destroyed on close. Per entry type (UI pass 1):
+       low        → green check circle, "No issues detected" reasons, score kept
+       medium/high→ scored ring + shield, reasons, action
+       unverified → dashed grey unverified ring, "Not verified" instead of a
+                    score, "Why it could not be verified" reason, and an action
+                    saying the item must not be treated as safe (contract §3)
+       error      → plain grey ring, no score pair, no data-risk attribute */
+  var DETAIL_RISK_LABEL = { low: "Low risk", medium: "Medium risk", high: "High risk", unverified: "Not verified", error: "Error" };
+  var DETAIL_RISK_CLS = { low: "risk-low", medium: "risk-medium", high: "risk-high", unverified: "risk-na", error: "risk-na" };
+  var DETAIL_SHIELD = { low: "secure", medium: "caution", high: "threat" };
+
+  function detailPair(dt, ddNode) {
+    var pair = document.createElement("div");
+    pair.className = "detail-pair";
+    var t = document.createElement("dt");
+    t.className = "detail-dt";
+    t.textContent = dt;
+    pair.appendChild(t);
+    pair.appendChild(ddNode);
+    return pair;
+  }
+
+  DAC.ui.detailsCard = function (rec) {
+    var r = rec || {};
+    var risk = r.risk || "unverified";
+    var plain = risk === "low" || risk === "medium" || risk === "high";
+    var utils = DAC.utils || {};
+    var shown = typeof utils.mask === "function"
+      ? utils.mask(r.input)
+      : String(r.input == null ? "" : r.input);
+    var sN = String(typeof r.score === "number" && isFinite(r.score) ? Math.max(0, Math.min(99, Math.round(r.score))) : 0);
+    var sPadded = sN.length < 2 ? "0" + sN : sN;
+
+    var card = document.createElement("div"); /* plain body wrapper: columns + footer row */
+    var detail = document.createElement("div");
+    detail.className = "modal-detail";
+    /* [F] contract §2.2: error rows carry NO data-risk attribute */
+    if (plain || risk === "unverified") { detail.setAttribute("data-risk", risk); }
+
+    var main = document.createElement("div");
+    main.className = "detail-main";
+    var lbl = document.createElement("p");
+    lbl.className = "risk-label " + (DETAIL_RISK_CLS[risk] || "risk-na");
+    /* data-risk drives core.css colors on BOTH pages (unverified/error → na) */
+    lbl.setAttribute("data-risk", (risk === "unverified" || risk === "error") ? "na" : risk);
+    lbl.textContent = DETAIL_RISK_LABEL[risk] || "Not verified";
+    main.appendChild(lbl);
+
+    var list = document.createElement("dl");
+    list.className = "detail-list";
+
+    /* Selected input — masked for display (never raw untrusted HTML) */
+    var selDd = document.createElement("dd");
+    selDd.className = "detail-dd";
+    var sel = document.createElement("span");
+    sel.className = "sel-input";
+    sel.textContent = shown;
+    sel.title = shown;
+    selDd.appendChild(sel);
+    list.appendChild(detailPair("Selected input", selDd));
+
+    /* Risk score: verified rows → NN/100; unverified → "Not verified"; error → none */
+    if (plain) {
+      var scoreDd = document.createElement("dd");
+      scoreDd.className = "detail-dd";
+      scoreDd.textContent = sPadded + "/100";
+      list.appendChild(detailPair("Risk score:", scoreDd));
+    } else if (risk === "unverified") {
+      var nvDd = document.createElement("dd");
+      nvDd.className = "detail-dd";
+      nvDd.textContent = "Not verified";
+      list.appendChild(detailPair("Risk score:", nvDd));
+    }
+
+    /* Reasons / why-not-verified */
+    var reasons = Array.isArray(r.reasons) ? r.reasons : [];
+    if (risk === "unverified") {
+      var whyDd = document.createElement("dd");
+      whyDd.className = "detail-dd";
+      whyDd.textContent = r.details || "The input could not be checked.";
+      list.appendChild(detailPair("Why it could not be verified", whyDd));
+    } else if (plain && reasons.length === 0) {
+      var okDd = document.createElement("dd");
+      okDd.className = "detail-dd";
+      okDd.textContent = risk === "low" ? "No issues detected" : "No risk indicators triggered.";
+      list.appendChild(detailPair("Detection reasons", okDd));
+    } else if (reasons.length) {
+      var rd = document.createElement("dd");
+      rd.className = "detail-dd";
+      var ul = document.createElement("ul");
+      ul.className = "reason-list";
+      for (var i = 0; i < reasons.length; i++) {
+        var li = document.createElement("li");
+        li.textContent = reasons[i];
+        ul.appendChild(li);
+      }
+      rd.appendChild(ul);
+      list.appendChild(detailPair("Detection reasons", rd));
+    }
+
+    /* Recommended action */
+    var actText = r.recommendation;
+    if (risk === "unverified" && !actText) {
+      actText = "This item could not be verified. It must not be treated as safe — re-check the input or try again later.";
+    }
+    var actDd = document.createElement("dd");
+    actDd.className = "detail-dd";
+    actDd.textContent = actText || "";
+    list.appendChild(detailPair("Recommended action", actDd));
+
+    main.appendChild(list);
+
+    var aside = document.createElement("aside");
+    aside.className = "modal-visual";
+    var shield = document.createElement("span");
+    shield.className = "modal-shield";
+    shield.hidden = !(risk === "medium" || risk === "high"); /* low: the check circle carries "all clear" */
+    var ring = document.createElement("span");
+    ring.className = "modal-ring";
+    var note = document.createElement("p");
+    note.className = "vis-note";
+    if (!plain) { note.textContent = r.details || ""; }
+    aside.appendChild(shield);
+    aside.appendChild(ring);
+    aside.appendChild(note);
+
+    detail.appendChild(main);
+    detail.appendChild(aside);
+    card.appendChild(detail);
+    var foot = document.createElement("div");
+    foot.className = "modal-foot";
+    card.appendChild(foot);
+
+    return {
+      card: card,
+      detail: detail,
+      ringHost: ring,
+      shieldHost: (risk === "medium" || risk === "high") ? shield : null,
+      note: note,
+      plainRisk: plain,
+      risk: risk,
+      scorePadded: sPadded
+    };
+  };
+
+  /* Attaches the animated visuals to a detailsCard. register(handle) collects
+     destroy handles (caller clears them onClose). Degrades to sr-only text when
+     the visuals peer is unavailable (dev preview without the core visuals). */
+  DAC.ui.attachDetailVisuals = function (h, rec, register) {
+    var vis = DAC.visuals || {};
+    if (!h || typeof register !== "function") { return; }
+    var drewRing = false;
+    if (h.ringHost) {
+      if (h.risk === "low" && typeof vis.checkCircle === "function") {
+        register(vis.checkCircle(h.ringHost));
+        drewRing = true;
+      } else if (h.risk === "unverified" && typeof vis.unverifiedRing === "function") {
+        register(vis.unverifiedRing(h.ringHost));
+        drewRing = true;
+      } else if (typeof vis.scoreRing === "function") {
+        register(vis.scoreRing(h.ringHost, h.plainRisk ? (rec && rec.score) : null, h.risk));
+        drewRing = true;
+      }
+      if (!drewRing) {
+        var t = document.createElement("span");
+        t.className = "sr-only";
+        t.textContent = h.plainRisk ? ("Risk score " + h.scorePadded + " out of 100") : "Not verified";
+        h.ringHost.appendChild(t);
+      }
+    }
+    if (h.shieldHost && typeof vis.shield === "function") {
+      var st = DETAIL_SHIELD[h.risk] || "caution";
+      h.shieldHost.classList.add("state-" + st);
+      register(vis.shield(h.shieldHost, st));
+    }
+  };
+
   /* -------------------------------- boot -------------------------------- */
   /* Injects the CONTRACT §14 shell before <main> and the footer after it.
      Idempotent via [data-shell-ready]. */
@@ -2374,6 +2556,47 @@ function addDeferred(result) {
   }
 
   /* ============================================================
+     NOT-VERIFIED RING — unverifiedRing(container) → { destroy() }
+     Static dashed ring in the neutral --na tone with a warning-triangle glyph
+     inside (the same GLYPH.alert the status lines use). Used wherever a result
+     could not be verified: no percentage, no green — never reads as "safe".
+     ============================================================ */
+  function unverifiedRing(container) {
+    var host = resolveHost(container);
+    var handle = { destroy: noop };
+
+    if (!host) return handle;
+
+    unclaim(host);
+    clearNode(host);
+
+    host.classList.add("unv-ring");
+    var glyphs = window.DAC && window.DAC.glyphs;
+    var svg = svgEl("svg", { "class": "unv-svg", viewBox: "0 0 24 24", "aria-hidden": "true", focusable: "false" });
+    svg.appendChild(svgEl("circle", { "class": "unv-track", cx: "12", cy: "12", r: "9.4" }));
+    if (glyphs && Array.isArray(glyphs.alert)) {
+      /* GLYPH.alert specs are trusted constants; scaled to sit inside the ring */
+      var g = svgEl("g", { transform: "translate(5.4 5.4) scale(0.55)" });
+      for (var i = 0; i < glyphs.alert.length; i++) {
+        var spec = glyphs.alert[i];
+        var p = svgEl(spec.tag || "path", {});
+        for (var a in spec) { if (a !== "tag") { p.setAttribute(a, spec[a]); } }
+        g.appendChild(p);
+      }
+      svg.appendChild(g);
+    }
+    host.appendChild(svg);
+
+    handle = {
+      destroy: function () {
+        if (host) { clearNode(host); host.classList.remove("unv-ring"); }
+      }
+    };
+    claim(host, handle);
+    return handle;
+  }
+
+  /* ============================================================
      COUNT UP — countUp(el, n, options) → { cancel() }
      rAF count with integer display; pad>0 zero-pads ("05"). Reduced motion → instant.
      cancel freezes the current value; safe to call twice.
@@ -2438,6 +2661,7 @@ function addDeferred(result) {
     reduceMotion: reduceMotion,
     scoreRing: scoreRing,
     checkCircle: checkCircle,
+    unverifiedRing: unverifiedRing,
     scanner: scanner,
     shield: shield,
     countUp: countUp

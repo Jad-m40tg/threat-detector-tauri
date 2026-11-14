@@ -1,11 +1,17 @@
 /* ==========================================================================
-   css/analysis-card.css — Task 3, Agent F
+   css/analysis-card.css — Task 3, Agent F; extended by UI pass 1 (Task 2c)
    Layout-only fixes for the "Analysis details" region:
      - index.html  → #result-panel (the result states card)
      - history.html → .modal-detail (the row-details modal panel)
    Color/glow is Agent E's css/risk-glow.css: this file NEVER sets
    background, border or box-shadow on #result-panel / .modal-detail.
    Loads after all inline page styles, so overrides need no !important.
+
+   UI pass 1: one builder (DAC.ui.detailsCard in core.js) now serves BOTH
+   pages' details modal, so the modal-detail component styles that used to
+   live only in css/pages/history.css are carried here as well (identical
+   values — history.css keeps its copies; treat core values as matching,
+   and change both files together if one changes).
    ========================================================================== */
 
 /* --- Start-aligned analysis text ------------------------------------------ */
@@ -41,3 +47,32 @@
    padding-top:108px so the ring occupies its own top strip and never
    overlaps text, long URLs included. ids #vis-ring-threat / #vis-ring-unv
    are untouched so the V.scoreRing draw keeps working. */
+
+/* --- SHARED DETAILS-MODAL COMPONENT (Task 2c) -------------------------------
+   The shared builder (DAC.ui.detailsCard) renders this markup on the history
+   page AND on the dashboard (batch "view details"). The rules mirror
+   history.css lines for .modal-detail exactly so both pages look identical;
+   risk-label colors come from core.css via the data-risk attribute the
+   builder sets (low/medium/high, na for unverified/error). */
+.modal-detail { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: var(--space-5); }
+.detail-main { flex: 1 1 auto; min-width: 0; }
+.modal-visual { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
+.modal-ring { width: 132px; height: 132px; }
+.modal-shield { width: 52px; height: 52px; color: var(--low); }
+.modal-shield.state-caution { color: var(--medium); }
+.modal-shield.state-threat { color: var(--high); }
+.vis-note { margin: 0; text-align: center; color: var(--text-muted); font-size: 0.875rem; max-width: 150px; }
+.detail-list { margin: var(--space-3) 0 0; display: grid; gap: 0; }
+.detail-pair { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: var(--space-3); padding: var(--space-2) 0; border-bottom: 1px solid var(--border); }
+.detail-pair:last-child { border-bottom: 0; }
+.detail-dt { color: var(--text-muted); font-weight: 600; overflow-wrap: anywhere; }
+.detail-dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.sel-input { display: block; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: var(--space-2) var(--space-3); }
+/* The details card carries its own foot inside the scrolling body (the modal's
+   real foot section stays unused); match history.css's spacing on both pages. */
+.modal-body .modal-foot { margin-top: var(--space-4); padding-top: var(--space-3); }
+@media (max-width: 639px) {
+  .modal-detail { grid-template-columns: 1fr; align-items: stretch; }
+  .modal-visual { flex-direction: row; justify-content: center; }
+  .detail-pair { grid-template-columns: 1fr; }
+}

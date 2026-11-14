@@ -122,6 +122,33 @@
 .ring-safe-wrap{margin:0 auto}
 .dash-batchrow{display:flex;justify-content:space-between;align-items:center;max-width:280px}
 .dash-batch-link{margin:var(--space-3) 0 0}
+
+/* [T2b] batch rows — scrollable per-row verdict list, one row per CSV entry in
+   file order. The list scrolls internally (max-height, thin scrollbar like
+   .modal-body) so the result panel keeps a bounded height; rows carry
+   content-visibility so off-screen rows of a 5,000-row batch cost little.
+   Indicators: scored ring (lazy), static green check for Low, dashed neutral
+   ring for Not Verified / Error — never a green tint or a percentage on a
+   row that was not verified. */
+.batch-list{list-style:none;margin:var(--space-3) 0 0;padding:var(--space-1) 0;display:grid;gap:var(--space-1);max-height:21em;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent}
+.batch-list::-webkit-scrollbar{width:10px}
+.batch-list::-webkit-scrollbar-track{background:transparent}
+.batch-list::-webkit-scrollbar-thumb{border:3px solid transparent;border-radius:999px;background-color:var(--border-strong);background-clip:padding-box}
+.batch-row{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3);border-radius:var(--radius-sm);content-visibility:auto;contain-intrinsic-size:auto 4em}
+.batch-row + .batch-row{border-top:1px solid var(--border)}
+.batch-row-main{flex:1 1 auto;min-width:0}
+.batch-row-top{display:flex;align-items:baseline;gap:var(--space-3);min-width:0}
+.batch-row-input{flex:1 1 auto;min-width:0;color:var(--text-muted)}
+.batch-row-sub{margin:2px 0 0;color:var(--text-faint);font-size:.9em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.batch-row-ind{flex:none;width:2.9em;height:2.9em;display:inline-flex;align-items:center;justify-content:center}
+.batch-list .ring-wrap,.batch-list .unv-ring{--ring-size:2.9em}
+.row-check{color:var(--low)}
+.row-check svg{width:1.5em;height:1.5em}
+.batch-row-open{flex:none;padding:.25em .8em;border-radius:var(--radius-pill);font-size:.85em}
+/* capped stagger on entry (rows 21+ all land at 240ms); governor/media kill it */
+html[data-motion="full"] .batch-row{opacity:0;animation:dashRise var(--dur-in) var(--ease-out) forwards;animation-delay:calc(var(--row-i,0)*12ms)}
+[data-motion="reduced"] .batch-row{animation:none;opacity:1}
+@media (prefers-reduced-motion:reduce){.batch-row{animation:none;opacity:1}}
 .dash-safe-wrap{display:grid;justify-items:center;padding:var(--space-4) 0;text-align:center}
 .dash-safe-wrap h3{margin:0 0 var(--space-1)}
 .dash-safe-wrap p:last-child{margin:var(--space-1) 0 0;color:var(--text-muted);font-size:.92em}

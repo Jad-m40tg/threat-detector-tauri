@@ -1569,6 +1569,35 @@ html[data-theme="light"] .ring-safe-wrap::before {
 }
 
 /* ============================================================
+   2b. NOT-VERIFIED RING  (.unv-ring > svg (.unv-track + scaled alert glyph))
+   Rendered by DAC.visuals.unverifiedRing(container). A static dashed ring in
+   the neutral --na tone with a warning triangle inside — never green, never a
+   percentage: an item that could not be verified is not "safe". Consumers
+   shrink it via --ring-size (batch rows) or keep the modal default (5em).
+   ============================================================ */
+.unv-ring {
+  --ring-size: 5em;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--na);
+}
+.unv-ring .unv-svg {
+  display: block;
+  inline-size: var(--ring-size);
+  block-size: var(--ring-size);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.unv-ring .unv-track {
+  stroke-dasharray: 2.6 3.1; /* dashed ring, 24-viewBox user units */
+}
+
+/* ============================================================
    3. SCANNER  (.scan-ring > svg (.scan-track + .scan-arc))
    Rendered by DAC.visuals.scanner(container). The JS adds .is-spinning only when motion
    is allowed; CSS then rotates the svg 1s linear infinite (transform only).

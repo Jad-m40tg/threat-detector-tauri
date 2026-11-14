@@ -227,7 +227,10 @@
                     <h3>Batch summary</h3>
                   </div>
                   <p class="muted" id="batch-meta"></p>
-                  <ul class="reason-list" id="batch-list"></ul>
+                  <ul class="reason-list" id="batch-counts"></ul>
+                  <!-- [T2b] per-row verdicts, one list item per CSV row (file order);
+                       rings/lazy visuals are built by index.js — keep this list empty -->
+                  <ul id="batch-list" class="batch-list" aria-label="Batch rows"></ul>
                   <p class="dash-batch-link"><a class="link-arrow" href="history.html">View in history</a></p>
                 </div>
               </div>
