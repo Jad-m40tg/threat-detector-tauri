@@ -429,3 +429,19 @@ since).
   space). Idle-only scope; threat/batch/scanning states stay top-anchored.
 - Verified live (mock): idle centered, 7-row batch stroke 2.8px + size 46.4;
   console clean; `node --check` clean.
+
+### User-review round 4 (2026-11-14, stroke + themed row button + arrow policy)
+- **Check stroke lighter again:** `stroke-width` 2.8 → 2.5 (user preference;
+  slot size unchanged, measured 46.4px == wheels).
+- **Row "View details" button follows the theme:** `.batch-row-open`
+  background `transparent` → `var(--bg-card)` (white + black text in light,
+  dark + white text in dark — pure tokens, no theme-specific overrides;
+  border stays themed `--border-strong`). Verified computed + painted:
+  light rows show white pills with dark text/arrow, dark shows dark pills.
+- **Arrow is small-screen-only:** new `@media (min-width:481px)
+  .batch-row-open .btn-arrow{display:none}` — wide rows show the
+  "View details" text alone; ≤480px keeps the icon-only arrow (existing
+  label-hide rule unchanged). Verified: 364px arrow shown/label hidden;
+  1247px (real-layout iframe) arrow hidden/label shown.
+- Verified live (mock): 7-row batch both themes; console clean;
+  `node --check` clean.

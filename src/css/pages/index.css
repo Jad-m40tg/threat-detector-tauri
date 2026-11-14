@@ -164,12 +164,14 @@
 .batch-list .ring-wrap,.batch-list .unv-ring{--ring-size:2.9em}
 .row-check{color:var(--low)}
 .row-check svg{width:2.9em;height:2.9em} /* same slot as the batch % wheels */
-.batch-row-open{flex:none;display:inline-flex;align-items:center;gap:var(--space-1);padding:.25em .7em;border:1px solid var(--border-strong);border-radius:var(--radius-pill);font-size:.85em;background:transparent;color:var(--text);cursor:pointer}
+.batch-row-open{flex:none;display:inline-flex;align-items:center;gap:var(--space-1);padding:.25em .7em;border:1px solid var(--border-strong);border-radius:var(--radius-pill);font-size:.85em;background:var(--bg-card);color:var(--text);cursor:pointer}
 .batch-row-open:hover{background:var(--accent-soft)}
 .batch-row-open:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
 .batch-row-open .btn-arrow{width:.9em;height:.9em;flex:none}
 .batch-row-open .btn-label{white-space:nowrap}
 @media (max-width:480px){.batch-row-open .btn-label{display:none}}
+/* arrow is small-screen-only: wide rows show the "View details" text alone */
+@media (min-width:481px){.batch-row-open .btn-arrow{display:none}}
 /* batch header (red-box redesign) */
 .batch-head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap}
 .batch-head-left{display:flex;align-items:baseline;gap:var(--space-3);flex-wrap:wrap;min-width:0}
