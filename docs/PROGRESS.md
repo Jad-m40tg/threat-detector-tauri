@@ -84,12 +84,59 @@
   - [ ] **CP2: Jad launches `run-dev.bat`** (window has still never been
         launched — the only remaining unverified piece of this phase).
 
+- [x] **Phase 5a: UI Improvement Pass 1 (Tasks 1–7)** — code complete and verified 2026-11-14
+  - [x] Task 1: Scan-type pills show one panel at a time with drop-down reveal
+        (`.reveal` grid-rows transition with bare `.reveal-inner` and `.scan-surface`).
+        Collapsed panel is inert and aria-hidden; seg buttons have aria-controls.
+  - [x] Task 2a: No stale verdict color mid-scan/mid-batch (`panel.removeAttribute('data-risk')`).
+  - [x] Task 2b: Scrollable batch rows in file order, rendered in rAF chunks (40/frame) with
+        lazy score rings via IntersectionObserver.
+  - [x] Task 2c: Shared details modal (`DAC.ui.detailsCard`) for dashboard batch rows and history.
+  - [x] Task 3: Analysis Results empty state ("No analysis results yet") when row count is 0.
+  - [x] Task 4: Navbar style setting renamed "Ring | Contrast" with honest preview icons.
+  - [x] Task 5: "Demo mode" notice hidden on real backend (`usingTauri()`).
+  - [x] Task 6: Threat Summary definitions:
+        - 1 scan = 1 analyzed entry (single input or CSV row);
+        - "Scans today" = entries since local midnight (including Not Verified and errors);
+        - "High risk" / "Medium risk" = today's entries verified at that risk;
+        - Demo seeds excluded via `DAC.history.userScans()`.
+  - [x] Task 7: Threat Summary stat labels fit without truncation ("Scans today", "High risk", "Medium risk").
+
 - [ ] **Phase 5b/6/6b/9** — not started. `docs/MANUAL_TEST.md` already written and
       corrected this session (rule listings now match the code; new-rule tests added).
 
 ---
 
 ## Verification Log
+
+**2026-11-14 UI Improvement Pass 1 Verification:**
+
+- **Backend & Core gates:**
+  - `cargo test --workspace` → **24/24 tests pass** (all 16 unit tests, dataset acceptance test, 4 engine tests, 2 invariant sweeps, BatchRegistry test).
+  - All edited JS files pass `node --check`.
+- **Open Bug Investigation (Counter values):**
+  - Verified root cause of previous observation: JS mock engine scores `http://192.168.1.50/portal/update` as Low (score 25, +20 for IP host under balanced sensitivity), while Rust backend scores 90 (High).
+  - "Scans today" correctly incremented to 1 (counting Low/NotVerified/High alike); High/Medium risk appropriately remained 0 for Low risk.
+  - Subsequent High risk test (`bank-security.example`) incremented High risk to 1; Medium risk test (`192.0.2.5`) incremented Medium risk to 1.
+  - No code changes needed; previous agent hypothesis about `addDeferred` was refuted (current-session scans are always included via `transient` + `userRowsRead`).
+- **Batch Verification (`manual-test/project_test_dataset.csv`):**
+  - 10 rows rendered in strict file order (2 Low, 2 Medium, 4 High, 2 Not Verified).
+  - Low rows (1, 6) render `.row-check` and no score ring or score value in row.
+  - Medium/High rows (2, 3, 4, 5, 7, 8) render `.ring-wrap.batch-row-ring` and lazy rings.
+  - Not Verified rows (9, 10) render `.unv-ring` (dashed track + alert glyph) and reasons; never styled as safe.
+  - "View details" modals:
+    - Low: green check circle, score preserved (12/100), "No issues detected".
+    - High/Medium: score ring + state shield, detection reasons, recommended action.
+    - Not Verified: dashed unv ring, score text "Not verified", why-unverified reason, never-safe action, `data-risk="unverified"`.
+  - Clear button: cleans panel `data-risk` attribute completely, returns to idle state with no stale tint.
+- **Stress Rendering (`manual-test/stress_500.csv`):**
+  - Chunked rAF rendering (40 items/frame) completed 500 rows in ~2.1s without UI freezing.
+  - Smooth scrolling tested across 10 scroll leaps without main thread deadlock.
+- **Theme & Responsiveness:**
+  - Dark OLED (`data-theme="dark"`, `data-bg="oled"`): `--bg: #000000`, `--text: #F2F5F7`.
+  - Dark Grey (`data-theme="dark"`, `data-bg="grey"`): `--bg: #121212`.
+  - Light (`data-theme="light"`): `--bg: #F4F7F5`, `--text: #10161C`.
+  - Narrow viewport (360px): 0 horizontal overflow (`scrollWidth === clientWidth === 360px`), responsive layout intact.
 
 **2026-11-13 Phase 4 shell (second verification pass):**
 
@@ -172,6 +219,21 @@
   the real result at the gate; `"instant"` shows the result the moment the backend
   answers. Read once per scan; a `scanRun` counter invalidates in-flight answers
   when the user clears or restarts.
+- **D10 (Modal Tint Reversal, 2026-11-14):** Modal details and backdrop retain neutral
+  structural framing with specific visual indicators (rings, badges, text colors)
+  carrying risk tint, avoiding aggressive whole-panel color washing.
+- **D11 (Low-Shield Removal, 2026-11-14):** Low risk rows and details modal show a small
+  green checkmark circle instead of the shield glyph to avoid over-claiming "100% safe"
+  (honoring the NotVerified invariant principle).
+- **D12 (Batch Straggler Residual Risk, 2026-11-14):** Late-arriving results from an old
+  batch cancelled or cleared by the user are ignored via `activeBatchId` / `cancelRequested`
+  guards so residual results do not pollute subsequent runs.
+- **D13 (Duplicated Modal-Detail CSS, 2026-11-14):** `.modal-detail` rules duplicated
+  across `src/css/analysis-card.css` and `src/css/pages/history.css` so each page remains
+  independently functional without cross-page stylesheet dependencies.
+- **D14 (Scan Surface Wrapper, 2026-11-14):** In `.reveal`, margins/padding on the grid
+  item prevent `grid-template-rows: 0fr` from collapsing to true zero; resolved by keeping
+  `.reveal-inner` unstyled and wrapping panel contents in `.scan-surface`.
 
 ## Open Questions for Jad
 
