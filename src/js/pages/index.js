@@ -821,7 +821,7 @@
       chk.setAttribute('focusable', 'false');
       chk.setAttribute('fill', 'none');
       chk.setAttribute('stroke', 'currentColor');
-      chk.setAttribute('stroke-width', '2.5');
+      chk.setAttribute('stroke-width', '2.2');
       chk.setAttribute('stroke-linecap', 'round');
       chk.setAttribute('stroke-linejoin', 'round');
       var cc = document.createElementNS(NSVG, 'circle');

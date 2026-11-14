@@ -445,3 +445,7 @@ since).
   1247px (real-layout iframe) arrow hidden/label shown.
 - Verified live (mock): 7-row batch both themes; console clean;
   `node --check` clean.
+
+### User-review round 5 (2026-11-14)
+- **Check stroke lighter again:** `stroke-width` 2.5 → 2.2 (user preference;
+  slot size unchanged, measured 46.4px == wheels).
