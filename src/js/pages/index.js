@@ -669,6 +669,13 @@
     $('batch-meta').textContent = total + ' entries analyzed';
     renderBatchRows(); /* [T2b] scrollable per-row verdicts, file order */
     setState('batch');
+    /* progress bar hit 100%: bring the verdict card into view (same double-rAF
+       settle-then-scroll pattern the scan start uses; reduced motion = instant) */
+    window.requestAnimationFrame(function () {
+      window.requestAnimationFrame(function () {
+        panel.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
+      });
+    });
     announce('Batch complete — ' + counts.high + ' high risk, ' + counts.medium + ' medium risk results found');
   }
 

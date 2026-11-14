@@ -469,3 +469,16 @@ since).
   console clean, `node --check` clean. The IO trigger is byte-for-byte the
   wheels' proven production path — end-to-end motion confirmation happens in
   the user's app window (where the wheels already animate on scroll).
+
+### User-review round 7 (2026-11-15, auto-scroll to verdict card after batch)
+- **Batch completion jumps to the verdict card:** `finishBatch` now scrolls
+  `#result-panel` into view after `setState('batch')` — same double-rAF
+  settle-then-scroll pattern as scan start (line ~236); smooth scroll, instant
+  (`behavior:'auto'`) under `reducedMotion()`. Covers mock + real-stream
+  finish paths (both route through `finishBatch`); the internal list scroll
+  still resets to 0 per batch so the batch summary header shows first.
+- Verified live (mock, frozen-timeline tab so reduced-motion instant path):
+  after the progress bar finished, window scrolled (scrollY 0 → 726) and the
+  card sat at 84px in the viewport (just below the sticky nav), batch state
+  active. Smooth path is the production pattern already used by scan start.
+  Console clean; `node --check` clean.
