@@ -714,6 +714,7 @@
     }
   }
   var rowRingRecs = new WeakMap(); /* ring host → record, consumed by the IO */
+  var rowCheckRecs = new WeakMap(); /* row-check host → pending draw-on, consumed by the IO */
 
   function rowNum(r) {
     var n = parseInt(r && r.id, 10);
@@ -746,8 +747,7 @@
     svg.appendChild(c);
     return svg;
   }
-  function lazyRing(host, rec) {
-    rowRingRecs.set(host, rec);
+  function ensureRowIO() {
     if (!rowRingIO && typeof IntersectionObserver === 'function') {
       rowRingIO = new IntersectionObserver(function (entries) {
         for (var i = 0; i < entries.length; i++) {
@@ -757,10 +757,19 @@
           var r = rowRingRecs.get(en.target) || null;
           rowRingRecs.delete(en.target);
           if (r && typeof V.scoreRing === 'function') V.scoreRing(en.target, r.score, r.risk);
+          if (rowCheckRecs.has(en.target)) { /* low row scrolled in: draw the check on */
+            rowCheckRecs.delete(en.target);
+            en.target.classList.add('is-drawn');
+          }
         }
       }, { root: batchListEl, rootMargin: '90px 0px' });
     }
-    if (rowRingIO) rowRingIO.observe(host);
+    return rowRingIO;
+  }
+  function lazyRing(host, rec) {
+    rowRingRecs.set(host, rec);
+    var io = ensureRowIO();
+    if (io) io.observe(host);
     else if (typeof V.scoreRing === 'function') V.scoreRing(host, rec.score, rec.risk); /* no IO support: draw now */
   }
   function batchRowDom(rec, i) {
@@ -813,7 +822,8 @@
     } else { /* low: static check — no ring, no score, no glow. Scaled to the
                 same drawn size as the batch % wheels (r+half-stroke = 11.6/24
                 ≈ the wheel's 58/60 in its 120 box); stroke a touch lighter
-                than the wheel's arc weight (user preference). */
+                than the wheel's arc weight (user preference). Draw-on matches
+                the wheels: hidden dash state until the shared row IO fires. */
       ind.classList.add('row-check');
       var chk = document.createElementNS(NSVG, 'svg');
       chk.setAttribute('viewBox', '0 0 24 24');
@@ -825,14 +835,19 @@
       chk.setAttribute('stroke-linecap', 'round');
       chk.setAttribute('stroke-linejoin', 'round');
       var cc = document.createElementNS(NSVG, 'circle');
+      cc.setAttribute('class', 'chk-circle');
       cc.setAttribute('cx', '12');
       cc.setAttribute('cy', '12');
       cc.setAttribute('r', '10.05');
       var cp = document.createElementNS(NSVG, 'path');
+      cp.setAttribute('class', 'chk-mark');
       cp.setAttribute('d', 'M7.7 12.4l2.9 2.9 5.7-6.1');
       chk.appendChild(cc);
       chk.appendChild(cp);
       ind.appendChild(chk);
+      var io = ensureRowIO();
+      if (io) { rowCheckRecs.set(ind, ind); io.observe(ind); } /* draw-on when scrolled into view */
+      else ind.classList.add('is-drawn'); /* no IO support: draw immediately */
     }
 
     var btn = document.createElement('button');

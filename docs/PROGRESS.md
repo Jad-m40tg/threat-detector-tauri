@@ -449,3 +449,23 @@ since).
 ### User-review round 5 (2026-11-14)
 - **Check stroke lighter again:** `stroke-width` 2.5 → 2.2 (user preference;
   slot size unchanged, measured 46.4px == wheels).
+
+### User-review round 6 (2026-11-15, scroll-triggered check draw-on)
+- **Low-row checks animate like the % wheels:** the check now builds in a
+  hidden dash state (circle C≈63.2, mark ≈12.5, 24 box) and draws on when the
+  row scrolls into view. Trigger shares the wheels' exact IntersectionObserver
+  (`lazyRing` refactored → `ensureRowIO()`; the callback now also flips
+  `.is-drawn` on registered check hosts, WeakMap like rowRingRecs, GC-safe).
+  CSS (index.css): circle sweeps 750ms `--ease-out` (60ms delay), tick draws
+  350ms at 520ms; `[data-motion="reduced"]` + prefers-reduced-motion render
+  drawn with no transition; no-IO fallback draws immediately. Paint-only SVG
+  props, no layout.
+- **Verification limits (headless tab):** this tab's rendering pipeline is
+  fully throttled — `document.timeline.currentTime` frozen at 0, real rAF
+  dead (hence the established shim), and IO callbacks never deliver (a fresh
+  probe observer on the same root also never fired). Verified statically
+  instead: new markup classes present, `.is-drawn` rule matches and applies
+  (offset jumps 63.2px → 0px with transition off), base hidden state = 63.2px,
+  console clean, `node --check` clean. The IO trigger is byte-for-byte the
+  wheels' proven production path — end-to-end motion confirmation happens in
+  the user's app window (where the wheels already animate on scroll).
