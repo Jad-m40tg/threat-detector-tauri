@@ -274,6 +274,32 @@
   initTdSeg('set-speed', 'progressSpeed', 'Progress speed');
   initTdSeg('set-navstyle', 'navStyle', 'Navbar selected style');
 
+  /* ---------- Task 4: navbar-style preview icons ----------
+     The five .nav-preview__btn spans mirror the real navbar links in real order
+     (Dashboard, Settings, Hardware, History, Info — Settings shown as current).
+     Icons are built at runtime from DAC.glyphs via DAC.svgGlyph — the same
+     source DAC.ui.boot injects into the real navbar — so the preview can never
+     drift from it. Purely decorative: the container is aria-hidden with
+     pointer-events none, so nothing here is focusable. Guard: without core
+     (dev preview) the spans stay empty instead of throwing. */
+  var PREVIEW_GLYPHS = ['home', 'gear', 'chip', 'clock', 'info'];
+
+  function buildNavPreviewIcons() {
+    if (typeof DAC === 'undefined' || !DAC.glyphs || typeof DAC.svgGlyph !== 'function') return;
+    var preview = $('nav-preview');
+    if (!preview) return;
+    var spans = preview.querySelectorAll('.nav-preview__btn');
+    for (var i = 0; i < PREVIEW_GLYPHS.length; i++) {
+      var glyph = DAC.glyphs[PREVIEW_GLYPHS[i]];
+      var span = spans[i];
+      if (glyph && span && !span.firstChild) {
+        span.appendChild(DAC.svgGlyph(glyph, null, null));
+      }
+    }
+  }
+
+  buildNavPreviewIcons();
+
   /* ---------- simple switches (role=switch buttons) ---------- */
 
   var SWITCHES = [

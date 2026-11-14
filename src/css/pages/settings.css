@@ -104,8 +104,11 @@ html[data-theme="dark"] #set-darkbg .seg__opt {
   transition-duration: var(--dur-fast), var(--dur-fast), var(--dur-fast), var(--dur-fast), .4s;
 }
 
-/* ── Task 3 [C] — "Navbar selected style" live preview: a decorative mirror of
-   html[data-nav-style], built from this page's tokens; never interactive. */
+/* ── Task 3 [C] — "Navbar selected style" live preview: a decorative miniature of
+   the real navbar, keyed on html[data-nav-style] exactly like nav.css and built
+   from this page's tokens; never interactive. Modes: Ring (accent ring + glow on
+   the current button) and Contrast (formerly labelled "Invert" — stored legacy
+   value "invert" is accepted and normalized by js/settings.js). */
 .nav-preview {
   display: inline-flex;
   align-items: center;
@@ -131,7 +134,8 @@ html[data-theme="dark"] #set-darkbg .seg__opt {
   transition: background-color var(--dur-fast) var(--ease-out),
               color var(--dur-fast),
               box-shadow var(--dur-fast) var(--ease-out),
-              outline-color var(--dur-fast) var(--ease-out);
+              outline-color var(--dur-fast) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
 }
 .nav-preview__btn svg { width: 16px; height: 16px; display: block; }
 .nav-preview__btn[data-current] {
@@ -140,13 +144,20 @@ html[data-theme="dark"] #set-darkbg .seg__opt {
   outline-offset: 2px;
   box-shadow: 0 0 10px var(--glow);
 }
-/* invert mode: the current button flips to the accent fill (a transparent outline
-   keeps box metrics stable, so nothing shifts when the mode toggles). */
+/* Contrast mode (the option was formerly labelled "Invert"; stored legacy value
+   "invert" is normalized by js/settings.js — both attribute values are matched
+   here as belt-and-braces, same as nav.css): mirror of the real navbar's
+   treatment. The accent ring drops and the current button becomes the inverted
+   filled circle (--navlink-bg / --navlink-icon swapped) with the thin
+   --border-strong edge and the same tuned scale as nav.css; the transparent
+   outline keeps box metrics stable, so nothing shifts when the mode toggles. */
+html[data-nav-style="contrast"] .nav-preview__btn[data-current],
 html[data-nav-style="invert"] .nav-preview__btn[data-current] {
-  background: var(--accent);
-  color: var(--accent-contrast);
+  background: var(--navlink-icon);
+  color: var(--navlink-bg);
   outline-color: transparent;
-  box-shadow: 0 0 0 1px var(--accent), 0 0 10px var(--glow);
+  box-shadow: 0 0 0 2px var(--border-strong);
+  transform: scale(1.0833);
 }
 
 /* List editors */
