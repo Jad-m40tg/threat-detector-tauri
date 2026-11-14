@@ -373,3 +373,24 @@ since).
   ~23px — pre-existing nav behavior below ~375px, unrelated to the batch card.
 - At the 209px-squeezed panel the threat-summary column and result panel
   share a tight two-column grid — page-layout artifact, pre-existing.
+
+### User-review follow-up (2026-11-14, three quick fixes)
+- **Check mark = wheel size:** batch Low rows now draw the check svg at the
+  same 2.9em slot as the % wheels (`.row-check svg` 1.5em → 2.9em) with ring
+  geometry scaled to the wheel's drawn diameter (r 10.05, stroke 3.1 in the
+  24 box = wheel's r+half-stroke 58/60 in its 120 box; checkmark path scaled
+  ~1.17×). Measured in-browser: check 46.4px == ring 46.4px.
+- **Card gradient flipped left→right:** `#result-panel` radials re-anchored
+  `at 100%…` → `at 0%…` and the border mask flipped `to left` → `to right`,
+  so the single verdict card fades the same direction as the batch rows.
+  Modal `.modal-detail` bottom-right radial deliberately unchanged (not in
+  the user's ask).
+- **Not Verified single scan shows the grey logo:** `presentResult` swaps
+  the % wheel for `V.unverifiedRing($('vis-ring-unv'))` (grey dashed ring +
+  warning triangle, 5em — same footprint as the threat wheel); guarded
+  fallback to `scoreRing(..., null, risk)` (neutral track, no number) if the
+  visual is missing. Verified: 0 `.ring-num`, 0 "%" text in the unverified
+  panel.
+- Verified live (mock): unverified single scan, high single scan (left-anchored
+  red gradients computed `at 0% 100%` / `at 0% 0%`, mask `to right`), 7-row
+  CSV batch (check==wheel px, all row gradients `to right`); console clean.

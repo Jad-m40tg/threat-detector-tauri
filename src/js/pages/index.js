@@ -188,8 +188,13 @@
       $('unv-reason').textContent = res.details || 'Connection timeout.';
       $('unv-action').textContent = res.recommendation || 'Unable to verify. Treat as untrusted and try again later.';
       setState('unverified');
-      if (typeof V.scoreRing === 'function') {
-        ringU = V.scoreRing($('vis-ring-unv'), res.score, res.risk);
+      /* Single-scan Not Verified shows the grey dashed unverified ring — the
+         same glyph batch rows use. Never a % wheel: an unverifiable link gets
+         no number. Fallback (visual missing): neutral scoreRing with no score. */
+      if (typeof V.unverifiedRing === 'function') {
+        ringU = V.unverifiedRing($('vis-ring-unv'));
+      } else if (typeof V.scoreRing === 'function') {
+        ringU = V.scoreRing($('vis-ring-unv'), null, res.risk);
       }
     } else if (res.risk === 'error') {
       setPanelRisk(null); /* contract §2.2: error rows carry NO data-risk */
@@ -805,7 +810,9 @@
       errRing.className = 'unv-ring';
       errRing.appendChild(naRingSvg());
       ind.appendChild(errRing);
-    } else { /* low: static small check — no ring, no score, no glow */
+    } else { /* low: static check — no ring, no score, no glow. Scaled to the
+                same drawn size as the batch % wheels (r+half-stroke = 11.6/24
+                ≈ the wheel's 58/60 in its 120 box); stroke matches arc weight. */
       ind.classList.add('row-check');
       var chk = document.createElementNS(NSVG, 'svg');
       chk.setAttribute('viewBox', '0 0 24 24');
@@ -813,15 +820,15 @@
       chk.setAttribute('focusable', 'false');
       chk.setAttribute('fill', 'none');
       chk.setAttribute('stroke', 'currentColor');
-      chk.setAttribute('stroke-width', '2');
+      chk.setAttribute('stroke-width', '3.1');
       chk.setAttribute('stroke-linecap', 'round');
       chk.setAttribute('stroke-linejoin', 'round');
       var cc = document.createElementNS(NSVG, 'circle');
       cc.setAttribute('cx', '12');
       cc.setAttribute('cy', '12');
-      cc.setAttribute('r', '8.6');
+      cc.setAttribute('r', '10.05');
       var cp = document.createElementNS(NSVG, 'path');
-      cp.setAttribute('d', 'M8.3 12.3l2.5 2.5 4.9-5.2');
+      cp.setAttribute('d', 'M7.7 12.4l2.9 2.9 5.7-6.1');
       chk.appendChild(cc);
       chk.appendChild(cp);
       ind.appendChild(chk);

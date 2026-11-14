@@ -154,7 +154,7 @@
 .batch-row-ind{flex:none;width:2.9em;height:2.9em;display:inline-flex;align-items:center;justify-content:center}
 .batch-list .ring-wrap,.batch-list .unv-ring{--ring-size:2.9em}
 .row-check{color:var(--low)}
-.row-check svg{width:1.5em;height:1.5em}
+.row-check svg{width:2.9em;height:2.9em} /* same slot as the batch % wheels */
 .batch-row-open{flex:none;display:inline-flex;align-items:center;gap:var(--space-1);padding:.25em .7em;border:1px solid var(--border-strong);border-radius:var(--radius-pill);font-size:.85em;background:transparent;color:var(--text);cursor:pointer}
 .batch-row-open:hover{background:var(--accent-soft)}
 .batch-row-open:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
