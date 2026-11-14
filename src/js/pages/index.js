@@ -59,7 +59,12 @@
       scannerH = null, ringT = null, ringU = null, checkH = null,
       shieldH = null,
       batchActive = false, batchEntries = null,
-      counts = null, activeMode = 'single', lastRes = null, scanRun = 0;
+      counts = null, activeMode = 'single', lastRes = null, scanRun = 0,
+      /* Batch identity (T2a staleness guards): batchId from the backend's start
+         reply filters progress/done events of an OLD batch; cancelRequested lets
+         the current batch's own NotVerified(BatchCancelled) rows through while
+         dropping stragglers from a previous, already-cleared run. */
+      activeBatchId = null, cancelRequested = false;
 
   var subMsgs = ['Checking URL structure...', 'Analyzing language...', 'Comparing known patterns...'];
   var RISK_LABEL = { low: 'Low risk', medium: 'Medium risk', high: 'High risk', unverified: 'Not verified', error: 'Error' };
@@ -74,6 +79,12 @@
      when the Rust backend is active (auto-detected in td-config.js). */
   var A = (window.TD && TD.services && TD.services.analysis) || null;
   function usingTauri() { return !!(A && A.backend === 'tauri'); }
+
+  /* Task 5: the "Demo mode" callout is only truthful in browser mode — the Rust
+     backend performs real analysis. The callout ships hidden in the HTML and is
+     shown here only when the mock backend is active. */
+  var demoNotice = $('demo-notice');
+  if (demoNotice) demoNotice.hidden = usingTauri();
 
   /* Backend IPC result (docs/IPC_CONTRACT.md) → UI result shape. Pure field
      rename: the backend owns the NotVerified invariants, no re-scoring here. */
@@ -200,6 +211,7 @@
     var tdMult = (window.TDSettings && typeof TDSettings.progressMultiplier === "function") ? TDSettings.progressMultiplier() : 1.4;
 
     setBusy(true);
+    setPanelRisk(null); /* T2a: no stale verdict tint while the new scan runs */
     announce('Scanning started');
     scanProgress.classList.add('is-indet'); /* single run = indeterminate sweep */
     scanProgress.removeAttribute('aria-valuenow');
@@ -371,15 +383,54 @@
   }
   function trimTo(keep) {
     while (tableBody.children.length > keep) tableBody.removeChild(tableBody.children[tableBody.children.length - 1]);
+    syncResultsEmpty();
   }
   function rebuildTable() {
     while (tableBody.firstChild) tableBody.removeChild(tableBody.firstChild);
     var all = DAC.history && typeof DAC.history.all === 'function' ? DAC.history.all() : [];
     var n = clampN(all.length, 5);
     for (var j = 0; j < n; j++) tableBody.appendChild(rowDom(all[j]));
+    syncResultsEmpty();
   }
-  function pushRow(res) {
-    if (DAC.history && typeof DAC.history.add === 'function') DAC.history.add(res);
+  /* [T3] Analysis Results empty state: hidden↔visible strictly follows the rows
+     the table draws from. Fade-out runs mounted (is-leaving → hidden after the
+     transition); fade-in is a CSS animation on unhide (and on the table). */
+  var resultsEmpty = $('results-empty'),
+      resultsTable = $('table-results'),
+      emptyHideTimer = null;
+  function syncResultsEmpty() {
+    if (!resultsEmpty || !resultsTable) return;
+    var isEmpty = tableBody.children.length === 0;
+    if (isEmpty) {
+      if (emptyHideTimer) { window.clearTimeout(emptyHideTimer); emptyHideTimer = null; }
+      resultsEmpty.classList.remove('is-leaving');
+      resultsTable.hidden = true;
+      resultsEmpty.hidden = false;
+    } else {
+      resultsTable.hidden = false;
+      if (!resultsEmpty.hidden) {
+        resultsEmpty.classList.add('is-leaving');
+        if (emptyHideTimer) window.clearTimeout(emptyHideTimer);
+        emptyHideTimer = window.setTimeout(function () {
+          resultsEmpty.hidden = true;
+          resultsEmpty.classList.remove('is-leaving');
+          emptyHideTimer = null;
+        }, reducedMotion() ? 0 : 180);
+      }
+      /* replay the table's fade-in for the empty → results transition */
+      resultsTable.classList.remove('is-entering');
+      void resultsTable.offsetWidth;
+      resultsTable.classList.add('is-entering');
+    }
+  }
+  function pushRow(res, deferHistory) {
+    /* Batch items are stored ONCE via addDeferred + finishBatch's flush (each
+       item used to be written twice — the Threat Summary double-count root).
+       Single scans persist immediately via add. */
+    if (DAC.history) {
+      if (deferHistory && typeof DAC.history.addDeferred === 'function') DAC.history.addDeferred(res);
+      else if (typeof DAC.history.add === 'function') DAC.history.add(res);
+    }
     tableBody.insertBefore(rowDom(res), tableBody.firstChild);
     trimTo(5);
   }
@@ -390,20 +441,30 @@
     el.textContent = String(n);
   }
   function updateSummary() {
-    var all = DAC.history && typeof DAC.history.all === 'function' ? DAC.history.all() : [];
-    var recent = all.slice(0, 10); /* last 10 scans per SPEC */
+    /* Definitions (kept in sync with docs/PROGRESS.md):
+       - one "scan" = one analyzed entry (a single input, or one CSV row);
+       - "Scans today" counts every entry analyzed since local midnight —
+         Not Verified and errored entries included, they were still analyzed;
+       - High/Medium risk count today's entries that were verified at that
+         risk level (Not Verified is neither — it was never risk-assessed);
+       - the window is "today" everywhere (the old last-10 slice under-counted
+         long batches); demo seed rows are excluded via history.userScans(). */
+    var src = (DAC.history && typeof DAC.history.userScans === 'function') ? DAC.history.userScans()
+            : (DAC.history && typeof DAC.history.all === 'function' ? DAC.history.all() : []);
     var high = 0, med = 0, today = 0;
     var midnight = new Date(); midnight.setHours(0, 0, 0, 0);
     var mt = midnight.getTime();
-    for (var j = 0; j < recent.length; j++) {
-      var r = recent[j];
-      if (r.risk === 'high') high++;
-      else if (r.risk === 'medium') med++;
-      if (r.ts >= mt) today++;
+    for (var j = 0; j < src.length; j++) {
+      var r = src[j];
+      if (r.ts >= mt) {
+        today++;
+        if (r.risk === 'high') high++;
+        else if (r.risk === 'medium') med++;
+      }
     }
     var state, title, desc, href;
-    if (high > 0) { state = 'threat'; title = 'Threat detected'; desc = high + ' high-risk results in recent scans'; href = 'history.html#risk=high'; }
-    else if (med > 0) { state = 'caution'; title = 'Use caution'; desc = med + ' medium-risk results in recent scans'; href = 'history.html#risk=medium'; }
+    if (high > 0) { state = 'threat'; title = 'Threat detected'; desc = high + ' high-risk results today'; href = 'history.html#risk=high'; }
+    else if (med > 0) { state = 'caution'; title = 'Use caution'; desc = med + ' medium-risk results today'; href = 'history.html#risk=medium'; }
     else { state = 'secure'; title = 'Your system is secure'; desc = 'No active threats detected'; href = 'history.html#risk=low'; }
     var tEl = $('summary-state-title');
     tEl.textContent = title;
@@ -439,7 +500,9 @@
       A.pickCsvFile().then(function (path) {
         if (!path) return; /* dialog cancelled */
         startBatchTauri(String(path).split(/[\\/]/).pop() || 'selected.csv');
-        A.analyzeCsvFile(path, csvBatchOptions()).catch(batchStartFailed);
+        A.analyzeCsvFile(path, csvBatchOptions()).then(function (info) {
+          rememberBatch(info);
+        }, batchStartFailed);
       }).catch(function (err) { showCsvError(readableErr(err)); });
       return;
     }
@@ -461,7 +524,9 @@
       tfr.onerror = function () { showCsvError('The file could not be read. Try again.'); };
       tfr.onload = function () {
         startBatchTauri(name);
-        A.analyzeCsvContent(name, String(tfr.result || ''), csvBatchOptions()).catch(batchStartFailed);
+        A.analyzeCsvContent(name, String(tfr.result || ''), csvBatchOptions()).then(function (info) {
+          rememberBatch(info);
+        }, batchStartFailed);
       };
       tfr.readAsText(file, 'utf-8');
       return;
@@ -498,9 +563,7 @@
     if (!batchActive) { resetCsvUi(); setState('idle'); return; } /* cleared mid-run */
     var entry = String(batchEntries[i]).trim();
     var res = analyzeSafe(entry);
-    pushRow(res);
-    if (DAC.history && typeof DAC.history.addDeferred === 'function') DAC.history.addDeferred(res);
-    else if (DAC.history && typeof DAC.history.add === 'function') DAC.history.add(res);
+    pushRow(res, true);
     counts[res.risk]++;
     var done = i + 1;
     window.requestAnimationFrame(function () { updateBatchUI(done, total); });
@@ -511,6 +574,16 @@
   function csvBatchOptions() {
     var speed = S.get('scanSpeed') || 'normal';
     return { minItemDurationMs: BATCH_ITEM_MS[speed] || 60 };
+  }
+  /* The start reply carries the batchId (+total); remembering it lets the event
+     handlers below reject progress/done events that belong to an older batch. */
+  function rememberBatch(info) {
+    if (!batchActive || !info) return;
+    if (info.batchId) activeBatchId = String(info.batchId);
+    if (typeof info.total === 'number') updateBatchUI(0, info.total);
+  }
+  function isStaleBatchEvent(p) {
+    return !!(p && p.batchId && activeBatchId && String(p.batchId) !== activeBatchId);
   }
   function batchStartFailed(err) {
     batchActive = false;
@@ -525,8 +598,10 @@
      opens in a "reading" state and the progress events drive every number. */
   function startBatchTauri(name) {
     batchActive = true;
+    cancelRequested = false; /* this run has not been asked to cancel */
     counts = { low: 0, medium: 0, high: 0, unverified: 0, error: 0 };
     setBusy(true);
+    setPanelRisk(null); /* T2a: no stale verdict tint while the batch runs */
     csvError.hidden = true;
     csvError.textContent = '';
     csvSummary.hidden = false;
@@ -548,8 +623,10 @@
     var tdMult = (window.TDSettings && typeof TDSettings.progressMultiplier === "function") ? TDSettings.progressMultiplier() : 1.4;
     batchActive = true;
     batchEntries = entries;
+    cancelRequested = false; /* this run has not been asked to cancel */
     counts = { low: 0, medium: 0, high: 0, unverified: 0, error: 0 };
     setBusy(true);
+    setPanelRisk(null); /* T2a: no stale verdict tint while the batch runs */
     csvSummary.hidden = false;
     csvName.textContent = name;
     csvName.title = name;
@@ -633,9 +710,11 @@
   }
   function resetAll() {
     if (batchActive && usingTauri()) {
+      cancelRequested = true; /* this run's own BatchCancelled rows may still be delivered */
       A.cancelBatch().catch(function () {}); /* SPEC 7.2: Clear = cancel (best effort) */
     }
     scanRun++; /* invalidate any in-flight single-scan answer */
+    activeBatchId = null; /* events of the cleared batch can no longer match */
     clearTimers();
     batchActive = false;
     batchEntries = null;
@@ -710,20 +789,22 @@
      though the backend may still deliver a few in-flight results (decision D5). */
   if (window.TD && TD.events) {
     TD.events.on('analysis:progress', function (p) {
-      if (!batchActive || !p) return;
+      if (!batchActive || !p || isStaleBatchEvent(p)) return;
       updateBatchUI(p.done, p.total);
     });
     TD.events.on('analysis:item-done', function (p) {
       if (!batchActive || !p || !p.result) return;
+      /* A result cancelled by the CURRENT run is delivered on purpose (D5);
+         the same marker arriving with no cancel request is a straggler from an
+         older, already-cleared batch — drop it. */
+      if (p.result.error && p.result.error.kind === 'BatchCancelled' && !cancelRequested) return;
       var ui = ipcToUi(p.result);
       if (!(ui.risk in counts)) ui.risk = 'unverified'; /* contract-violation guard */
-      pushRow(ui);
-      if (DAC.history && typeof DAC.history.addDeferred === 'function') DAC.history.addDeferred(ui);
-      else if (DAC.history && typeof DAC.history.add === 'function') DAC.history.add(ui);
+      pushRow(ui, true);
       counts[ui.risk]++;
     });
     TD.events.on('analysis:batch-done', function (p) {
-      if (!batchActive || !p) return;
+      if (!batchActive || !p || isStaleBatchEvent(p)) return;
       /* Count = results actually delivered (D5): smaller than the total after a
          cancel; rows were already streamed via item-done, so this only closes. */
       var delivered = (typeof p.count === 'number') ? p.count

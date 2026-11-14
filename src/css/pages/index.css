@@ -183,6 +183,20 @@ html[data-motion="full"] #result-panel .reason-list li:nth-child(4){animation-de
   #table-results td.dash-td-input::before{display:none}
 }
 
+/* [T3] empty state for the Analysis Results card — same data source as the
+   table (DAC.history via rebuildTable); shown only when the table has no rows. */
+.dash-results-empty{display:grid;justify-items:center;gap:var(--space-1);text-align:center;padding:var(--space-6) 0;color:var(--text-muted)}
+.dash-results-empty-ico{width:30px;height:30px;color:var(--text-faint)}
+.dash-results-empty h3{margin:var(--space-2) 0 0;color:var(--text)}
+.dash-results-empty p{margin:0;font-size:.95em}
+.dash-results-empty{transition:opacity var(--dur-out) var(--ease-out)}
+.dash-results-empty.is-leaving{opacity:0}
+html[data-motion="full"] .dash-results-empty:not([hidden]){animation:dashRise var(--dur-in) var(--ease-out)}
+html[data-motion="full"] #table-results.is-entering{animation:dashRise var(--dur-in) var(--ease-out)}
+@media (prefers-reduced-motion:reduce){.dash-results-empty{animation:none;transition:none}#table-results.is-entering{animation:none}}
+[data-motion="reduced"] .dash-results-empty{animation:none;transition:none}
+[data-motion="reduced"] #table-results.is-entering{animation:none}
+
 /* Summary card */
 #summary-card{position:relative;overflow:hidden;cursor:pointer}
 #summary-card .card-title{display:inline-flex;align-items:center;gap:var(--space-2)}
@@ -200,7 +214,9 @@ html[data-motion="full"] #result-panel .reason-list li:nth-child(4){animation-de
 .dash-stats{margin:var(--space-4) 0 0;padding:var(--space-3) 0 0;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-2);list-style:none}
 .dash-stat{margin:0;min-height:2lh}
 @supports (grid-template-rows: subgrid){.dash-stats{grid-template-rows:auto auto}.dash-stat{display:grid;grid-template-rows:subgrid;grid-row:span 2;min-height:0}}
-.dash-stat dt{margin:0;color:var(--text-faint);font-size:.75em;font-weight:600;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* [T7] labels wrap instead of truncating (SCANS TOD… at narrow columns); tracking
+   tightened .04em→.02em so the longest label ("MEDIUM RISK") fits one line ≥360px */
+.dash-stat dt{margin:0;color:var(--text-faint);font-size:.75em;font-weight:600;text-transform:uppercase;letter-spacing:.02em}
 .dash-stat dd{margin:var(--space-1) 0 0;font-size:1.35em;font-weight:700;line-height:1.15;color:var(--text);font-variant-numeric:tabular-nums}
 .dash-stat dd[data-risk="high"]{color:var(--high)}
 .dash-stat dd[data-risk="medium"]{color:var(--medium)}

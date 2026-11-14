@@ -130,7 +130,7 @@
               </div>
             </div>
 
-            <div class="callout dash-callout" data-type="info" role="note">
+            <div id="demo-notice" class="callout dash-callout" data-type="info" role="note" hidden>
               <p class="callout__text"><strong>Demo mode:</strong> The displayed results are fictional examples. No actual analysis is performed.</p>
             </div>
           </section>
@@ -255,8 +255,8 @@
             <p class="dash-state-desc" id="summary-state-desc">No active threats detected</p>
             <dl id="stmt-stats" class="dash-stats">
               <div class="dash-stat"><dt>Scans today</dt><dd id="stat-today">0</dd></div>
-              <div class="dash-stat"><dt>High-risk</dt><dd id="stat-high" data-risk="high">0</dd></div>
-              <div class="dash-stat"><dt>Medium-risk</dt><dd id="stat-medium" data-risk="medium">0</dd></div>
+              <div class="dash-stat"><dt>High risk</dt><dd id="stat-high" data-risk="high">0</dd></div>
+              <div class="dash-stat"><dt>Medium risk</dt><dd id="stat-medium" data-risk="medium">0</dd></div>
             </dl>
             <div class="dash-summary-foot">
               <a id="summary-review" class="link-arrow" href="history.html#risk=low">
@@ -301,6 +301,11 @@
               </thead>
               <tbody id="table-results-body"></tbody>
             </table>
+            <div id="results-empty" class="dash-results-empty" role="status" hidden>
+              <svg class="dash-results-empty-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M5 19.5V9.5"></path><path d="M12 19.5V4.5"></path><path d="M19 19.5v-6"></path><path d="M3.5 19.5h17"></path></svg>
+              <h3>No analysis results yet</h3>
+              <p>Run a scan to see results here.</p>
+            </div>
           </section>
     </div>
   </main>
