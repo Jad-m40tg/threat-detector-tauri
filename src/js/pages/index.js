@@ -615,6 +615,7 @@
     batchRows = []; /* [T2b] fresh verdict list per batch */
     setBusy(true);
     setPanelRisk(null); /* T2a: no stale verdict tint while the batch runs */
+    if (batchTallyEl) batchTallyEl.textContent = '';
     csvError.hidden = true;
     csvError.textContent = '';
     csvSummary.hidden = false;
@@ -641,6 +642,7 @@
     batchRows = []; /* [T2b] fresh verdict list per batch */
     setBusy(true);
     setPanelRisk(null); /* T2a: no stale verdict tint while the batch runs */
+    if (batchTallyEl) batchTallyEl.textContent = '';
     csvSummary.hidden = false;
     csvName.textContent = name;
     csvName.title = name;
@@ -656,26 +658,9 @@
     batchEntries = null;
     setBusy(false);
     updateSummary();
-    /* per-risk pills (unchanged summary — now in #batch-counts) */
-    var countsList = $('batch-counts');
-    countsList.textContent = '';
-    var NAMES = { low: 'Low', medium: 'Medium', high: 'High', unverified: 'Not verified', error: 'Error' };
-    var order = ['low', 'medium', 'high', 'unverified', 'error'];
-    for (var j = 0; j < order.length; j++) {
-      var k = order[j];
-      if (!counts[k]) continue;
-      var li = document.createElement('li');
-      li.className = 'dash-batchrow';
-      var pill = document.createElement('span');
-      pill.className = 'pill';
-      pill.setAttribute('data-risk', (k === 'unverified' || k === 'error') ? 'na' : k);
-      pill.appendChild(icon('dot'));
-      pill.appendChild(document.createTextNode(NAMES[k]));
-      var num = document.createElement('strong');
-      num.textContent = String(counts[k]);
-      li.appendChild(pill); li.appendChild(num);
-      countsList.appendChild(li);
-    }
+    /* compact risk tally (replaces the old count-pill list) */
+    if (batchTallyEl) { batchTallyEl.textContent = ''; }
+    renderTally(counts);
     $('batch-meta').textContent = total + ' entries analyzed';
     renderBatchRows(); /* [T2b] scrollable per-row verdicts, file order */
     setState('batch');
@@ -691,6 +676,38 @@
      IntersectionObserver only when the row scrolls into view. The list scrolls
      internally (max-height) so the result panel keeps a bounded height. */
   var batchListEl = $('batch-list');
+  var batchTallyEl = $('batch-tally');
+
+  /* compact risk tally for the batch header (replaces the old count-pill list) */
+  function renderTally(c) {
+    if (!batchTallyEl) return;
+    batchTallyEl.textContent = '';
+    var items = [
+      { key: 'low', label: 'Low' },
+      { key: 'medium', label: 'Medium' },
+      { key: 'high', label: 'High' },
+      { key: 'unverified', label: 'Not verified' }
+    ];
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      var n = (c && c[it.key]) || 0;
+      if (!n) continue;
+      var span = document.createElement('span');
+      span.className = 'batch-tally-item';
+      var dot = document.createElement('span');
+      dot.className = 'batch-tally-dot';
+      dot.setAttribute('data-risk', it.key);
+      var num = document.createElement('strong');
+      num.textContent = String(n);
+      var lbl = document.createElement('span');
+      lbl.className = 'batch-tally-label';
+      lbl.textContent = it.label;
+      span.appendChild(dot);
+      span.appendChild(num);
+      span.appendChild(lbl);
+      batchTallyEl.appendChild(span);
+    }
+  }
   var rowRingRecs = new WeakMap(); /* ring host → record, consumed by the IO */
 
   function rowNum(r) {
@@ -813,8 +830,26 @@
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'btn btn-ghost batch-row-open';
-    btn.textContent = 'View details';
     btn.setAttribute('data-idx', String(i));
+    btn.setAttribute('aria-label', 'View details');
+    var btnLbl = document.createElement('span');
+    btnLbl.className = 'btn-label';
+    btnLbl.textContent = 'View details';
+    btn.appendChild(btnLbl);
+    var btnArrow = document.createElementNS(NSVG, 'svg');
+    btnArrow.setAttribute('viewBox', '0 0 24 24');
+    btnArrow.setAttribute('aria-hidden', 'true');
+    btnArrow.setAttribute('focusable', 'false');
+    btnArrow.setAttribute('fill', 'none');
+    btnArrow.setAttribute('stroke', 'currentColor');
+    btnArrow.setAttribute('stroke-width', '1.7');
+    btnArrow.setAttribute('stroke-linecap', 'round');
+    btnArrow.setAttribute('stroke-linejoin', 'round');
+    btnArrow.setAttribute('class', 'btn-arrow');
+    var btnArrowPath = document.createElementNS(NSVG, 'path');
+    btnArrowPath.setAttribute('d', 'M5 12h13M12.6 6.6 18 12l-5.4 5.4');
+    btnArrow.appendChild(btnArrowPath);
+    btn.appendChild(btnArrow);
 
     li.appendChild(main);
     li.appendChild(ind);
@@ -929,6 +964,7 @@
     batchActive = false;
     batchEntries = null;
     batchRows = []; batchRenderOrder = []; /* [T2b] drop the cleared batch's verdict list */
+    if (batchTallyEl) batchTallyEl.textContent = '';
     scannerH = destroyVisual(scannerH);
     setBusy(false);
     inputEl.value = '';

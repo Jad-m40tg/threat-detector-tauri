@@ -126,31 +126,55 @@
 @media (min-width:600px){#result-panel .dash-threat-inner{padding-right:132px}#result-panel .dash-unv-inner{padding-right:132px}}
 @media (max-width:599.98px){#result-panel .dash-threat-inner{padding-top:108px}#result-panel .dash-unv-inner{padding-top:108px}}
 .ring-safe-wrap{margin:0 auto}
-.dash-batchrow{display:flex;justify-content:space-between;align-items:center;max-width:280px}
 .dash-batch-link{margin:var(--space-3) 0 0}
 
 /* [T2b] batch rows — scrollable per-row verdict list, one row per CSV entry in
-   file order. The list scrolls internally (max-height, thin scrollbar like
-   .modal-body) so the result panel keeps a bounded height; rows carry
-   content-visibility so off-screen rows of a 5,000-row batch cost little.
-   Indicators: scored ring (lazy), static green check for Low, dashed neutral
-   ring for Not Verified / Error — never a green tint or a percentage on a
-   row that was not verified. */
-.batch-list{list-style:none;margin:var(--space-3) 0 0;padding:var(--space-1) 0;display:grid;gap:var(--space-1);max-height:21em;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent}
+   file order. Each row is its own bordered, risk-tinted block (fix-2 redesign).
+   The list scrolls internally (max-height, thin scrollbar like .modal-body) so
+   the result panel keeps a bounded height; rows carry content-visibility so
+   off-screen rows of a 5,000-row batch cost little. Indicators: scored ring
+   (lazy), static green check for Low, dashed neutral ring for Not Verified /
+   Error — never a green tint or a percentage on a row that was not verified. */
+.batch-list{list-style:none;margin:var(--space-3) 0 0;padding:0;display:grid;gap:var(--space-2);max-height:21em;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent}
 .batch-list::-webkit-scrollbar{width:10px}
 .batch-list::-webkit-scrollbar-track{background:transparent}
 .batch-list::-webkit-scrollbar-thumb{border:3px solid transparent;border-radius:999px;background-color:var(--border-strong);background-clip:padding-box}
-.batch-row{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3);border-radius:var(--radius-sm);content-visibility:auto;contain-intrinsic-size:auto 4em}
-.batch-row + .batch-row{border-top:1px solid var(--border)}
+/* risk-rgb mapping per row (reuses risk-glow.css tokens) */
+.batch-row[data-risk="low"]{--risk-rgb:var(--risk-low-rgb)}
+.batch-row[data-risk="medium"]{--risk-rgb:var(--risk-medium-rgb)}
+.batch-row[data-risk="high"]{--risk-rgb:var(--risk-high-rgb)}
+.batch-row[data-risk="unverified"]{--risk-rgb:var(--risk-unverified-rgb)}
+.batch-row[data-risk="na"]{--risk-rgb:var(--risk-unverified-rgb)}
+.batch-row{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3);border:1px solid color-mix(in srgb, var(--border) 75%, rgb(var(--risk-rgb, 138 147 160)) 25%);border-radius:var(--radius);background-color:var(--bg-card);background-image:linear-gradient(to right, rgb(var(--risk-rgb, 138 147 160) / .10), transparent 65%);content-visibility:auto;contain-intrinsic-size:auto 5em}
 .batch-row-main{flex:1 1 auto;min-width:0}
 .batch-row-top{display:flex;align-items:baseline;gap:var(--space-3);min-width:0}
-.batch-row-input{flex:1 1 auto;min-width:0;color:var(--text-muted)}
+.batch-row-input{flex:1 1 auto;min-width:0;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .batch-row-sub{margin:2px 0 0;color:var(--text-faint);font-size:.9em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .batch-row-ind{flex:none;width:2.9em;height:2.9em;display:inline-flex;align-items:center;justify-content:center}
 .batch-list .ring-wrap,.batch-list .unv-ring{--ring-size:2.9em}
 .row-check{color:var(--low)}
 .row-check svg{width:1.5em;height:1.5em}
-.batch-row-open{flex:none;padding:.25em .8em;border-radius:var(--radius-pill);font-size:.85em}
+.batch-row-open{flex:none;display:inline-flex;align-items:center;gap:var(--space-1);padding:.25em .7em;border:1px solid var(--border-strong);border-radius:var(--radius-pill);font-size:.85em;background:transparent;color:var(--text);cursor:pointer}
+.batch-row-open:hover{background:var(--accent-soft)}
+.batch-row-open:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+.batch-row-open .btn-arrow{width:.9em;height:.9em;flex:none}
+.batch-row-open .btn-label{white-space:nowrap}
+@media (max-width:480px){.batch-row-open .btn-label{display:none}}
+/* batch header (red-box redesign) */
+.batch-head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap}
+.batch-head-left{display:flex;align-items:baseline;gap:var(--space-3);flex-wrap:wrap;min-width:0}
+.batch-head-left h3{margin:0;font-size:1.05em}
+.batch-head-left .muted{margin:0}
+.batch-tally{display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap}
+.batch-tally-item{display:inline-flex;align-items:center;gap:var(--space-1)}
+.batch-tally-dot{width:.5em;height:.5em;border-radius:50%;flex:none}
+.batch-tally-dot[data-risk="low"]{background:rgb(var(--risk-low-rgb))}
+.batch-tally-dot[data-risk="medium"]{background:rgb(var(--risk-medium-rgb))}
+.batch-tally-dot[data-risk="high"]{background:rgb(var(--risk-high-rgb))}
+.batch-tally-dot[data-risk="unverified"]{background:rgb(var(--risk-unverified-rgb))}
+.batch-tally-item strong{font-weight:700}
+.batch-tally-label{color:var(--text-muted)}
+.batch-divider{border:0;border-top:1px solid var(--border);margin:var(--space-3) 0}
 /* capped stagger on entry (rows 21+ all land at 240ms); governor/media kill it */
 html[data-motion="full"] .batch-row{opacity:0;animation:dashRise var(--dur-in) var(--ease-out) forwards;animation-delay:calc(var(--row-i,0)*12ms)}
 [data-motion="reduced"] .batch-row{animation:none;opacity:1}

@@ -236,13 +236,14 @@
 
               <div class="result-state state-batch" data-state="batch">
                 <div class="dash-batch-inner">
-                  <div class="panel-heading">
-                    <h3>Batch summary</h3>
+                  <div class="batch-head">
+                    <div class="batch-head-left">
+                      <h3>Batch summary</h3>
+                      <p class="muted" id="batch-meta"></p>
+                    </div>
+                    <div class="batch-tally" id="batch-tally" aria-label="Risk tally"></div>
                   </div>
-                  <p class="muted" id="batch-meta"></p>
-                  <ul class="reason-list" id="batch-counts"></ul>
-                  <!-- [T2b] per-row verdicts, one list item per CSV row (file order);
-                       rings/lazy visuals are built by index.js — keep this list empty -->
+                  <hr class="batch-divider" aria-hidden="true">
                   <ul id="batch-list" class="batch-list" aria-label="Batch rows"></ul>
                   <p class="dash-batch-link"><a class="link-arrow" href="history.html">View in history</a></p>
                 </div>
