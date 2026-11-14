@@ -12,9 +12,13 @@
       attr: "data-progress-speed",
       def: "normal"
     },
+    /* navStyle canonical values: "ring" | "contrast". The second option was
+       formerly labelled and stored as "invert"; stored "invert" values are still
+       accepted and normalized on read (see LEGACY below), while writes always
+       store the canonical value. */
     navStyle: {
       store: "td.navStyle",
-      values: ["ring", "invert"],
+      values: ["ring", "contrast"],
       attr: "data-nav-style",
       def: "ring"
     }
@@ -54,11 +58,26 @@
     return !!def && typeof value === "string" && def.values.indexOf(value) !== -1;
   }
 
-  /* Validated current value; never throws, never returns raw corrupt data. */
+  /* Legacy stored values, mapped to their canonical replacement: pre-rename
+     installs hold "invert" for navStyle (the option was then labelled Invert),
+     so reads normalize it to "contrast" and writes store "contrast". Values not
+     listed pass through untouched. */
+  var LEGACY = {
+    navStyle: { invert: "contrast" }
+  };
+
+  function normalize(key, value) {
+    if (typeof value !== "string") { return value; }
+    var map = LEGACY[key];
+    return map && Object.prototype.hasOwnProperty.call(map, value) ? map[value] : value;
+  }
+
+  /* Validated current value; never throws, never returns raw corrupt data.
+     A stored legacy value ("invert") reads back as its canonical replacement. */
   function current(key) {
     var def = KEY_DEFS[key];
     if (!def) { return undefined; /* unknown key: no default exists */ }
-    var raw = readRaw(def.store);
+    var raw = normalize(key, readRaw(def.store));
     return isValid(key, raw) ? raw : def.def;
   }
 
@@ -87,11 +106,12 @@
   }
 
   function set(key, value) {
-    if (!isValid(key, value)) { return false; /* no writes on invalid input */ }
+    var v = normalize(key, value); /* a legacy alias in → canonical value stored */
+    if (!isValid(key, v)) { return false; /* no writes on invalid input */ }
     var def = KEY_DEFS[key];
-    writeRaw(def.store, value);
-    applyAttr(key, value);
-    fire(key, value); /* exactly one event per successful set */
+    writeRaw(def.store, v);
+    applyAttr(key, v);
+    fire(key, v); /* exactly one event per successful set */
     return true;
   }
 

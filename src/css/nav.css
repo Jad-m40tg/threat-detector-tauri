@@ -1,12 +1,19 @@
-/* ===== Nav button style modes — selected-button "invert" treatment (Agent D) ===== */
+/* ===== Nav button style modes — selected-button "contrast" treatment (Agent D) ===== */
 /* Loaded via <link> in the <head> of all three pages (after the shared core).
 
-   Ring mode (html[data-nav-style="ring"] — the default — or the attribute
-   absent) is untouched: every rule below is keyed on
-   html[data-nav-style="invert"], the value window.TDSettings (js/settings.js,
-   key td.navStyle) writes to <html> before first paint.
+   Two modes, chosen by the "Navbar selected style" setting (js/settings.js,
+   key td.navStyle): Ring (html[data-nav-style="ring"] — the default — or the
+   attribute absent) and Contrast. "Contrast" was formerly labelled "Invert"
+   (seg option label and stored value); pre-rename installs that stored
+   "invert" are accepted and normalized to "contrast" by js/settings.js on
+   read, so <html> only ever receives "ring" | "contrast" going forward. Both
+   attribute values are still matched below as belt-and-braces, in case an old
+   value slips through a writer that bypasses that normalization.
 
-   In invert mode the selected link drops its offset accent ring and becomes an
+   Ring mode is untouched: every rule below is keyed on the contrast values,
+   which window.TDSettings writes to <html> before first paint.
+
+   In contrast mode the selected link drops its offset accent ring and becomes an
    inverted-colour filled circle: in dark themes a dark circle + white icon +
    a thin contrasting border (so it still reads against the dark navbar),
    mirrored in light themes. Colours are the EXISTING tokens, with the
@@ -16,8 +23,8 @@
    backgrounds are covered without a single literal colour.
 
    Geometry (measured with d_probe_geom.py on desktop and at 360px):
-     · ring mode outer Ø  = 44px button + 2 × (2px outline + 2px offset)  = 52px
-     · invert mode outer Ø = (44px + 2 × 2px border) × scale              = 52px
+     · ring mode outer Ø     = 44px button + 2 × (2px outline + 2px offset) = 52px
+     · contrast mode outer Ø = (44px + 2 × 2px border) × scale             = 52px
        ⇒ scale = 52 / 48 ≈ 1.0833 — tuned so the inverted button's visual
          footprint matches the ringed one. Transform-only: the layout box
          stays 44×44 (no reflow); the visual grows ~4px per side into the
@@ -26,8 +33,10 @@
 
    Hover on unselected buttons and the legend button's aria-expanded ring are
    intentionally not touched; keyboard :focus-visible gets the focus ring back
-   below (the resting invert state has no outer ring by design). */
+   below (the resting contrast state has no outer ring by design). */
 
+html[data-nav-style="contrast"] .navlink[aria-current="page"],
+html[data-nav-style="contrast"] .navlink.is-current,
 html[data-nav-style="invert"] .navlink[aria-current="page"],
 html[data-nav-style="invert"] .navlink.is-current {
   background: var(--navlink-icon);             /* dark circle in dark themes, light in light */
@@ -42,9 +51,11 @@ html[data-nav-style="invert"] .navlink.is-current {
               box-shadow 180ms var(--ease-out);
 }
 
-/* Keyboard focus stays distinguishable in invert mode: the global
+/* Keyboard focus stays distinguishable in contrast mode: the global
    :focus-visible rule below would be shadowed by the outline: none above,
    so the cyan/blue --focus-ring is re-added for focus-visible only. */
+html[data-nav-style="contrast"] .navlink[aria-current="page"]:focus-visible,
+html[data-nav-style="contrast"] .navlink.is-current:focus-visible,
 html[data-nav-style="invert"] .navlink[aria-current="page"]:focus-visible,
 html[data-nav-style="invert"] .navlink.is-current:focus-visible {
   outline: 2px solid var(--focus-ring);
