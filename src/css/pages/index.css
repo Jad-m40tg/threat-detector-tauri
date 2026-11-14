@@ -38,15 +38,23 @@
 /* Scan card */
 #scan-card .card-title{display:inline-flex;align-items:center;gap:var(--space-2)}
 #scan-card .card-title svg{width:20px;height:20px;color:var(--accent)}
-#scan-card .seg{margin-top:var(--space-4)}
+#scan-card .seg{margin-top:var(--space-4);margin-bottom:var(--space-3)}
 /* [T1] scan panels: ONE visible at a time — each .scan-block is the shared
    .reveal component (core.css, grid-rows height reveal driven by data-open);
    the inner element carries the panel surface (bg/border/padding), so a
    collapsed block contributes zero height and the old "OR" divider is gone.
+   NOTE: no margins on .reveal-inner — a grid item's margin-box would inflate
+   the 0fr collapsed track (the settings reveal cancels its pad the same way);
+   the gap between seg and panels lives on the seg's margin-bottom instead.
    [a11y 1.4.3] the old inactive-dim rules are gone with it: a collapsed panel
    is inert + invisible, so there is no low-contrast visible content left. */
 .scan-panels{display:grid}
-.scan-block > .reveal-inner{margin-top:var(--space-3);background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--radius);padding:var(--space-2)}
+/* the surface (bg/border/padding) lives on a child of .reveal-inner: padding and
+   border on the grid item itself would keep a ~17px min-contribution in the
+   0fr collapsed track (same reason the settings reveal cancels its 3px pad);
+   with an empty-min inner the collapsed track is a true 0 */
+.scan-block > .reveal-inner{min-height:0}
+.scan-surface{background:var(--bg-card-2);border:1px solid var(--border);border-radius:var(--radius);padding:var(--space-2)}
 .dash-inputwrap{position:relative;margin-top:var(--space-2)}
 .dash-inputwrap .type-icon{position:absolute;left:var(--space-3);top:12px;width:20px;height:20px;color:var(--text-muted);pointer-events:none}
 #scan-input{width:100%;padding-left:42px;resize:none;overflow-y:auto;min-height:44px;max-height:160px}

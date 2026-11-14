@@ -85,6 +85,7 @@
               <!-- Single input panel -->
               <div class="scan-block reveal is-active" data-block="single" id="panel-single" data-open="true" role="group" aria-label="Single input">
                 <div class="reveal-inner">
+                 <div class="scan-surface">
                   <form id="scan-form" novalidate>
                     <label class="field-label" for="scan-input">URL or message</label>
                     <div class="dash-inputwrap">
@@ -101,12 +102,14 @@
                       <button type="button" id="btn-clear" class="btn btn-secondary">Clear</button>
                     </div>
                   </form>
+                 </div>
                 </div>
               </div>
 
               <!-- CSV batch panel -->
               <div class="scan-block reveal" data-block="csv" id="panel-csv" data-open="false" inert aria-hidden="true" role="group" aria-label="CSV batch">
                 <div class="reveal-inner">
+                 <div class="scan-surface">
                   <div id="csv-drop" class="drop-zone" role="button" tabindex="0" aria-label="CSV file drop zone. Press Enter to browse for a file.">
                     <div class="dash-drop-inner">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M7.4 18.4h9.4a3.6 3.6 0 0 0 .6-7.15A5.55 5.55 0 0 0 6.8 9.6a4.4 4.4 0 0 0 .6 8.8Z"></path><path d="M12 16.2v-5.5"></path><path d="m9.7 12.9 2.3-2.3 2.3 2.3"></path></svg>
@@ -135,6 +138,7 @@
                       Download sample CSV
                     </button>
                   </div>
+                 </div>
                 </div>
               </div>
             </div>
