@@ -99,6 +99,9 @@
     .score-na { color: var(--text-muted); }
     .status-line { display: inline-flex; align-items: center; gap: var(--space-1); white-space: nowrap; }
     .status-line svg { width: 12px; height: 12px; flex: 0 0 auto; }
+    /* [B2] stacked rows are a grid: the tag would stretch across the value
+       column otherwise. No effect in desktop table mode (parent is a cell). */
+    #table-history .risk-tag { justify-self: start; }
     .details-text { display: block; color: var(--text-muted); }
     .history-time { display: block; white-space: nowrap; color: var(--text-muted); }
 
