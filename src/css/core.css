@@ -1155,8 +1155,10 @@ html[data-motion="reduced"] .seg__thumb, html[data-motion="reduced"] .seg__opt {
   font-weight: 600;
   white-space: nowrap;
 }
-.status-line svg { width: 16px; height: 16px; flex: none; }
-.status-line.is-ok    { color: var(--low); }
+/* Verified goes muted so the risk tag stays the strongest color in the row;
+   Not Verified (amber) and Error (red) keep their distinct tones */
+.status-line svg { width: 12px; height: 12px; flex: none; }
+.status-line.is-ok    { color: var(--text-muted); }
 .status-line.is-warn  { color: var(--medium); }
 .status-line.is-error { color: var(--high); }
 

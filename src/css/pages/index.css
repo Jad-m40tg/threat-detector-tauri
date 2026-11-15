@@ -227,7 +227,7 @@ html[data-motion="full"] #result-panel .reason-list li:nth-child(4){animation-de
 #table-results tbody tr:hover{background:var(--bg-card-2)}
 #table-results tbody tr.is-highlight{background:var(--accent-soft)}
 #table-results tbody tr:focus-visible{outline:2px solid var(--focus-ring);outline-offset:-2px}
-.status-line svg{width:16px;height:16px;flex:none}
+.status-line svg{width:12px;height:12px;flex:none}
 /* [B] Input cell: 16-18px icon (flex:none) + one-line truncating text + title tooltip,
    icon vertically centered. Details clamp to 2 lines. */
 #table-results td.dash-td-input{display:flex;align-items:center;gap:var(--space-2);min-width:0}
