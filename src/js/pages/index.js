@@ -73,7 +73,6 @@
 
   var subMsgs = ['Checking URL structure...', 'Analyzing language...', 'Comparing known patterns...'];
   var RISK_LABEL = { low: 'Low risk', medium: 'Medium risk', high: 'High risk', unverified: 'Not verified', error: 'Error' };
-  var PILL_LABEL = { low: 'Low', medium: 'Medium', high: 'High', unverified: 'N/A', error: 'N/A' };
   var STATUS_LABEL = { verified: 'Verified', not_verified: 'Not Verified', error: 'Error' };
   var SPEED_MS = { fast: 1000, normal: 2000, slow: 3500 };
   /* D4: per-item demo delay (ms) passed to the Rust engine so batch progress
@@ -300,8 +299,7 @@
     envelope: [{ t: 'rect', a: { x: '3.6', y: '5.8', width: '16.8', height: '12.4', rx: '2.2' } }, { t: 'path', a: { d: 'M4.4 7.4 12 13l7.6-5.6' } }],
     check: [{ t: 'path', a: { d: 'M5.5 12.6l4.2 4.2 8.6-9' } }],
     warn: [{ t: 'path', a: { d: 'M12 4.2 3.4 19.8h17.2Z' } }, { t: 'path', a: { d: 'M12 10.2v4.6' } }, { t: 'path', a: { d: 'M12 17.4h.01' } }],
-    err: [{ t: 'circle', a: { cx: '12', cy: '12', r: '8.2' } }, { t: 'path', a: { d: 'M12 8v4.8' } }, { t: 'path', a: { d: 'M12 16.4h.01' } }],
-    dot: [{ t: 'circle', a: { cx: '12', cy: '12', r: '5', fill: 'currentColor', stroke: 'none' } }]
+    err: [{ t: 'circle', a: { cx: '12', cy: '12', r: '8.2' } }, { t: 'path', a: { d: 'M12 8v4.8' } }, { t: 'path', a: { d: 'M12 16.4h.01' } }]
   };
   function icon(kind, cls) {
     var svg = document.createElementNS(NSVG, 'svg');
@@ -346,13 +344,7 @@
 
     var td2 = document.createElement('td');
     td2.setAttribute('data-label', 'Risk Level');
-    var pillRisk = (res.risk === 'unverified' || res.risk === 'error') ? 'na' : res.risk;
-    var pill = document.createElement('span');
-    pill.className = 'pill';
-    pill.setAttribute('data-risk', pillRisk);
-    pill.appendChild(icon('dot'));
-    pill.appendChild(document.createTextNode(PILL_LABEL[res.risk]));
-    td2.appendChild(pill);
+    td2.appendChild(DAC.ui.riskTag(res.risk)); /* [B2] shared tag builder */
 
     var td3 = document.createElement('td');
     td3.setAttribute('data-label', 'Status');

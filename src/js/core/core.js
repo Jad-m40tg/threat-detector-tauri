@@ -941,6 +941,51 @@
     return pair;
   }
 
+  /* ===== Risk tag [B2] — shared by the homepage + history tables =====
+     One neutral container for every level; the 3-bar severity meter and the
+     label color carry the risk. riskTag builds DOM (homepage rows),
+     riskTagHtml feeds the history row pipeline (string rows, can hold
+     thousands — the markup is constant per level, so the string is cached;
+     no per-tag SVG: the warning triangle is a CSS mask). Bars and triangle
+     are aria-hidden; the text label is the accessible name, so a level
+     never depends on color alone. na = Not verified / error (grey, no bars,
+     never styled as Low). */
+  var RISK_TAG_LABEL = { low: "Low", medium: "Medium", high: "High" };
+  var riskTagHtmlCache = {};
+  function riskTagKey(risk) {
+    return (risk === "low" || risk === "medium" || risk === "high") ? risk : "na";
+  }
+  DAC.ui.riskTag = function (risk) {
+    var key = riskTagKey(risk);
+    var tag = document.createElement("span");
+    tag.className = "risk-tag";
+    tag.setAttribute("data-risk", key);
+    if (key === "na") {
+      var warn = document.createElement("span");
+      warn.className = "risk-warn";
+      warn.setAttribute("aria-hidden", "true");
+      tag.appendChild(warn);
+      tag.appendChild(document.createTextNode("N/A"));
+      return tag;
+    }
+    var meter = document.createElement("span");
+    meter.className = "risk-meter";
+    meter.setAttribute("aria-hidden", "true");
+    for (var b = 1; b <= 3; b++) {
+      var bar = document.createElement("span");
+      bar.className = "risk-bar risk-bar-" + b;
+      meter.appendChild(bar);
+    }
+    tag.appendChild(meter);
+    tag.appendChild(document.createTextNode(RISK_TAG_LABEL[key]));
+    return tag;
+  };
+  DAC.ui.riskTagHtml = function (risk) {
+    var key = riskTagKey(risk);
+    if (!riskTagHtmlCache[key]) riskTagHtmlCache[key] = DAC.ui.riskTag(key).outerHTML;
+    return riskTagHtmlCache[key];
+  };
+
   DAC.ui.detailsCard = function (rec) {
     var r = rec || {};
     var risk = r.risk || "unverified";

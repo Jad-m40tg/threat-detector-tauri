@@ -56,14 +56,6 @@
     .chips-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
     .chips-row .chip { min-height: 44px; padding-left: var(--space-4); padding-right: var(--space-4); }
 
-    /* Risk pills: icon + text + color (never color alone) */
-    .pill-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: currentColor; margin-right: var(--space-1); }
-    /* [a11y 1.4.3] pills render over bg-card (rows) and bg-card-2 (hover / stacked
-       rows): the rgba -soft fill can drop the label below 4.5:1 there (measured:
-       dark-grey --na 3.86/4.20, light --low 4.36 on card-2). Solid page-surface
-       bg (tokens only) keeps every risk combo AA in both themes. */
-    #table-history .pill { background: var(--bg); }
-
     /* Danger-toned ghost (page-scoped modifier, uses risk token only) */
 
     /* Sticky toolbar (min-width 768): --nav-h falls back if the shell core does not define it */

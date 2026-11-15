@@ -1100,22 +1100,51 @@ html[data-motion="reduced"] .seg__thumb, html[data-motion="reduced"] .seg__opt {
 }
 .table--stack .table-head-hide { display: none; } /* head row opted out via class */
 
-/* --- Risk pills: text + color, computed AA-safe on tinted bg --- */
-.pill {
+/* --- Risk tag [B2]: one neutral container for every level; the 3-bar meter
+   and the label color carry the risk (both tables share this class) ------ */
+.risk-tag {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
-  padding: 3px var(--space-3);
-  border-radius: var(--radius-pill);
-  font-size: .82rem;
-  font-weight: 700;
+  justify-content: center;
+  gap: var(--space-2); /* 8px ≈ the ~7px spec gap, kept on the spacing scale */
+  min-width: 92px;
+  padding: var(--space-1) var(--space-3); /* 4px 12px ≈ the ~4px 11px spec */
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm); /* nearest token to the ~6px spec (8px) */
+  background: var(--bg-card-2); /* one surface step above the table card */
+  font-size: .75rem; /* 12px */
+  font-weight: 500;
+  letter-spacing: .03em;
   white-space: nowrap;
 }
-.pill svg { width: 12px; height: 12px; }
-.pill[data-risk="low"]    { color: var(--low);    background: var(--low-soft); }
-.pill[data-risk="medium"] { color: var(--medium); background: var(--medium-soft); }
-.pill[data-risk="high"]   { color: var(--high);   background: var(--high-soft); }
-.pill[data-risk="na"]     { color: var(--na);     background: var(--na-soft); }
+.risk-tag[data-risk="low"]    { color: var(--low); }
+.risk-tag[data-risk="medium"] { color: var(--medium); }
+.risk-tag[data-risk="high"]   { color: var(--high); }
+/* na (Not verified / error): muted grey label — --na dips below 4.5:1 on
+   bg-card-2 in dark-grey (measured 3.86:1), --text-muted passes everywhere */
+.risk-tag[data-risk="na"]     { color: var(--text-muted); }
+/* severity meter: bottom-aligned ascending bars; inactive = strong border */
+.risk-meter { display: inline-flex; align-items: flex-end; gap: 2px; flex: none; }
+.risk-bar { width: 3px; border-radius: 1px; background: var(--border-strong); }
+.risk-bar-1 { height: 6px; }
+.risk-bar-2 { height: 9px; }
+.risk-bar-3 { height: 12px; }
+.risk-tag[data-risk="low"] .risk-bar-1 { background: var(--low); }
+.risk-tag[data-risk="medium"] .risk-bar-1,
+.risk-tag[data-risk="medium"] .risk-bar-2 { background: var(--medium); }
+.risk-tag[data-risk="high"] .risk-bar-1,
+.risk-tag[data-risk="high"] .risk-bar-2,
+.risk-tag[data-risk="high"] .risk-bar-3 { background: var(--high); }
+/* warning triangle (na): the app's warn icon (same paths as the batch rows)
+   as one shared CSS mask — no SVG per tag; tinted via background */
+.risk-warn {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  background: var(--na);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 4.2 3.4 19.8h17.2Z'/%3E%3Cpath d='M12 10.2v4.6'/%3E%3Cpath d='M12 17.4h.01'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 4.2 3.4 19.8h17.2Z'/%3E%3Cpath d='M12 10.2v4.6'/%3E%3Cpath d='M12 17.4h.01'/%3E%3C/svg%3E") center / contain no-repeat;
+}
 
 /* --- Status line (icon + text + color) --- */
 .status-line {

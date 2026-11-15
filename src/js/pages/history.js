@@ -22,7 +22,6 @@
       var ICON_X = svgIcon('<circle cx="12" cy="12" r="8.4"/><path d="m9.2 9.2 5.6 5.6"/><path d="m14.8 9.2-5.6 5.6"/>');
 
       /* ---------- copy/label maps (CONTRACT §7 + copy deck §13) ---------- */
-      var PILL = { low: 'Low', medium: 'Medium', high: 'High', unverified: 'N/A', error: 'N/A' };
       var RISK_LABEL = { low: 'Low risk', medium: 'Medium risk', high: 'High risk', unverified: 'Not verified', error: 'Error' };
       var RISK_CLS = { low: 'risk-low', medium: 'risk-medium', high: 'risk-high', unverified: 'risk-na', error: 'risk-na' };
       var SHIELD_STATE = { low: 'secure', medium: 'caution', high: 'threat' };
@@ -49,10 +48,6 @@
       var modalVis = [];       /* destroy() handles for the modal's ring/shield */
 
       /* ---------- small builders ---------- */
-      function pillHtml(risk) {
-        var dataRisk = (risk === 'low' || risk === 'medium' || risk === 'high') ? risk : 'na';
-        return '<span class="pill" data-risk="' + dataRisk + '"><span class="pill-dot" aria-hidden="true"></span>' + PILL[risk] + '</span>';
-      }
       function statusHtml(status) {
         var s = STATUS[status] || STATUS.error;
         return '<span class="status-line ' + s.cls + '">' + s.icon + '<span>' + s.txt + '</span></span>';
@@ -70,7 +65,7 @@
             '<span class="type-icon" aria-hidden="true">' + (r.type === 'message' ? ICON_MAIL : ICON_GLOBE) + '</span>' +
             '<button type="button" class="input-open text-truncate" title="' + esc(shownOut) + '">' + esc(shown) + '</button>' +
           '</td>' +
-          '<td data-label="Risk Level">' + pillHtml(r.risk) + '</td>' +
+          '<td data-label="Risk Level">' + ui.riskTagHtml(r.risk) + '</td>' +
           '<td data-label="Score" class="cell-score">' + scoreText(r) + '</td>' +
           '<td data-label="Status">' + statusHtml(r.status) + '</td>' +
           '<td data-label="Details"><span class="details-text text-truncate" title="' + esc(r.details) + '">' + esc(r.details) + '</span></td>' +
