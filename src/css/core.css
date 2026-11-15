@@ -1155,12 +1155,11 @@ html[data-motion="reduced"] .seg__thumb, html[data-motion="reduced"] .seg__opt {
   font-weight: 600;
   white-space: nowrap;
 }
-/* Verified text stays muted so the risk tag stays the strongest color in the
-   row, but the check keeps the green so the OK state reads at a glance.
-   Not Verified (amber) and Error (red) keep their distinct tones */
+/* Verified back in green (user preference): check + label both use --low so
+   the OK state reads at a glance. Not Verified (amber) and Error (red) keep
+   their distinct tones */
 .status-line svg { width: 12px; height: 12px; flex: none; }
-.status-line.is-ok    { color: var(--text-muted); }
-.status-line.is-ok svg { color: var(--low); }
+.status-line.is-ok    { color: var(--low); }
 .status-line.is-warn  { color: var(--medium); }
 .status-line.is-error { color: var(--high); }
 
