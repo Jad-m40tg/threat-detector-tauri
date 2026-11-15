@@ -604,6 +604,331 @@
     syncDarkReveal();
   });
 
+  /* ---------- Verdict colors (Phase 3 — docs/VERDICT_COLORS.md) ----------
+     Two swatch rows (light/dark × 4 verdicts). A swatch opens the shared modal
+     shell (DAC.ui.modal) holding the REAL verdict card — DAC.ui.detailsCard +
+     DAC.ui.attachDetailVisuals, the same builder the dashboard batch
+     "view details" modal uses — plus TD.components.shadePicker. Drafts stay in
+     this closure: a picked shade writes --vs-<verdict> on the preview
+     container (which also carries data-theme-scope so it shows the edited
+     theme while the app runs in the other one). Nothing is saved until Apply
+     calls DAC.verdictShade.set; closing discards the drafts. */
+  var VS_VERDICTS = [
+    { key: 'high', label: 'High risk' },
+    { key: 'medium', label: 'Medium risk' },
+    { key: 'low', label: 'Low risk' },
+    { key: 'unverified', label: 'Not verified' }
+  ];
+  var VS_THEMES = [
+    { key: 'light', label: 'Light mode' },
+    { key: 'dark', label: 'Dark mode' }
+  ];
+  /* Sample records fed to DAC.ui.detailsCard — the same record shape the
+     dashboard/history pass it (risk, score, input, reasons, details). */
+  var VS_SAMPLES = {
+    high: {
+      input: 'http://192.168.1.122/login', type: 'url', risk: 'high', score: 90,
+      reasons: ['Insecure HTTP link', 'IP-address hostnames'],
+      recommendation: 'Do not visit this link or enter any information on the page.'
+    },
+    medium: {
+      input: 'http://www.news-portal-385.org/articles', type: 'url', risk: 'medium', score: 45,
+      reasons: ['Urgent language.'],
+      recommendation: 'Be cautious — check the source before trusting the content.'
+    },
+    low: {
+      input: 'https://example.com', type: 'url', risk: 'low', score: 5,
+      reasons: [], recommendation: 'No action needed.'
+    },
+    unverified: {
+      input: 'htp:/malformed-url', type: 'url', risk: 'unverified',
+      details: 'Unable to verify: Malformed URL.'
+    }
+  };
+  var VS_ORDER = ['high', 'medium', 'low', 'unverified'];
+  var vsSwatches = {};
+  var vsModal = null;
+
+  function vsVerdictLabel(key) {
+    for (var i = 0; i < VS_VERDICTS.length; i++) {
+      if (VS_VERDICTS[i].key === key) return VS_VERDICTS[i].label;
+    }
+    return key;
+  }
+
+  function vsPaintSwatch(btn, theme, v) {
+    var hex = DAC.verdictShade.get(theme, v.key);
+    var themeLabel = theme === 'light' ? 'Light mode' : 'Dark mode';
+    btn.style.backgroundColor = hex;
+    btn.setAttribute('aria-label', themeLabel + ', ' + v.label + ' color, ' + hex);
+  }
+
+  /* Build the two swatch rows (real buttons, painted from verdictShade.get). */
+  VS_THEMES.forEach(function (t) {
+    var row = $('vs-row-' + t.key);
+    if (!row) return;
+    VS_VERDICTS.forEach(function (v) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'vs-swatch';
+      vsPaintSwatch(btn, t.key, v);
+      btn.addEventListener('click', function () { vsOpenModal(t.key, v.key); });
+      row.appendChild(btn);
+      vsSwatches[t.key + '.' + v.key] = { paint: function () { vsPaintSwatch(btn, t.key, v); } };
+    });
+  });
+
+  /* Any saved change (Apply / Reset / Reset all / another writer) repaints the
+     matching swatch and, while the modal is open, the "Current" dot. */
+  if (typeof DAC.verdictShade.onChange === 'function') {
+    DAC.verdictShade.onChange(function (e) {
+      if (!e) return;
+      var s = vsSwatches[e.theme + '.' + e.verdict];
+      if (s) s.paint();
+      if (vsModal && vsModal.theme === e.theme && vsModal.verdict === e.verdict && vsModal.currentDot) {
+        vsModal.currentDot.style.backgroundColor = e.value;
+        vsModal.currentDot.title = e.value;
+      }
+    });
+  }
+
+  $('vs-reset-all').addEventListener('click', function () {
+    DAC.ui.confirm.open({
+      title: 'Reset verdict colors',
+      message: 'Every verdict color override returns to its default, in both themes. This action cannot be undone.',
+      confirmLabel: 'Reset colors',
+      cancelLabel: 'Cancel',
+      danger: true
+    }).then(function (ok) {
+      if (!ok) return;
+      DAC.verdictShade.resetAll();
+      DAC.ui.toast('Verdict colors reset to defaults', 'success');
+    });
+  });
+
+  /* One draft per verdict (seeded from the saved values) + the "tried" color. */
+  function vsSetDraft(key, hex, fromPicker) {
+    if (!vsModal) return;
+    vsModal.drafts[key] = hex;
+    vsModal.preview.style.setProperty('--vs-' + key, hex);
+    vsModal.selectedDot.style.backgroundColor = hex;
+    vsModal.selectedDot.title = hex;
+    /* Keep the square/hex input in step when the change came from elsewhere
+       (Reset, verdict switch); silent avoids an onChange round-trip. */
+    if (!fromPicker && vsModal.picker) vsModal.picker.set(hex, { silent: true });
+  }
+
+  /* The real verdict card for one verdict, with its animated visuals. Handles
+     are collected so modal close can destroy every one of them. */
+  function vsRenderCard(key) {
+    var rec = VS_SAMPLES[key];
+    var h = DAC.ui.detailsCard(rec);
+    h.card.classList.add('vs-card');
+    DAC.ui.attachDetailVisuals(h, rec, function (handle) {
+      if (handle) vsModal.vis.push(handle);
+    });
+    return h.card;
+  }
+
+  /* Thumbnails: the three verdicts that are not selected, fixed order.
+     Gradients read --vs-* inherited from the preview container, so a draft
+     recolors the matching thumb with no extra DOM work. */
+  function vsRenderThumbs() {
+    if (!vsModal) return;
+    vsModal.thumbs.textContent = '';
+    VS_ORDER.forEach(function (key) {
+      if (key === vsModal.verdict) return;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'vs-thumb';
+      btn.setAttribute('data-risk', key);
+      var ico = document.createElement('span');
+      ico.className = 'vs-ico' + (key === 'high' || key === 'medium' ? ' vs-ico-ring' : '');
+      ico.setAttribute('aria-hidden', 'true');
+      if (key === 'low' && DAC.glyphs && typeof DAC.svgGlyph === 'function') {
+        ico.appendChild(DAC.svgGlyph(DAC.glyphs.check));
+      } else if (key === 'unverified' && DAC.glyphs && typeof DAC.svgGlyph === 'function') {
+        ico.appendChild(DAC.svgGlyph(DAC.glyphs.alert));
+      }
+      var title = document.createElement('span');
+      title.className = 'vs-thumb-title';
+      title.textContent = vsVerdictLabel(key);
+      btn.appendChild(ico);
+      btn.appendChild(title);
+      btn.addEventListener('click', function () { vsShowVerdict(key); });
+      vsModal.thumbs.appendChild(btn);
+    });
+  }
+
+  /* Verdict switch inside the modal: re-render the large preview and cross-fade
+     (opacity + small transform, ~200ms; instant under reduced motion because
+     the CSS kill-switch removes the transition). */
+  function vsShowVerdict(key) {
+    if (!vsModal || vsModal.verdict === key) return;
+    var old = vsModal.stage.querySelector('.vs-card:not(.vs-leave)');
+    var card = vsRenderCard(key);
+    card.classList.add('vs-enter');
+    vsModal.stage.appendChild(card);
+    void card.offsetWidth; /* compute the start state, then release it */
+    card.classList.remove('vs-enter');
+    vsModal.verdict = key;
+    vsRenderThumbs();
+    vsSetDraft(key, vsModal.drafts[key], false);
+    if (old) {
+      old.classList.add('vs-leave');
+      window.setTimeout(function () {
+        if (old.parentNode) old.parentNode.removeChild(old);
+      }, 240);
+    }
+  }
+
+  function vsResetDraft() {
+    if (!vsModal) return;
+    vsSetDraft(vsModal.verdict, DAC.verdictShade.defaults(vsModal.theme, vsModal.verdict), false);
+  }
+
+  /* Apply saves every CHANGED draft for this theme with verdictShade.set
+     (which also fires onChange → swatch repaint), toasts, and closes. */
+  function vsApply() {
+    if (!vsModal) return;
+    var theme = vsModal.theme;
+    var changed = [];
+    VS_VERDICTS.forEach(function (v) {
+      if (vsModal.drafts[v.key] && vsModal.drafts[v.key] !== DAC.verdictShade.get(theme, v.key)) {
+        changed.push([v.key, vsModal.drafts[v.key]]);
+      }
+    });
+    if (changed.length) {
+      for (var i = 0; i < changed.length; i++) DAC.verdictShade.set(theme, changed[i][0], changed[i][1]);
+      DAC.ui.toast('Verdict colors applied', { type: 'success', key: 'settings', timeout: 4000 });
+    }
+    DAC.ui.modal.close();
+  }
+
+  /* onClose: closing discards unapplied drafts and tears down the picker and
+     every visual handle created for the preview cards. */
+  function vsCloseModal() {
+    if (!vsModal) return;
+    if (vsModal.picker && typeof vsModal.picker.destroy === 'function') vsModal.picker.destroy();
+    vsModal.vis.forEach(function (h) {
+      try { if (typeof h.destroy === 'function') h.destroy(); } catch (e) { /* isolated */ }
+    });
+    vsModal = null;
+  }
+
+  function vsOpenModal(theme, verdictKey) {
+    var drafts = {};
+    VS_VERDICTS.forEach(function (v) { drafts[v.key] = DAC.verdictShade.get(theme, v.key); });
+
+    var body = document.createElement('div');
+    body.className = 'vs-modal';
+
+    /* Left: scoped preview container (edited theme's tokens + draft --vs-*). */
+    var previewCol = document.createElement('div');
+    previewCol.className = 'vs-preview-col';
+    var preview = document.createElement('div');
+    preview.className = 'vs-preview';
+    preview.setAttribute('data-theme-scope', theme);
+    VS_VERDICTS.forEach(function (v) { preview.style.setProperty('--vs-' + v.key, drafts[v.key]); });
+    var stage = document.createElement('div');
+    stage.className = 'vs-stage';
+    preview.appendChild(stage);
+    var otherLabel = document.createElement('p');
+    otherLabel.className = 'vs-side-label';
+    otherLabel.textContent = 'The other verdicts';
+    var thumbs = document.createElement('div');
+    thumbs.className = 'vs-thumbs';
+    preview.appendChild(otherLabel);
+    preview.appendChild(thumbs);
+    previewCol.appendChild(preview);
+
+    /* Right: shade picker (maxSat 0.3 for Not verified), Current/Selected dots,
+       Apply + Reset. */
+    var controlsCol = document.createElement('div');
+    controlsCol.className = 'vs-controls-col';
+    var pickerHost = document.createElement('div');
+    pickerHost.className = 'vs-picker-host';
+    var picker = window.TD && window.TD.components && window.TD.components.shadePicker
+      ? window.TD.components.shadePicker.create(pickerHost, {
+          color: drafts[verdictKey],
+          label: vsVerdictLabel(verdictKey) + ' shade',
+          maxSat: verdictKey === 'unverified' ? 0.3 : 1,
+          onChange: function (hex) { vsSetDraft(vsModal ? vsModal.verdict : verdictKey, hex, true); }
+        })
+      : null;
+
+    var dots = document.createElement('div');
+    dots.className = 'vs-dots';
+    function dotRow(label) {
+      var row = document.createElement('div');
+      row.className = 'vs-dot-row';
+      var dot = document.createElement('span');
+      dot.className = 'vs-dot';
+      var txt = document.createElement('span');
+      txt.textContent = label;
+      row.appendChild(dot);
+      row.appendChild(txt);
+      dots.appendChild(row);
+      return dot;
+    }
+    var currentDot = dotRow('Current');
+    var selectedDot = dotRow('Selected');
+    currentDot.style.backgroundColor = drafts[verdictKey];
+    currentDot.title = drafts[verdictKey];
+    selectedDot.style.backgroundColor = drafts[verdictKey];
+    selectedDot.title = drafts[verdictKey];
+
+    var actions = document.createElement('div');
+    actions.className = 'set-actions';
+    var resetBtn = document.createElement('button');
+    resetBtn.type = 'button';
+    resetBtn.className = 'btn btn-secondary';
+    resetBtn.textContent = 'Reset';
+    resetBtn.addEventListener('click', vsResetDraft);
+    var applyBtn = document.createElement('button');
+    applyBtn.type = 'button';
+    applyBtn.className = 'btn btn-primary';
+    applyBtn.textContent = 'Apply';
+    applyBtn.addEventListener('click', vsApply);
+    actions.appendChild(resetBtn);
+    actions.appendChild(applyBtn);
+
+    controlsCol.appendChild(pickerHost);
+    controlsCol.appendChild(dots);
+    controlsCol.appendChild(actions);
+
+    body.appendChild(previewCol);
+    body.appendChild(controlsCol);
+
+    var modal = DAC.ui.modal.open({ title: 'Preview', body: body, onClose: vsCloseModal });
+    /* Wider shell for the two columns; close button stays in its default
+       .modal-head position (top-right, existing style). */
+    modal.classList.add('modal-vs');
+
+    vsModal = {
+      theme: theme,
+      verdict: verdictKey,
+      drafts: drafts,
+      preview: preview,
+      stage: stage,
+      thumbs: thumbs,
+      picker: picker,
+      currentDot: currentDot,
+      selectedDot: selectedDot,
+      vis: []
+    };
+
+    vsShowVerdictInitial(verdictKey);
+  }
+
+  /* First card render (no cross-fade source: the stage is empty). */
+  function vsShowVerdictInitial(key) {
+    if (!vsModal) return;
+    vsModal.verdict = key;
+    vsRenderThumbs();
+    vsModal.stage.appendChild(vsRenderCard(key));
+  }
+
   /* ---------- initial render from persisted settings ---------- */
   syncEverything();
   syncDarkReveal();

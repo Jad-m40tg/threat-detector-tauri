@@ -188,3 +188,97 @@ html[data-motion="reduced"] .set-wrap *, html[data-motion="reduced"] .set-wrap *
 @media (prefers-reduced-motion: reduce) {
   .set-wrap *, .set-wrap *::before, .set-wrap *::after { transition: none !important; }
 }
+
+/* ===== Verdict colors (Phase 3 — docs/VERDICT_COLORS.md) =====
+   Swatch rows, the shared-modal picker body and its preview. Colors come from
+   tokens only; the preview cards read --vs-<verdict> inline from the preview
+   container, which also carries [data-theme-scope] (core.css mirrors the theme
+   token blocks onto it). Page-owned: the picker modal only exists here. */
+
+/* Section swatches — same circle treatment as the accent .sw rows */
+.vs-swatches { display: flex; flex-wrap: wrap; gap: var(--space-3); padding: 2px 0; }
+.vs-swatch {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid var(--border-strong); background: transparent; padding: 0; cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.vs-swatch:hover { transform: scale(1.06); box-shadow: 0 0 0 3px var(--accent-soft); }
+.vs-swatch:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+/* Wider shell for the two-column picker modal (page-owned override of .modal) */
+.modal-vs { width: min(860px, 100%); }
+
+/* Picker modal body: two columns on wide screens, stacked ≤639.98px */
+.vs-modal { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(240px, 1fr); gap: var(--space-5); align-items: start; }
+@media (max-width: 639.98px) {
+  .vs-modal { grid-template-columns: 1fr; }
+}
+.vs-preview-col, .vs-controls-col { min-width: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.vs-side-label { margin: 0; font-size: .82rem; font-weight: 600; color: var(--text-muted); }
+
+/* Large preview: the real details card on the edited theme's surface. The
+   empty foot the builder appends stays out of the preview. */
+.vs-stage { position: relative; }
+.vs-stage .modal-detail {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+.vs-stage .modal-foot { display: none; }
+
+/* Cross-fade on verdict switch (transform + opacity only, ~200ms; the reduced
+   motion kill below makes it instant) */
+.vs-card { transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out); }
+.vs-card.vs-enter { opacity: 0; transform: translateY(6px); }
+.vs-card.vs-leave {
+  position: absolute; left: 0; right: 0; top: 0;
+  opacity: 0; transform: translateY(-4px);
+  pointer-events: none;
+}
+
+/* Thumbnails: small cards with the same gradient recipe as .modal-detail
+   (risk-glow.css), tinted via --risk-color ← --vs-* inherited from the
+   preview container. Icon + title only; icons keep the ENGINE risk colors
+   (only the gradient tint is user-controlled). */
+.vs-thumbs { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.vs-thumb {
+  display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2);
+  min-width: 128px; padding: var(--space-3) var(--space-4);
+  font: inherit; text-align: start; color: var(--text); cursor: pointer;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.vs-thumb:hover { border-color: var(--border-strong); }
+.vs-thumb:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.vs-thumb[data-risk] {
+  background-image: radial-gradient(85% 120% at 100% 100%,
+    color-mix(in srgb, var(--risk-color) calc(var(--risk-corner-a) * 100%), transparent), transparent 60%);
+}
+.vs-thumb[data-risk="high"]       { --risk-color: var(--vs-high); }
+.vs-thumb[data-risk="medium"]     { --risk-color: var(--vs-medium); }
+.vs-thumb[data-risk="low"]        { --risk-color: var(--vs-low); }
+.vs-thumb[data-risk="unverified"] { --risk-color: var(--vs-unverified); }
+.vs-thumb-title { font-weight: 600; font-size: .9rem; }
+.vs-ico { display: inline-flex; width: 22px; height: 22px; color: var(--na); }
+.vs-ico svg { width: 22px; height: 22px; display: block; }
+.vs-ico-ring { width: 20px; height: 20px; border: 2px solid var(--na); border-radius: 50%; }
+.vs-thumb[data-risk="high"] .vs-ico       { color: var(--high); border-color: var(--high); }
+.vs-thumb[data-risk="medium"] .vs-ico     { color: var(--medium); border-color: var(--medium); }
+.vs-thumb[data-risk="low"] .vs-ico        { color: var(--low); }
+.vs-thumb[data-risk="unverified"] .vs-ico { color: var(--na); }
+
+/* Current / Selected color dots */
+.vs-dots { display: flex; flex-direction: column; gap: var(--space-2); }
+.vs-dot-row { display: flex; align-items: center; gap: var(--space-2); font-size: .85rem; color: var(--text-muted); }
+.vs-dot {
+  width: 20px; height: 20px; flex: none; border-radius: 50%;
+  border: 1px solid var(--border-strong); background: transparent;
+}
+
+/* Reduced motion: no cross-fade, no hover pop (OS or Settings kill-switch) */
+html[data-motion="reduced"] .vs-modal *, html[data-motion="reduced"] .vs-swatch { transition: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .vs-modal *, .vs-swatch { transition: none !important; }
+}

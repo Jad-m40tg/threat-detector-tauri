@@ -25,7 +25,10 @@
    drop glow, no animation loops.
    ========================================================================== */
 
-:root {
+/* The scope attribute mirrors these tokens onto the verdict-color preview
+   container (Settings picker modal) — same pattern as the core.css blocks. */
+:root,
+[data-theme-scope="dark"] {
   /* Engine risk colors, dark theme (contract §2.3; mirrors --low/--medium/--high/--na) */
   --risk-low-rgb: 61 220 132;
   --risk-medium-rgb: 255 176 32;
@@ -40,7 +43,8 @@
   --risk-border-a: .35; /* faint tinted 1px border (masked ::after overlay) */
 }
 
-:root[data-theme="light"] {
+:root[data-theme="light"],
+[data-theme-scope="light"] {
   /* Light theme — same hue family, lower intensity (contract §2.3) */
   --risk-low-rgb: 18 122 72;
   --risk-medium-rgb: 180 83 9;

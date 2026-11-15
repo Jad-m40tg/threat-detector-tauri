@@ -46,3 +46,13 @@ every dark variant (grey / OLED). Registered in `js/settings.js` (`hex: true`).
 Invalid theme/verdict args return `null`/`false` (never throws). Overrides are
 applied to `<html>` at load (end-of-body core.js — earliest the script-order
 contract allows; theme-init.js must not read `td.*` keys).
+
+## Settings UI (Phase 3)
+Settings → "Verdict colors": 8 swatch buttons (light/dark × 4 verdicts) show the
+effective color and open the shared modal (DAC.ui.modal) holding the real
+details card (DAC.ui.detailsCard + attachDetailVisuals), the shade picker
+(maxSat .3 for Not verified) and Apply/Reset. Drafts set `--vs-<verdict>` on the
+scoped preview container only; Apply saves via `verdictShade.set`, Reset/Reset
+all restore defaults. The preview shows the edited theme via
+`[data-theme-scope=…]` selectors added next to the theme token blocks
+(core.css + risk-glow.css).

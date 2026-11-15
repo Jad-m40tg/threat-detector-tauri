@@ -146,6 +146,34 @@
       </div>
     </section>
 
+    <!-- ===== Card: Verdict colors (Phase 3 — docs/VERDICT_COLORS.md) =====
+         Swatch buttons are built by pages/settings.js (aria-label carries the
+         effective hex, so it lives in JS). Clicking one opens the shared modal
+         shell with the real verdict card + shade picker; nothing is saved
+         until Apply. "Reset all" restores every override via verdictShade. -->
+    <section class="card set-card" aria-labelledby="hd-verdict">
+      <div class="set-card-head">
+        <h2 class="card-title" id="hd-verdict">Verdict colors</h2>
+        <p class="set-card-sub">Gradient tint of each verdict card, per theme. Ring, label and border colors are not affected.</p>
+      </div>
+
+      <div class="set-field">
+        <span class="set-label" id="lb-vs-light">Light mode</span>
+        <div class="vs-swatches" id="vs-row-light" role="group" aria-labelledby="lb-vs-light"></div>
+        <p class="set-help">Shade used by verdict cards while the light theme is active.</p>
+      </div>
+
+      <div class="set-field">
+        <span class="set-label" id="lb-vs-dark">Dark mode</span>
+        <div class="vs-swatches" id="vs-row-dark" role="group" aria-labelledby="lb-vs-dark"></div>
+        <p class="set-help">Shade used by verdict cards while a dark theme is active.</p>
+      </div>
+
+      <div class="set-actions">
+        <button type="button" class="btn btn-ghost" id="vs-reset-all">Reset all</button>
+      </div>
+    </section>
+
     <!-- ===== Card: Detection ===== -->
     <section class="card set-card" aria-labelledby="hd-detection">
       <div class="set-card-head">

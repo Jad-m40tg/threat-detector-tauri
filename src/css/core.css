@@ -83,7 +83,12 @@ html[data-text="small"]  { font-size: 15px;   --text-base: 15px; }
 html[data-text="large"]  { font-size: 17.5px; --text-base: 17.5px; }
 
 /* ----- DARK / OLED ----- */
-:root[data-theme="dark"] {
+/* [data-theme-scope] mirrors the theme tokens onto the verdict-color preview
+   container (Settings picker modal) so it can show the theme being edited
+   while the app itself runs in the other theme. The scope always shows the
+   OLED dark surfaces (the grey variant only shifts --bg-* on :root). */
+:root[data-theme="dark"],
+[data-theme-scope="dark"] {
   color-scheme: dark;
   --bg: #000000;
   /* Cover-tier color (snap fix 2.3c): duplicates --bg on purpose so the
@@ -137,7 +142,8 @@ html[data-text="large"]  { font-size: 17.5px; --text-base: 17.5px; }
 }
 
 /* ----- RISK (always paired with text + icon, never color alone) ----- */
-:root[data-theme="dark"] {
+:root[data-theme="dark"],
+[data-theme-scope="dark"] {
   --low: #3DDC84;
   --medium: #FFB020;
   --high: #FF5A5F;
@@ -148,7 +154,8 @@ html[data-text="large"]  { font-size: 17.5px; --text-base: 17.5px; }
   --na-soft: rgba(138, 147, 160, .18);
 }
 
-:root[data-theme="light"] {
+:root[data-theme="light"],
+[data-theme-scope="light"] {
   --low: #127A48;
   /* [A1] richer amber (was a muddy brown); AA ≥4.5:1 on card/white surfaces */
   --medium: #B45309;
@@ -161,7 +168,8 @@ html[data-text="large"]  { font-size: 17.5px; --text-base: 17.5px; }
 }
 
 /* ----- LIGHT ----- */
-:root[data-theme="light"] {
+:root[data-theme="light"],
+[data-theme-scope="light"] {
   color-scheme: light;
   --bg: #F4F7F5;
   /* Cover-tier color: duplicates --bg (see note in the dark/oled block). */
