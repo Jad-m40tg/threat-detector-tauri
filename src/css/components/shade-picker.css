@@ -1,0 +1,49 @@
+/* ===== TD.components.shadePicker — 2D shade square + hex input (verdict colors P2) ===== */
+/* Tokens only (core.css). Square: white→hue horizontally, transparent→black vertically;
+   the gradient colors are set inline by JS because the hue is dynamic. */
+
+.shade-picker {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 280px; /* keeps the hex input aligned with the capped square */
+}
+
+.shade-picker__square {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-width: 280px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  touch-action: none; /* pointer drags the shade, never scrolls */
+  cursor: crosshair;
+}
+
+.shade-picker__handle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-pill);
+  border: 2px solid #fff;           /* visible on dark shades */
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .55); /* dark outline: visible on white */
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.shade-picker__hex {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; /* no mono token exists */
+}
+
+/* invalid typed hex: error border, nothing else changes */
+.shade-picker__hex[aria-invalid="true"] {
+  border-color: var(--high);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shade-picker__square,
+  .shade-picker__handle,
+  .shade-picker__hex {
+    transition: none;
+  }
+}
