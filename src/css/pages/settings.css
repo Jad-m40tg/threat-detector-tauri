@@ -226,6 +226,11 @@ html[data-motion="reduced"] .set-wrap *, html[data-motion="reduced"] .set-wrap *
   padding: var(--space-5);
 }
 .vs-stage .modal-foot { display: none; }
+/* The preview card is ~430px wide at every viewport width (it lives in the
+   modal's preview column), so it needs the same narrow treatment
+   analysis-card.css applies at <=639px: labels stack above their values,
+   otherwise the fixed 150px dt column leaves ~60px for the value. */
+.vs-stage .detail-pair { grid-template-columns: 1fr; gap: var(--space-1); }
 
 /* Cross-fade on verdict switch (transform + opacity only, ~200ms; the reduced
    motion kill below makes it instant) */
