@@ -540,5 +540,76 @@ Restore point: tag `before-risk-tag-b2` (5efee5e). Commits 9222b22 → 025e5d2
   origin = fresh cache) for verification. Real-app usage unaffected.
 - **NOT RUN:** real engine error-row rendering in the homepage table (na
   builder path verified via a seeded error record on history + builder
-  probe); screenshots (desktop window hidden) — side-by-side steps listed
+  probe); screenshots (desktop window hidden) - side-by-side steps listed
   in the report; smooth-scroll feel (frozen-timeline tab cannot animate).
+
+## verdict-colors: 3-phase prompt-queue run + runtime verification (2026-11-16)
+
+Queue run via `run-phases.ps1` (prompts folder) on `opencode/glm-5.3-flash-free`.
+First attempt stopped safely: the default model (gemini-4-hydrogen free tier)
+exceeded its 250k input-token/min limit during Phase 1's file reads. Model
+switched in the script's `$Model` line for the successful run.
+
+### Setup notes
+- `docs/AGENT_CONTRACT.md` did not exist but all three phase prompts open with
+  "Obey docs\AGENT_CONTRACT.md" - created it (`f79ce32`) from the conventions the
+  prompts cite (DAC/TD namespaces, TDSettings `td.*` keys, script load order,
+  per-page CSS, tokens over hardcoded hex).
+- `opencode` CLI was only bundled inside the desktop app; a forwarder
+  `opencode.cmd` was added to WindowsApps so the script can call it. The
+  script's keep-awake hex literals (`0x80000001`) parsed as negative Int32 and
+  errored - fixed to decimal (2147483649/2147483648).
+
+### What changed (phase commits)
+- `7819142` (P1): `--vs-high/medium/low/unverified` defaults in risk-glow.css,
+  gradient stops to `color-mix` with `--risk-color` mapping, `DAC.verdictShade`
+  (get/set/reset/resetAll/isCustom/defaults/onChange) in core.js applied at
+  end-of-body load, 8 `td.vs.*` hex keys ("" = unset) in settings.js,
+  `docs/VERDICT_COLORS.md`.
+- `7c13e76` (P2): `TD.components.shadePicker` - 2D CSS-gradient shade square
+  (no canvas), maxSat cap, hex input (3-digit expansion, invalid -> aria-invalid
+  + `--high` border, blur reverts), pointer/touch/keyboard a11y (role=slider,
+  1%/10% arrows), destroy(). Wired into settings.html per contract load order.
+- `2c4c373` (P3): Settings "Verdict colors" card (8 swatches + Reset all),
+  picker modal reusing `DAC.ui.modal` + `DAC.ui.detailsCard`/`attachDetailVisuals`
+  (the real batch-details builder), drafts via `--vs-*` on a scoped preview
+  container, Apply/Reset/Reset all, `[data-theme-scope="dark|light"]` selectors
+  added next to the theme token blocks in core.css and risk-glow.css.
+- `2137353` (this session): `.vs-stage .detail-pair { grid-template-columns: 1fr }` -
+  the preview card is ~430px wide at any viewport, and `.detail-pair`'s fixed
+  150px label track left ~61px for values (URL wrapped char-per-line). Mirrors
+  analysis-card.css's own <=639px stacked pattern; values now 223px.
+
+### Verified
+- P1: 54/54 checks in headless Edge (phase log): defaults, live apply, td.vs.*
+  storage, invalid rejection, 3-digit expansion, persistence across reload,
+  reset/resetAll, onChange + unsubscribe, batch-row tint follows override,
+  pixel-identical dark card while light overridden, console clean on all 4 pages.
+- P2: 28/28 Playwright checks (temp page, deleted after): drag, touch, keyboard
+  1%/10%, paste/trim, maxSat 0.3 grey cap, destroy, both themes.
+- P3 claimed FAIL honestly (no browser tooling in that session) - runtime checks
+  completed by second agent, 27 + 13 targeted checks, all passing: rows built and
+  painted with effective hex, aria-labels exactly per spec, modal opens with
+  real card + picker, draft semantics (preview/Selected update, saved untouched),
+  Apply saves (API + localStorage + swatch repaint + close), survives reload,
+  Reset restores default per prompt wording, Reset all clears to "" with confirm
+  dialog, Escape/backdrop close discards, cross-theme preview both directions
+  (app dark -> light scope shows light surface and vice versa), cross-fade
+  classes + cleanup, 390px single column with no overflow, reduced-motion kills
+  transitions, gradient-follows-draft verified in computed backgroundImage
+  (#c2263b -> #e6a700), console clean on settings + index.
+- Taste-skill inspector run on settings.html: its 1 contrast FAIL is a false
+  positive (it paired checked segment text with the container background; the
+  real pair is text on the sibling `.seg__thumb` - 11:1 dark theme
+  (#07230D on #8DEB6B), 5.18:1 light (#FFF on #1E7D3C)). App-screen WARNs
+  (wide margins at 1440, scrollable settings column) match the desktop window,
+  not a web page.
+
+### NOT RUN / for the user
+- Real Tauri window visual pass (run-dev.bat): swatch modal feel, light-mode
+  contrast by eye, animations.
+- Dashboard end-to-end with the real engine (P1 verified card/batch tint via its
+  own harness with seeded records; the Settings Apply path uses the same
+  verdictShade.set -> load-time apply chain).
+- `_restore\before-verdict-phase1/2/3` snapshots exist for rollback.
+
