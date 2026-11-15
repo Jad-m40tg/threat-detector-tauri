@@ -253,6 +253,15 @@ html[data-motion="full"] #result-panel .reason-list li:nth-child(4){animation-de
   #table-results td::before{content:attr(data-label);flex:none;width:88px;color:var(--text-muted);font-size:.75em;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
   #table-results td.dash-td-input::before{display:none}
 }
+/* [B2] desktop table mode: the Input cell is a flex box, so its own bottom
+   border paints mid-air when Details wraps to two lines. td borders off; the
+   row paints one continuous divider (collapsed borders span the full row).
+   Stacked card rows (container ≤759.98 / media ≤639.98) keep td dividers. */
+@container (min-width:760px){
+  #table-results td{border-bottom:0}
+  #table-results tbody tr{border-bottom:1px solid var(--border)}
+  #table-results th,#table-results td{padding-left:var(--space-4);padding-right:var(--space-4)}
+}
 
 /* [T3] empty state for the Analysis Results card — same data source as the
    table (DAC.history via rebuildTable); shown only when the table has no rows. */

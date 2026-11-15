@@ -102,6 +102,16 @@
     .details-text { display: block; color: var(--text-muted); }
     .history-time { display: block; white-space: nowrap; color: var(--text-muted); }
 
+    /* [B2] desktop table: one continuous row divider — tbody tr already carries
+       the border, so td borders come off (the flex Input cell otherwise paints
+       a mid-air line when Details wraps) + a little more header/column padding.
+       Stacked rows (container ≤759.98 / media ≤639.98) keep td field dividers. */
+    @container (min-width:760px){
+      #table-history td { border-bottom: 0; }
+      #table-history th { padding-left: var(--space-4); padding-right: var(--space-4); }
+      #table-history td { padding-left: var(--space-3); padding-right: var(--space-3); }
+    }
+
     /* Pagination */
     .pagination-row {
       display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
