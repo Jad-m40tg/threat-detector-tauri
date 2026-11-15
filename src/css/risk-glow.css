@@ -52,11 +52,37 @@
   --risk-border-a: .25;
 }
 
-/* --- Per-state --risk-rgb mapping, scoped to the index root only --- */
-#result-panel[data-risk="low"]        { --risk-rgb: var(--risk-low-rgb); }
-#result-panel[data-risk="medium"]     { --risk-rgb: var(--risk-medium-rgb); }
-#result-panel[data-risk="high"]       { --risk-rgb: var(--risk-high-rgb); }
-#result-panel[data-risk="unverified"] { --risk-rgb: var(--risk-unverified-rgb); }
+/* --- Verdict shade tokens (Phase 1 — docs/VERDICT_COLORS.md) ---------------
+   --vs-<verdict> is the gradient TINT of each verdict state (High / Medium /
+   Low / Not verified); ring, label, border and text colors are untouched.
+   Defaults equal today's colors, so nothing changes visually. The
+   --vs-<verdict>-<theme>-o fallback variables are JS overrides written by
+   DAC.verdictShade (stored in TDSettings as td.vs.<theme>.<verdict>); an
+   absent/removed property falls back to the default, so default theme
+   switching needs no JS. Dark defaults are shared by every dark variant
+   (oled / grey). Keep in sync with the table in docs/VERDICT_COLORS.md. */
+:root {
+  --vs-high:       var(--vs-high-dark-o,       #ff5a5f);
+  --vs-medium:     var(--vs-medium-dark-o,     #ffb020);
+  --vs-low:        var(--vs-low-dark-o,        #3ddc84);
+  --vs-unverified: var(--vs-unverified-dark-o, #8a93a0);
+}
+:root[data-theme="light"] {
+  --vs-high:       var(--vs-high-light-o,       #c2263b);
+  --vs-medium:     var(--vs-medium-light-o,     #b45309);
+  --vs-low:        var(--vs-low-light-o,        #127a48);
+  --vs-unverified: var(--vs-unverified-light-o, #55606a);
+}
+
+/* --- Per-state mapping, scoped to the index root only ---
+   --risk-rgb (triplet) feeds the border overlay and stays at the engine
+   defaults (border colors do not change). --risk-color feeds the gradient
+   tint and reads the verdict shade tokens, so DAC.verdictShade overrides
+   recolor the glow only. */
+#result-panel[data-risk="low"]        { --risk-rgb: var(--risk-low-rgb); --risk-color: var(--vs-low); }
+#result-panel[data-risk="medium"]     { --risk-rgb: var(--risk-medium-rgb); --risk-color: var(--vs-medium); }
+#result-panel[data-risk="high"]       { --risk-rgb: var(--risk-high-rgb); --risk-color: var(--vs-high); }
+#result-panel[data-risk="unverified"] { --risk-rgb: var(--risk-unverified-rgb); --risk-color: var(--vs-unverified); }
 
 /* --- INDEX: Analysis details card glow (reshaped — allowlist B) ------------
    Keeps .card's background-color, border width/style and radius. The tint is
@@ -71,8 +97,8 @@
 #result-panel[data-risk="high"],
 #result-panel[data-risk="unverified"] {
   background-image:
-    radial-gradient(90% 130% at 100% 100%, rgb(var(--risk-rgb) / var(--risk-edge-a)), transparent 58%),
-    radial-gradient(75% 120% at 100% 0%, rgb(var(--risk-rgb) / var(--risk-corner-a)), transparent 55%);
+    radial-gradient(90% 130% at 100% 100%, color-mix(in srgb, var(--risk-color, var(--vs-unverified)) calc(var(--risk-edge-a) * 100%), transparent), transparent 58%),
+    radial-gradient(75% 120% at 100% 0%, color-mix(in srgb, var(--risk-color, var(--vs-unverified)) calc(var(--risk-corner-a) * 100%), transparent), transparent 55%);
   transition: background-color 300ms ease;
 }
 
@@ -108,14 +134,16 @@ html[data-motion="reduced"] #result-panel::after { transition: none; }
    "view details" — one builder, one look). Only a soft bottom-right radial:
    --risk-corner-a is the highest alpha in play (.10 dark / .06 light), well
    inside AA over the modal surface. Not Verified rows tint with the neutral
-   grey (--risk-unverified-rgb) — never green, never a verdict color. Error
-   rows carry NO data-risk attribute (contract §2.2) and stay unglowed. */
-.modal-detail[data-risk="low"]        { --risk-rgb: var(--risk-low-rgb); }
-.modal-detail[data-risk="medium"]     { --risk-rgb: var(--risk-medium-rgb); }
-.modal-detail[data-risk="high"]       { --risk-rgb: var(--risk-high-rgb); }
-.modal-detail[data-risk="unverified"] { --risk-rgb: var(--risk-unverified-rgb); }
+   grey (--risk-unverified-rgb / --vs-unverified) — never green, never a verdict
+   color. Error rows carry NO data-risk attribute (contract §2.2) and stay
+   unglowed. --risk-rgb (border/border-untouched defaults) + --risk-color
+   (gradient tint) follow the same split as #result-panel above. */
+.modal-detail[data-risk="low"]        { --risk-rgb: var(--risk-low-rgb); --risk-color: var(--vs-low); }
+.modal-detail[data-risk="medium"]     { --risk-rgb: var(--risk-medium-rgb); --risk-color: var(--vs-medium); }
+.modal-detail[data-risk="high"]       { --risk-rgb: var(--risk-high-rgb); --risk-color: var(--vs-high); }
+.modal-detail[data-risk="unverified"] { --risk-rgb: var(--risk-unverified-rgb); --risk-color: var(--vs-unverified); }
 
 .modal-detail[data-risk] {
   background-image:
-    radial-gradient(85% 120% at 100% 100%, rgb(var(--risk-rgb) / var(--risk-corner-a)), transparent 60%);
+    radial-gradient(85% 120% at 100% 100%, color-mix(in srgb, var(--risk-color, var(--vs-unverified)) calc(var(--risk-corner-a) * 100%), transparent), transparent 60%);
 }

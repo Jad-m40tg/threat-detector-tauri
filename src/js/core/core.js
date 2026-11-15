@@ -1141,6 +1141,149 @@
     }
   };
 
+  /* ======================= verdict shade (Phase 1) ======================= */
+  /* Per-theme gradient tint overrides for the 4 verdict states (docs/VERDICT_COLORS.md).
+     Storage goes through TDSettings (keys td.vs.<theme>.<verdict>, registered in
+     settings.js); only overrides are stored — absent or "" means default. The CSS
+     side (risk-glow.css, css/pages/index.css) reads --vs-<verdict>, whose fallback
+     chain --vs-<verdict>-<theme>-o → default lets overrides apply with no JS in
+     the style rules. Defaults mirror risk-glow.css (kept in sync by hand). */
+  (function () {
+    var THEMES = ["light", "dark"];
+    var VERDICTS = ["high", "medium", "low", "unverified"];
+    var DEF = {
+      light: { high: "#c2263b", medium: "#b45309", low: "#127a48", unverified: "#55606a" },
+      dark:  { high: "#ff5a5f", medium: "#ffb020", low: "#3ddc84", unverified: "#8a93a0" }
+    };
+    var HEX6 = /^#?[0-9a-f]{6}$/i;
+    var HEX3 = /^#?[0-9a-f]{3}$/i;
+    var listeners = [];
+
+    function validTheme(t) { return THEMES.indexOf(t) !== -1; }
+    function validVerdict(v) { return VERDICTS.indexOf(v) !== -1; }
+    function storeKey(theme, verdict) { return "vs." + theme + "." + verdict; }
+    function ovVar(theme, verdict) { return "--vs-" + verdict + "-" + theme + "-o"; }
+
+    /* "#RGB"/"#RRGGBB" (case-insensitive, "#" optional) → lowercase "#rrggbb";
+       anything else → null (no throw). */
+    function normalizeHex(input) {
+      if (typeof input !== "string") return null;
+      var s = input.trim();
+      var m = HEX6.exec(s) || HEX3.exec(s);
+      if (!m) return null;
+      s = s.replace(/^#/, "").toLowerCase();
+      if (s.length === 3) {
+        s = s.charAt(0) + s.charAt(0) + s.charAt(1) + s.charAt(1) + s.charAt(2) + s.charAt(2);
+      }
+      return "#" + s;
+    }
+
+    function storedRaw(theme, verdict) {
+      var v = null;
+      try {
+        if (window.TDSettings && typeof window.TDSettings.get === "function") {
+          v = window.TDSettings.get(storeKey(theme, verdict));
+        }
+      } catch (e) { v = null; }
+      return v === null || v === undefined || v === "" ? null : String(v);
+    }
+
+    function effective(theme, verdict) {
+      var norm = normalizeHex(storedRaw(theme, verdict));
+      return norm || DEF[theme][verdict];
+    }
+
+    function applyOne(theme, verdict, hex) {
+      try { document.documentElement.style.setProperty(ovVar(theme, verdict), hex); }
+      catch (e) { /* no documentElement (tests): nothing to apply */ }
+    }
+    function removeOne(theme, verdict) {
+      try { document.documentElement.style.removeProperty(ovVar(theme, verdict)); }
+      catch (e) { /* nothing to apply */ }
+    }
+    function notify(theme, verdict, value) {
+      for (var i = 0; i < listeners.length; i++) {
+        try { listeners[i]({ theme: theme, verdict: verdict, value: value }); }
+        catch (e) { /* listener errors are isolated */ }
+      }
+    }
+
+    function tdSet(theme, verdict, value) {
+      try {
+        if (window.TDSettings && typeof window.TDSettings.set === "function") {
+          return window.TDSettings.set(storeKey(theme, verdict), value) !== false;
+        }
+      } catch (e) { /* storage unavailable */ }
+      return false;
+    }
+
+    /* Initial apply: stored overrides → --vs-<verdict>-<theme>-o on <html>.
+       Runs here (end-of-body core.js) — the earliest the contract allows, since
+       theme-init.js must not read td.* keys (TDSettings loads after it). */
+    (function applyStored() {
+      for (var t = 0; t < THEMES.length; t++) {
+        for (var v = 0; v < VERDICTS.length; v++) {
+          var norm = normalizeHex(storedRaw(THEMES[t], VERDICTS[v]));
+          if (norm) applyOne(THEMES[t], VERDICTS[v], norm);
+        }
+      }
+    })();
+
+    DAC.verdictShade = {
+      /* Effective hex: stored override if valid, else the default. */
+      get: function (theme, verdict) {
+        if (!validTheme(theme) || !validVerdict(verdict)) return null;
+        return effective(theme, verdict);
+      },
+      defaults: function (theme, verdict) {
+        if (!validTheme(theme) || !validVerdict(verdict)) return null;
+        return DEF[theme][verdict];
+      },
+      /* True only when a stored override differs from the default. */
+      isCustom: function (theme, verdict) {
+        if (!validTheme(theme) || !validVerdict(verdict)) return false;
+        var norm = normalizeHex(storedRaw(theme, verdict));
+        return !!norm && norm !== DEF[theme][verdict];
+      },
+      /* Returns true on success; invalid input is rejected without throwing. */
+      set: function (theme, verdict, hex) {
+        if (!validTheme(theme) || !validVerdict(verdict)) return false;
+        var norm = normalizeHex(hex);
+        if (!norm) return false;
+        tdSet(theme, verdict, norm);
+        applyOne(theme, verdict, norm); /* live apply even if storage is off */
+        notify(theme, verdict, norm);
+        return true;
+      },
+      /* "" at the store level = unset (default tint again). */
+      reset: function (theme, verdict) {
+        if (!validTheme(theme) || !validVerdict(verdict)) return false;
+        tdSet(theme, verdict, "");
+        removeOne(theme, verdict);
+        notify(theme, verdict, DEF[theme][verdict]);
+        return true;
+      },
+      resetAll: function () {
+        for (var t = 0; t < THEMES.length; t++) {
+          for (var v = 0; v < VERDICTS.length; v++) {
+            DAC.verdictShade.reset(THEMES[t], VERDICTS[v]);
+          }
+        }
+        return true;
+      },
+      /* fn({ theme, verdict, value }); returns an unsubscribe function. */
+      onChange: function (fn) {
+        if (typeof fn !== "function") return function () {};
+        listeners.push(fn);
+        return function () {
+          for (var i = 0; i < listeners.length; i++) {
+            if (listeners[i] === fn) { listeners.splice(i, 1); break; }
+          }
+        };
+      }
+    };
+  })();
+
   /* -------------------------------- boot -------------------------------- */
   /* Injects the CONTRACT §14 shell before <main> and the footer after it.
      Idempotent via [data-shell-ready]. */

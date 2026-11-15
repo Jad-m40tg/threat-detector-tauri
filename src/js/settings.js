@@ -21,7 +21,19 @@
       values: ["ring", "contrast"],
       attr: "data-nav-style",
       def: "ring"
-    }
+    },
+    /* Verdict shade overrides (Phase 1 — docs/VERDICT_COLORS.md). hex: true keys
+       store a lowercase "#rrggbb" (or "" meaning "unset / back to default");
+       def: null (absent key = default tint). Input normalization and validation
+       happen in DAC.verdictShade (js/core/core.js) before set() is called. */
+    "vs.light.high":       { store: "td.vs.light.high",       hex: true, def: null },
+    "vs.light.medium":     { store: "td.vs.light.medium",     hex: true, def: null },
+    "vs.light.low":        { store: "td.vs.light.low",        hex: true, def: null },
+    "vs.light.unverified": { store: "td.vs.light.unverified", hex: true, def: null },
+    "vs.dark.high":        { store: "td.vs.dark.high",        hex: true, def: null },
+    "vs.dark.medium":      { store: "td.vs.dark.medium",      hex: true, def: null },
+    "vs.dark.low":         { store: "td.vs.dark.low",         hex: true, def: null },
+    "vs.dark.unverified":  { store: "td.vs.dark.unverified",  hex: true, def: null }
   };
   /* Higher multiplier = slower progress animation. Exact decimals. */
   var MULTIPLIER = { fast: 1.0, normal: 1.4, slow: 2.2 };
@@ -53,9 +65,12 @@
     } catch (e2) { /* Map fallback unreachable */ }
   }
 
+  var HEX_RE = /^#?[0-9a-f]{6}$/i;
   function isValid(key, value) {
     var def = KEY_DEFS[key];
-    return !!def && typeof value === "string" && def.values.indexOf(value) !== -1;
+    if (!def || typeof value !== "string") { return false; }
+    if (def.hex) { return value === "" || HEX_RE.test(value); } /* "" = unset */
+    return def.values.indexOf(value) !== -1;
   }
 
   /* Legacy stored values, mapped to their canonical replacement: pre-rename
