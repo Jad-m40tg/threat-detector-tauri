@@ -507,7 +507,9 @@ Restore point: tag `before-risk-tag-b2` (5efee5e). Commits 9222b22 → 025e5d2
   by a danger ghost at core.css:768).
 - **Muted Verified status:** `.status-line.is-ok` → `--text-muted` +
   12px check svg (core.css; page dupes updated). is-warn/is-error keep
-  amber/red.
+  amber/red. Follow-up (same day, user review): the check mark goes back
+  to `--low` green (`.status-line.is-ok svg { color: var(--low) }`) —
+  label text stays muted; warn/error tones untouched.
 - **Continuous row dividers + column padding (desktop table mode only):**
   flex Input cells paint no td border; the divider moved to `tbody tr`
   (collapsed borders span the full row — aligns when Details wraps).
