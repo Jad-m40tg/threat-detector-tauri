@@ -482,3 +482,61 @@ since).
   card sat at 84px in the viewport (just below the sticky nav), batch state
   active. Smooth path is the production pattern already used by scan start.
   Console clean; `node --check` clean.
+
+### User-review round 8 (2026-11-15, risk-level tag redesign "B2" + table polish)
+Restore point: tag `before-risk-tag-b2` (5efee5e). Commits 9222b22 → 025e5d2
+→ 88cb69f → b457a04.
+- **B2 tag replaces the risk pills in both tables** (homepage Analysis
+  Results + history): shared builder `DAC.ui.riskTag` / `DAC.ui.riskTagHtml`
+  (core.js, string form cached per level — 20k builds = 3.2ms, no per-tag
+  SVG) + one `.risk-tag` block in core.css. Neutral container: inline-flex,
+  min-width 92px, padding 4px 12px (space tokens ≈ the ~4/11px spec),
+  radius `--radius-sm` 8px (no 6px token — nearest), bg `--bg-card-2`,
+  border `--border-strong`; label 12px/500/.03em in the risk text token;
+  3-bar bottom-aligned meter (3px wide, 2px gap, 1px radius, 6/9/12px,
+  inactive bars `--border-strong`; Low=1, Medium=2, High=3 active bars in
+  the risk fill token), bars aria-hidden. na (Not verified/error): same
+  container, no bars, grey triangle (app warn icon paths as one shared CSS
+  mask, tinted `--na`) + muted label "N/A" (constant text; the Status
+  column next to it spells out Not Verified/Error; "Not Verified" as label
+  would make the tag ~112px and overflow the fixed Risk column). `data-risk`
+  attributes unchanged (low/medium/high/na).
+- **Old pill CSS removed:** core.css `.pill` block, index.css `.dash-dot` +
+  `.pill svg` + a11y bg override, history.css `.pill-dot` + override,
+  `ICONS.dot`, `PILL_LABEL`/`PILL` maps. `--*-soft` tokens kept (still used
+  by a danger ghost at core.css:768).
+- **Muted Verified status:** `.status-line.is-ok` → `--text-muted` +
+  12px check svg (core.css; page dupes updated). is-warn/is-error keep
+  amber/red.
+- **Continuous row dividers + column padding (desktop table mode only):**
+  flex Input cells paint no td border; the divider moved to `tbody tr`
+  (collapsed borders span the full row — aligns when Details wraps).
+  Scoped `@container (min-width:760px)` per table so stacked card rows
+  keep their td field dividers. Header/cell horizontal padding 12→16px
+  (homepage), th 12→16 + td 8→12 (history). Risk columns widened to fit
+  the 92px tag: homepage col 120→128px; history 12%→16% (Input 27%→23%)
+  — this also fixes a pre-existing Medium-pill bleed at card ~830px
+  (measured 13px overflow at the old 12% column).
+- **Stacked history fix:** tag got stretched by the stacked grid
+  (`justify-self:start` keeps it 92px); homepage stacked td is flex, no
+  stretch there.
+- **Verified (computed-style probes on both pages, 3 themes):** identical
+  tags both tables (92×27, 12px/500/.03em, pad 4/12, radius 8, bg
+  card-2, border-strong); meter geometry exact; na = no meter + masked
+  triangle + muted label; real pipeline renders all levels (High 3 red /
+  Medium 2 amber / Low 1 green / na grey); no overflow at wide (1247),
+  mid (900) or stacked (700); contrast on tag surface AA in all themes
+  (light: low 5.12 / medium 4.78 / high 5.5 / na 6.72; dark-grey: 8.85 /
+  8.64 / 5.18 / 7.24; OLED: 9.93 / 9.69 / 5.8 / 8.12); filters, risk
+  sort (ascending/descending), search, details modal unchanged; 588-row
+  history paginates (10 rows in DOM, page render 3.7ms) so a 500-row
+  scroll never exists by design; td borders 0 + tr border continuous on
+  wrapped-Details rows; stacked views keep td field dividers; console
+  clean on both pages; `node --check` clean; no `.pill` rules left.
+- **Test-infra note:** localhost:8420 JS was served from browser heuristic
+  cache (files fetched yesterday); used http://127.0.0.1:8420 (separate
+  origin = fresh cache) for verification. Real-app usage unaffected.
+- **NOT RUN:** real engine error-row rendering in the homepage table (na
+  builder path verified via a seeded error record on history + builder
+  probe); screenshots (desktop window hidden) — side-by-side steps listed
+  in the report; smooth-scroll feel (frozen-timeline tab cannot animate).
