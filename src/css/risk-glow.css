@@ -49,17 +49,17 @@
   --risk-high-rgb: 194 38 59;
   --risk-unverified-rgb: 85 96 106;
 
-  /* Light theme — same hue family (contract §2.3). Alphas raised THREE times
-     after user reports: .12/.06/.25 → .16/.08/.28 (sketch round 2, still
-     invisible) → .28/.14/.40 (round 3) → .34/.20/.46 (round 4: "a little
-     more stronger"). Light now EXCEEDS dark (.22/.10/.35) ON PURPOSE: white
-     surfaces need a higher alpha for the same perceived strength (the same
-     tint on the dark card reads much stronger). Verified visually on the
-     white card and the thumbnails. Also strengthens the light history
-     .modal-detail tint slightly (shared tokens). */
-  --risk-edge-a: .34;
-  --risk-corner-a: .20;
-  --risk-border-a: .46;
+  /* Light theme — same hue family (contract §2.3). Alphas raised FOUR times
+     after user reports: .12/.06/.25 → .16/.08/.28 (round 2) → .28/.14/.40
+     (round 3) → .34/.20/.46 (round 4) → .50/.30/.55 (round 5: "increase the
+     gradient color strength more... they still feel barely visible" — possibly
+     a bad laptop panel, so this is deliberately bold: a clearly visible tint
+     even on a low-contrast screen). Light now far exceeds dark
+     (.22/.10/.35) ON PURPOSE: white surfaces need much more. Text stays
+     AA-safe (worst case --text on the high tint ≈ 10:1). */
+  --risk-edge-a: .50;
+  --risk-corner-a: .30;
+  --risk-border-a: .55;
 }
 
 /* --- Verdict shade tokens (Phase 1 — docs/VERDICT_COLORS.md) ---------------

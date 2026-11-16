@@ -732,6 +732,11 @@ The user's sketch redefined the modal layout; all questions answered. Changes:
   column, always visible, "Note: this feature is dev mode only", icon painted
   via DAC.ui.callouts.upgrade(body) right after the modal opens.
 - Shade picker square cap 280px -> 320px (sketch shows a larger square).
+- Apply/Reset button sizing (user r4: "exact same size" -> equal halves;
+  user r5: "make their width smaller just like their exact previous width"):
+  both buttons fixed at 96x44, centered in the controls column — compact
+  natural-looking width AND exactly equal at any label length (`.modal-vs
+  .set-actions .btn`, scoped to this modal).
 - Light gradient made visible (raised TWICE — user still found it "barely
   visible" after round 2): light alphas now edge .28 / corner .14 / border
   .40 (was .12/.06/.25 → .16/.08/.28 → current), i.e. light now EXCEEDS dark
@@ -797,20 +802,18 @@ Restore point: round-2 commit `01f4824`.
   that scaled height. Measured: all three buttons 160×138, all shots 142×90,
   one scale 0.2819 (505px stage at the 1000px modal).
 - `.vs-thumbs` grid fixed `repeat(3, minmax(0,1fr))` (was auto-fit).
-- Light gradient: user round-4 follow-up ("a little more stronger" + "the
-  white color of the cards too strong") — alphas raised a THIRD time to edge
-  .34 / corner .20 / border .46 (was .16/.08/.28 → .28/.14/.40 → current),
-  now clearly stronger than dark (.22/.10/.35) by design. Plus a new
-  light-only base tint: the card SURFACE carries a permanent 4%
-  `color-mix(in srgb, var(--risk-color) 4%, var(--bg-card))` background-color
-  (verdict-card.css, scoped `:root[data-theme="light"]` +
-  `[data-theme-scope="light"]`) so the whole card reads tinted instead of
-  stark white — verified bg color(srgb .990 .966 .969) for light high etc.
-  One token block (risk-glow.css, shared by the scope mirror) → preview,
-  thumbs AND dashboard card all raised together. Verified live for ALL 4
-  verdicts, big card AND thumbs: alphas [0.34, 0.20], borders .46, base
-  tints present (lightcheck.js; screenshots not eye-checked this round —
-  numeric proof only).
+- Light gradient: user round-5 follow-up ("increase the gradient color
+  strength more... they still feel barely visible idk if they are or because
+  my laptop screen is bad") — alphas raised a FOURTH time to edge .50 /
+  corner .30 / border .55 (history: .16/.08/.28 → .28/.14/.40 → .34/.20/.46
+  → current), deliberately bold so the tint registers even on a
+  low-contrast panel; base wash 4% → 10% (light high surface ≈ #F9E9EC,
+  clearly pink). Text stays AA-safe (worst case ≈10:1). One token block
+  (risk-glow.css, shared by the scope mirror) → preview, thumbs AND
+  dashboard card all raised together. Verified live for ALL 4 verdicts, big
+  card AND thumbs: alphas [0.50, 0.30], borders .55, base tints present
+  (lightcheck.js; screenshots not eye-checked this round — numeric proof
+  only).
 
 Verification (all suites re-run after the changes):
 1. verify_preview.js: 8/8 preview==dashboard width-invariant parity +

@@ -38,10 +38,12 @@
    the right edge; the tinted 1px border lives on the masked ::after
    overlay below (the former inset box-shadow stays removed).
    Light mode only (user round 4: "the white color of the cards too
-   strong"): the card SURFACE itself carries a permanent faint risk tint
-   (4% color-mix over --bg-card) so the whole card reads as "this verdict",
-   not only its right edge. Text tokens are unchanged (worst case --text on
-   the high tint ≈ 15:1, far above AA). */
+   strong"; round 5: base wash raised 4% → 10% because the tint "still
+   feels barely visible" on the user's screen): the card SURFACE itself
+   carries a permanent faint risk tint (10% color-mix over --bg-card) so
+   the whole card clearly reads as "this verdict", not only its right edge.
+   Text tokens are unchanged (worst case --text on the high tint ≈ 10:1,
+   far above AA). */
 .verdict-card[data-risk="low"],
 .verdict-card[data-risk="medium"],
 .verdict-card[data-risk="high"],
@@ -53,7 +55,7 @@
 }
 :root[data-theme="light"] .verdict-card[data-risk],
 [data-theme-scope="light"] .verdict-card[data-risk] {
-  background-color: color-mix(in srgb, var(--risk-color, var(--vs-unverified)) 4%, var(--bg-card));
+  background-color: color-mix(in srgb, var(--risk-color, var(--vs-unverified)) 10%, var(--bg-card));
 }
 
 /* Masked border overlay: right half only (allowlist B). Defined on the bare

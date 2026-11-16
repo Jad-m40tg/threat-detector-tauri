@@ -28,15 +28,16 @@ every dark variant (grey / OLED). Registered in `js/settings.js` (`hex: true`).
   set on `document.documentElement` by `DAC.verdictShade`; removed on reset.
 - Gradient alphas (shared by the verdict card and the details modal):
   dark `--risk-edge-a: .22` / `--risk-corner-a: .10` / `--risk-border-a: .35`;
-  light `.34` / `.20` / `.46` — raised three times after user reports
-  (`.12/.06/.25` → `.16/.08/.28` round 2 → `.28/.14/.40` round 3 → current,
-  round 4: "a little more stronger"). Light now EXCEEDS dark by design: a
-  white surface needs a higher alpha for the same perceived strength.
-  Additionally (round 4: "the white color of the cards too strong") the LIGHT
-  verdict card's base surface carries a permanent 4% risk-color mix over
-  `--bg-card` (verdict-card.css, scoped to light + `[data-theme-scope=light]`)
-  — the whole card reads tinted, not only its right edge; text tokens
-  unchanged (worst case ≈15:1, AA-safe).
+  light `.50` / `.30` / `.55` — raised four times after user reports
+  (`.12/.06/.25` → `.16/.08/.28` r2 → `.28/.14/.40` r3 → `.34/.20/.46` r4 →
+  current, r5: "increase the gradient color strength more... still feel
+  barely visible" — deliberately bold so the tint registers even on a
+  low-contrast laptop panel). Light far exceeds dark by design: a white
+  surface needs much more. Text stays AA-safe (worst case ≈10:1).
+  Additionally (r4, raised in r5) the LIGHT verdict card's base surface
+  carries a permanent 10% risk-color mix over `--bg-card`
+  (verdict-card.css, scoped to light + `[data-theme-scope=light]`) — the
+  whole card clearly reads tinted (light high ≈ `#F9E9EC`), not white.
 
 ## Selectors
 - Defaults: `:root` (dark) and `:root[data-theme="light"]` (light).
