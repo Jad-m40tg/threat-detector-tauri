@@ -36,7 +36,12 @@
    background-color, border width/style and radius. The tint is two
    right-anchored gradients whose fade completes ~52% of the card width from
    the right edge; the tinted 1px border lives on the masked ::after
-   overlay below (the former inset box-shadow stays removed). */
+   overlay below (the former inset box-shadow stays removed).
+   Light mode only (user round 4: "the white color of the cards too
+   strong"): the card SURFACE itself carries a permanent faint risk tint
+   (4% color-mix over --bg-card) so the whole card reads as "this verdict",
+   not only its right edge. Text tokens are unchanged (worst case --text on
+   the high tint ≈ 15:1, far above AA). */
 .verdict-card[data-risk="low"],
 .verdict-card[data-risk="medium"],
 .verdict-card[data-risk="high"],
@@ -45,6 +50,10 @@
     radial-gradient(90% 130% at 100% 100%, color-mix(in srgb, var(--risk-color, var(--vs-unverified)) calc(var(--risk-edge-a) * 100%), transparent), transparent 58%),
     radial-gradient(75% 120% at 100% 0%, color-mix(in srgb, var(--risk-color, var(--vs-unverified)) calc(var(--risk-corner-a) * 100%), transparent), transparent 55%);
   transition: background-color 300ms ease;
+}
+:root[data-theme="light"] .verdict-card[data-risk],
+[data-theme-scope="light"] .verdict-card[data-risk] {
+  background-color: color-mix(in srgb, var(--risk-color, var(--vs-unverified)) 4%, var(--bg-card));
 }
 
 /* Masked border overlay: right half only (allowlist B). Defined on the bare

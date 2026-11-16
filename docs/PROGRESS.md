@@ -797,17 +797,20 @@ Restore point: round-2 commit `01f4824`.
   that scaled height. Measured: all three buttons 160×138, all shots 142×90,
   one scale 0.2819 (505px stage at the 1000px modal).
 - `.vs-thumbs` grid fixed `repeat(3, minmax(0,1fr))` (was auto-fit).
-- Light gradient: user round-3 follow-up ("still barely visible on the
-  thumbnails and the preview") — light alphas raised a second time to edge
-  .28 / corner .14 / border .40 (was .16/.08/.28), now STRONGER than dark
-  (.22/.10/.35) by design: a white surface needs a higher alpha for the same
-  perceived strength, and the ~142×90 mini thumbs had proportionally almost
-  no tint. One token block (risk-glow.css, shared by the
-  `[data-theme-scope="light"]` mirror) → preview, thumbs AND dashboard card
-  all raised together. Verified live for ALL 4 verdicts, big card AND thumbs:
-  alphas [0.28, 0.14], borders rgba(194,38,59/.40) high, rgba(180,83,9/.40)
-  medium, rgba(18,122,72/.40) low, rgba(85,96,106/.40) unverified
-  (lightcheck.js + light-*.png screenshots).
+- Light gradient: user round-4 follow-up ("a little more stronger" + "the
+  white color of the cards too strong") — alphas raised a THIRD time to edge
+  .34 / corner .20 / border .46 (was .16/.08/.28 → .28/.14/.40 → current),
+  now clearly stronger than dark (.22/.10/.35) by design. Plus a new
+  light-only base tint: the card SURFACE carries a permanent 4%
+  `color-mix(in srgb, var(--risk-color) 4%, var(--bg-card))` background-color
+  (verdict-card.css, scoped `:root[data-theme="light"]` +
+  `[data-theme-scope="light"]`) so the whole card reads tinted instead of
+  stark white — verified bg color(srgb .990 .966 .969) for light high etc.
+  One token block (risk-glow.css, shared by the scope mirror) → preview,
+  thumbs AND dashboard card all raised together. Verified live for ALL 4
+  verdicts, big card AND thumbs: alphas [0.34, 0.20], borders .46, base
+  tints present (lightcheck.js; screenshots not eye-checked this round —
+  numeric proof only).
 
 Verification (all suites re-run after the changes):
 1. verify_preview.js: 8/8 preview==dashboard width-invariant parity +
@@ -819,12 +822,12 @@ Verification (all suites re-run after the changes):
 2. lightcheck.js (fresh page, light theme, all 4 verdicts): the alphas/
    borders above on big card + thumbs, white card surface, screenshots
    confirm a visible tint; 0 errors.
-3. verify_dashboard.js (re-run): 14 default diffs vs the restore snapshot
-   are EXACTLY the approved light-alpha raises (now 0.12→0.28, 0.06→0.14,
-   0.25→0.40; light only — nonLightDiffs=0); dark untouched; shades 8/8
-   (changed / other theme untouched / reset restored); batch rows follow
-   shades with medium/low untouched and borders unchanged; 0 console
-   errors.
+3. verify_dashboard.js (re-run): 18 default diffs vs the restore snapshot
+   are EXACTLY the light-alpha raises + the 4 new base-tint colors (now
+   0.12→0.34, 0.06→0.20, 0.25→0.46; light only — nonLightDiffs=0); dark
+   untouched; shades 8/8 (changed / other theme untouched / reset restored);
+   batch rows follow shades with medium/low untouched and borders unchanged;
+   0 console errors.
 4. verify_history.js (re-run): shade-immune (bg identical with/without
    shades, no `.verdict-card` on the page); `matchesOld=false` remains a
    STRING-format-only difference (rgba(61,220,132,0.1) vs color(srgb .../0.1)
