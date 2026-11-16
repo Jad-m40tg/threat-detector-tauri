@@ -99,42 +99,16 @@
   .scan-progress.is-indet .progress-bar { animation: none !important; transform: scaleX(0.35); opacity: 0.5; }
 }
 [data-motion="reduced"] .scan-progress.is-indet .progress-bar { animation: none !important; transform: scaleX(0.35); opacity: 0.5; }
-#result-panel .result-states{position:relative;min-height:220px;transition:height var(--dur-in) var(--ease-out)}
-#result-panel .result-state{position:absolute;top:0;left:0;width:100%;padding:var(--space-4) var(--space-5);opacity:0;visibility:hidden;transition:opacity var(--dur-in) var(--ease-out),visibility 0s linear var(--dur-in)}
-/* [D1] Idle text floats mid-panel: the state spans the wrapper's full used
-   height (top:0+bottom:0 — percentage heights don't resolve against the
-   wrapper's auto+min-height) and centers its content vertically. */
-#result-panel .state-idle{bottom:0;display:flex;flex-direction:column;justify-content:center}
-#result-panel .result-state.is-active{opacity:1;visibility:visible;transition:opacity var(--dur-in) var(--ease-out)}
-#result-panel .dash-c{text-align:center}
-#result-panel .dash-c h3{margin:0 0 var(--space-1);font-size:1.15em}
-#result-panel .dash-c p{margin:0;color:var(--text-muted)}
+/* Result-card styles moved to css/components/verdict-card.css (.verdict-card
+   selectors; the dashboard panel carries that class via #result-panel). */
 .dash-visual{margin:0 auto var(--space-3)}
 .dash-scan-dots span{opacity:.2;animation:dashDot 1.2s ease-in-out infinite}
 .dash-scan-dots span:nth-of-type(2){animation-delay:.2s}
 .dash-scan-dots span:nth-of-type(3){animation-delay:.4s}
 @keyframes dashDot{0%,60%,100%{opacity:.2}30%{opacity:1}}
 .scan-substatus{margin-top:var(--space-2)}
-.panel-heading{margin:0 0 var(--space-3);display:flex;align-items:baseline;gap:var(--space-3);flex-wrap:wrap}
-.panel-heading h3{margin:0;font-size:1.05em}
-.risk-label{font-weight:700}
-.risk-label[data-risk="medium"]{color:var(--medium)}
-.risk-label[data-risk="high"]{color:var(--high)}
-.risk-label[data-risk="error"]{color:var(--high)}
-.detail-rows{margin:0;display:grid;gap:var(--space-2)}
-.detail-rows .detail-dt{color:var(--text-faint);font-weight:600}
-.detail-rows .detail-dd{margin:0 0 var(--space-2);color:var(--text)}
-.dash-prewrap{white-space:pre-wrap;word-break:break-word}
-.reason-list{margin:0 0 var(--space-2);padding-left:var(--space-4);display:grid;gap:var(--space-1)}
-#result-panel .dash-threat-inner{padding-top:0}
-/* [D1] Float rings park top-right like the threat wheel. .unv-ring's
-   position:relative (core.css, later in the cascade) otherwise beats
-   .result-ring-float's absolute and drops the Not Verified logo into
-   flow at the left; top/right still come from the shared float hook. */
-#result-panel .result-ring-float{position:absolute}
-@media (min-width:600px){#result-panel .dash-threat-inner{padding-right:132px}#result-panel .dash-unv-inner{padding-right:132px}}
-@media (max-width:599.98px){#result-panel .dash-threat-inner{padding-top:108px}#result-panel .dash-unv-inner{padding-top:108px}}
-.ring-safe-wrap{margin:0 auto}
+/* Heading/label/row styles for the verdict card moved to
+   css/components/verdict-card.css (.verdict-card selectors). */
 .dash-batch-link{margin:var(--space-3) 0 0}
 
 /* [T2b] batch rows — scrollable per-row verdict list, one row per CSV entry in
@@ -148,16 +122,15 @@
 .batch-list::-webkit-scrollbar{width:10px}
 .batch-list::-webkit-scrollbar-track{background:transparent}
 .batch-list::-webkit-scrollbar-thumb{border:3px solid transparent;border-radius:999px;background-color:var(--border-strong);background-clip:padding-box}
-/* risk mapping per row (reuses risk-glow.css tokens): --risk-rgb keeps the
-   border tint and the left gradient at engine defaults. Batch rows are NOT
-   verdict-color targets (user sketch: only the analysis-details cards —
-   #result-panel and .modal-detail — follow the --vs-* overrides). */
-.batch-row[data-risk="low"]{--risk-rgb:var(--risk-low-rgb)}
-.batch-row[data-risk="medium"]{--risk-rgb:var(--risk-medium-rgb)}
-.batch-row[data-risk="high"]{--risk-rgb:var(--risk-high-rgb)}
-.batch-row[data-risk="unverified"]{--risk-rgb:var(--risk-unverified-rgb)}
-.batch-row[data-risk="na"]{--risk-rgb:var(--risk-unverified-rgb)}
-.batch-row{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3);border:1px solid color-mix(in srgb, var(--border) 75%, rgb(var(--risk-rgb, 138 147 160)) 25%);border-radius:var(--radius);background-color:var(--bg-card);background-image:linear-gradient(to left, rgb(var(--risk-rgb, 138 147 160) / .10), transparent 65%);content-visibility:auto;contain-intrinsic-size:auto 5em}
+/* risk mapping per row: --risk-rgb keeps the border tint at engine defaults
+   (borders/rings/text do not change); --risk-color feeds the left gradient
+   and follows the --vs-* verdict shades, as the user sketch asked. */
+.batch-row[data-risk="low"]{--risk-rgb:var(--risk-low-rgb);--risk-color:var(--vs-low)}
+.batch-row[data-risk="medium"]{--risk-rgb:var(--risk-medium-rgb);--risk-color:var(--vs-medium)}
+.batch-row[data-risk="high"]{--risk-rgb:var(--risk-high-rgb);--risk-color:var(--vs-high)}
+.batch-row[data-risk="unverified"]{--risk-rgb:var(--risk-unverified-rgb);--risk-color:var(--vs-unverified)}
+.batch-row[data-risk="na"]{--risk-rgb:var(--risk-unverified-rgb);--risk-color:var(--vs-unverified)}
+.batch-row{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3);border:1px solid color-mix(in srgb, var(--border) 75%, rgb(var(--risk-rgb, 138 147 160)) 25%);border-radius:var(--radius);background-color:var(--bg-card);background-image:linear-gradient(to left, color-mix(in srgb, var(--risk-color, var(--na)) 10%, transparent), transparent 65%);content-visibility:auto;contain-intrinsic-size:auto 5em}
 .batch-row-main{flex:1 1 auto;min-width:0}
 .batch-row-top{display:flex;align-items:baseline;gap:var(--space-3);min-width:0}
 .batch-row .risk-label{white-space:nowrap}
@@ -202,18 +175,7 @@ html[data-motion="reduced"] .row-check .chk-circle,html[data-motion="reduced"] .
 html[data-motion="full"] .batch-row{opacity:0;animation:dashRise var(--dur-in) var(--ease-out) forwards;animation-delay:calc(var(--row-i,0)*12ms)}
 [data-motion="reduced"] .batch-row{animation:none;opacity:1}
 @media (prefers-reduced-motion:reduce){.batch-row{animation:none;opacity:1}}
-.dash-safe-wrap{display:grid;justify-items:center;padding:var(--space-4) 0;text-align:center}
-.dash-safe-wrap h3{margin:0 0 var(--space-1)}
-.dash-safe-wrap p:last-child{margin:var(--space-1) 0 0;color:var(--text-muted);font-size:.92em}
-[data-motion="reduced"] #result-panel .result-states,[data-motion="reduced"] #result-panel .result-state{transition:none}
-@media (prefers-reduced-motion:reduce){#result-panel .result-states,#result-panel .result-state{transition:none}}
-html[data-motion="full"] #result-panel .reason-list li{opacity:0;animation:dashReason var(--dur-in) var(--ease-out) forwards}
-html[data-motion="full"] #result-panel .reason-list li:nth-child(2){animation-delay:80ms}
-html[data-motion="full"] #result-panel .reason-list li:nth-child(3){animation-delay:160ms}
-html[data-motion="full"] #result-panel .reason-list li:nth-child(4){animation-delay:240ms}
-@keyframes dashReason{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){#result-panel .reason-list li{opacity:1;animation:none;transform:none}}
-[data-motion="reduced"] #result-panel .reason-list li{opacity:1;animation:none;transform:none}
+/* Safe-state styles + card motion moved to css/components/verdict-card.css. */
 [data-motion="reduced"] .dash-scan-dots{display:none}
 [data-motion="reduced"] .scan-substatus{display:none}
 @media (prefers-reduced-motion:reduce){.dash-scan-dots{display:none}.scan-substatus{display:none}}

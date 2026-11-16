@@ -1,28 +1,26 @@
 /* ==========================================================================
    risk-glow.css — Agent E (Task 3), reshaped overnight (allowlist B + C)
-   Edge-tinted risk glow keyed to Agent F's data-risk attribute. Applies ONLY
-   to the scored root on index.html (contract §2.2):
-     - index.html  : #result-panel[data-risk="…"]  (Analysis details card; the
-                     dark card background/border width/radius come from .card)
-                     Glow is RIGHT-SIDE-ONLY (allowlist B): right-anchored
-                     background gradients whose fade completes ~52% of the
-                     card width from the right edge, and the tinted 1px border
-                     is drawn by a masked ::after overlay that fades out
-                     leftward. The former inset box-shadow is REMOVED.
-     - details modal (.modal-detail — history.html AND the dashboard batch
-     "view details" modal, both share DAC.ui.detailsCard): UI pass 1 re-adds
-     a SUBTLE tint (Task 2c, per approved sketch). This deliberately reverses
-     the old "allowlist C" removal: one soft bottom-right radial in the risk
-     color, alpha capped at --risk-corner-a (.10 dark / .06 light) so body
-     text keeps AA contrast over the modal surface.
+   Edge-tinted risk glow keyed to Agent F's data-risk attribute.
+      - index.html card (#result-panel, class .verdict-card): its tint rules
+        (per-state mapping, gradients, masked border overlay) now live in
+        css/components/verdict-card.css — one block shared with the Settings
+        preview. This file still defines the tokens both pages read:
+        --risk-*-rgb engine triplets + --risk-*-a alphas + the --vs-*
+        verdict-shade tokens (docs/VERDICT_COLORS.md), light-scoped for
+        [data-theme-scope] previews.
+      - details modal (.modal-detail — history.html AND the dashboard batch
+      "view details" modal, both share DAC.ui.detailsCard): UI pass 1 adds
+      a SUBTLE tint (Task 2c, per approved sketch) in the ENGINE risk color.
+      It deliberately does NOT follow the --vs-* verdict shades: the shade
+      targets only the dashboard result card.
    Deliberately NEVER matches: bare [data-risk], .risk-label pills, or the
    batch mini-pills (data-risk="na") — those keep their existing rules.
    All colors are rgb(var(--risk-rgb) / ALPHA): --risk-rgb is mapped per state
    below, and the alphas are tokens (--risk-*-a) so the light theme lowers
    intensity without touching the recipes. Idle / scanning / error states
    carry no data-risk attribute and therefore keep today's unglowed look.
-   No layout properties, no border-radius change on #result-panel, no outer
-   drop glow, no animation loops.
+   No layout properties, no border-radius change, no outer drop glow, no
+   animation loops.
    ========================================================================== */
 
 /* The scope attribute mirrors these tokens onto the verdict-color preview
@@ -77,77 +75,36 @@
   --vs-low:        var(--vs-low-light-o,        #127a48);
   --vs-unverified: var(--vs-unverified-light-o, #55606a);
 }
-
-/* --- Per-state mapping, scoped to the index root only ---
-   --risk-rgb (triplet) feeds the border overlay and stays at the engine
-   defaults (border colors do not change). --risk-color feeds the gradient
-   tint and reads the verdict shade tokens, so DAC.verdictShade overrides
-   recolor the glow only. */
-#result-panel[data-risk="low"]        { --risk-rgb: var(--risk-low-rgb); --risk-color: var(--vs-low); }
-#result-panel[data-risk="medium"]     { --risk-rgb: var(--risk-medium-rgb); --risk-color: var(--vs-medium); }
-#result-panel[data-risk="high"]       { --risk-rgb: var(--risk-high-rgb); --risk-color: var(--vs-high); }
-#result-panel[data-risk="unverified"] { --risk-rgb: var(--risk-unverified-rgb); --risk-color: var(--vs-unverified); }
-
-/* --- INDEX: Analysis details card glow (reshaped — allowlist B) ------------
-   Keeps .card's background-color, border width/style and radius. The tint is
-   RIGHT-SIDE-ONLY: two right-anchored gradients whose fade completes ~52% of
-   the card width from the right edge (center stays --bg-card), and the tinted
-   1px border lives on a masked ::after overlay (inset:0, radius inherited,
-   fades out leftward, gone by 52% width) instead of recoloring the element's
-   own border. The former inset box-shadow is REMOVED. No layout properties
-   change; #result-panel is already position:relative (css/pages/index.css). */
-#result-panel[data-risk="low"],
-#result-panel[data-risk="medium"],
-#result-panel[data-risk="high"],
-#result-panel[data-risk="unverified"] {
-  background-image:
-    radial-gradient(90% 130% at 100% 100%, color-mix(in srgb, var(--risk-color, var(--vs-unverified)) calc(var(--risk-edge-a) * 100%), transparent), transparent 58%),
-    radial-gradient(75% 120% at 100% 0%, color-mix(in srgb, var(--risk-color, var(--vs-unverified)) calc(var(--risk-corner-a) * 100%), transparent), transparent 55%);
-  transition: background-color 300ms ease;
+/* The Settings preview scopes the edited theme via [data-theme-scope] (see
+   core.css token blocks). Without this mirror, a light-scoped preview while
+   the app runs dark would fall back to the dark defaults above. */
+[data-theme-scope="light"] {
+  --vs-high:       var(--vs-high-light-o,       #c2263b);
+  --vs-medium:     var(--vs-medium-light-o,     #b45309);
+  --vs-low:        var(--vs-low-light-o,        #127a48);
+  --vs-unverified: var(--vs-unverified-light-o, #55606a);
 }
 
-/* Masked border overlay: right half only (allowlist B). Defined on the bare
-   root with a transparent border so the tint cross-fades over 300ms on risk
-   change (idle scenes render it fully invisible). pointer-events:none keeps
-   the card interactive; border-radius:inherit matches the .card corners. */
-#result-panel::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  border: 1px solid transparent;
-  pointer-events: none;
-  -webkit-mask-image: linear-gradient(to left, #000, transparent 52%);
-          mask-image: linear-gradient(to left, #000, transparent 52%);
-  transition: border-color 300ms ease;
-}
-#result-panel[data-risk]::after {
-  border-color: rgb(var(--risk-rgb) / var(--risk-border-a));
-}
+/* The #result-panel card tint (per-state mapping, gradients, masked border
+   overlay) MOVED to css/components/verdict-card.css as .verdict-card rules —
+   one tint block shared by the dashboard card and the Settings preview. */
 
-/* --- Reduced motion: no cross-fade (codebase [data-motion="reduced"] pattern) --- */
-html[data-motion="reduced"] #result-panel[data-risk] { transition: none; }
-html[data-motion="reduced"] #result-panel::after { transition: none; }
-@media (prefers-reduced-motion: reduce) {
-  #result-panel[data-risk],
-  #result-panel::after { transition: none; }
-}
-
-/* --- DETAILS MODAL TINT (Task 2c) -------------------------------------------
+/* --- DETAILS MODAL TINT (restored to the pre-verdict-shade default) --------
    .modal-detail is the shared details body (history page AND dashboard batch
-   "view details" — one builder, one look). Only a soft bottom-right radial:
-   --risk-corner-a is the highest alpha in play (.10 dark / .06 light), well
-   inside AA over the modal surface. Not Verified rows tint with the neutral
-   grey (--risk-unverified-rgb / --vs-unverified) — never green, never a verdict
-   color. Error rows carry NO data-risk attribute (contract §2.2) and stay
-   unglowed. --risk-rgb (border/border-untouched defaults) + --risk-color
-   (gradient tint) follow the same split as #result-panel above. */
-.modal-detail[data-risk="low"]        { --risk-rgb: var(--risk-low-rgb); --risk-color: var(--vs-low); }
-.modal-detail[data-risk="medium"]     { --risk-rgb: var(--risk-medium-rgb); --risk-color: var(--vs-medium); }
-.modal-detail[data-risk="high"]       { --risk-rgb: var(--risk-high-rgb); --risk-color: var(--vs-high); }
-.modal-detail[data-risk="unverified"] { --risk-rgb: var(--risk-unverified-rgb); --risk-color: var(--vs-unverified); }
+   "view details" — one builder, one look). Only a soft bottom-right radial
+   in the ENGINE risk color: the History/details modal deliberately does NOT
+   follow the --vs-* verdict shades (user decision — the shade targets only
+   the dashboard result card). --risk-rgb below maps per state from the
+   engine colors; alpha capped at --risk-corner-a (.10 dark / .06 light) so
+   body text keeps AA contrast over the modal surface. Not Verified rows tint
+   with the neutral grey — never green, never a verdict color. Error rows
+   carry NO data-risk attribute (contract §2.2) and stay unglowed. */
+.modal-detail[data-risk="low"]        { --risk-rgb: var(--risk-low-rgb); }
+.modal-detail[data-risk="medium"]     { --risk-rgb: var(--risk-medium-rgb); }
+.modal-detail[data-risk="high"]       { --risk-rgb: var(--risk-high-rgb); }
+.modal-detail[data-risk="unverified"] { --risk-rgb: var(--risk-unverified-rgb); }
 
 .modal-detail[data-risk] {
   background-image:
-    radial-gradient(85% 120% at 100% 100%, color-mix(in srgb, var(--risk-color, var(--vs-unverified)) calc(var(--risk-corner-a) * 100%), transparent), transparent 60%);
+    radial-gradient(85% 120% at 100% 100%, rgb(var(--risk-rgb) / var(--risk-corner-a)), transparent 60%);
 }

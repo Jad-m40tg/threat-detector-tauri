@@ -18,15 +18,19 @@
 /* Shared core centers the state views (.state-idle/.state-scanning/.state-safe/
    .state-unverified/.state-error) for the old hero layout. The detail-bearing
    states now read like the threat state: every heading, label and value is
-   start-aligned. Idle / scanning / safe keep their centered look. */
+   start-aligned. Idle / scanning / safe keep their centered look. The
+   .verdict-card twins cover the Settings preview render of the same card. */
 #result-panel .state-unverified,
-#result-panel .state-error { text-align: start; }
+#result-panel .state-error,
+.verdict-card .state-unverified { text-align: start; }
 #result-panel .state-error .panel-heading { justify-content: flex-start; }
 
 /* Long values wrap instead of forcing horizontal scroll
    (same preference the codebase already uses on .dash-prewrap) */
-#result-panel .detail-dd { word-break: break-word; min-width: 0; }
-#result-panel .reason-list li { word-break: break-word; }
+#result-panel .detail-dd,
+.verdict-card .detail-dd { word-break: break-word; min-width: 0; }
+#result-panel .reason-list li,
+.verdict-card .reason-list li { word-break: break-word; }
 
 /* History modal: left column holds pretextual notes under the ring */
 .modal-detail .vis-note { overflow-wrap: anywhere; }
@@ -36,7 +40,8 @@
    dd sit side by side; that pair needs too much width at phone sizes. Tracks
    collapse to one min(0,1fr) column → label above value, no markup change. */
 @media (max-width: 599.98px) {
-  #result-panel .detail-rows { grid-template-columns: minmax(0, 1fr); }
+  #result-panel .detail-rows,
+  .verdict-card .detail-rows { grid-template-columns: minmax(0, 1fr); }
 }
 /* history.html already stacks .detail-pair ≤639px (page CSS); nothing to add:
    600px is inside that range, so labels/values stack there too. */

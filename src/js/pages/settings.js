@@ -606,10 +606,10 @@
 
   /* ---------- Verdict colors (Phase 3 — docs/VERDICT_COLORS.md) ----------
      Two swatch rows (light/dark × 4 verdicts). A swatch opens the shared modal
-     shell (DAC.ui.modal) holding the REAL verdict card — DAC.ui.detailsCard +
-     DAC.ui.attachDetailVisuals, the same builder the dashboard batch
-     "view details" modal uses — plus TD.components.shadePicker. Drafts stay in
-     this closure: a picked shade writes --vs-<verdict> on the preview
+     shell (DAC.ui.modal) holding the REAL dashboard verdict card —
+     TD.components.verdictCard, the same builder + css/components/verdict-card.css
+     the dashboard result panel uses — plus TD.components.shadePicker. Drafts
+     stay in this closure: a picked shade writes --vs-<verdict> on the preview
      container (which also carries data-theme-scope so it shows the edited
      theme while the app runs in the other one). Nothing is saved until Apply
      calls DAC.verdictShade.set; closing discards the drafts. */
@@ -623,18 +623,19 @@
     { key: 'light', label: 'Light mode' },
     { key: 'dark', label: 'Dark mode' }
   ];
-  /* Sample records fed to DAC.ui.detailsCard — the same record shape the
-     dashboard/history pass it (risk, score, input, reasons, details). */
+  /* Sample records fed to TD.components.verdictCard — the app's normal result
+     shape, with the engine's real wording (same strings the backend rules
+     produce). Low/Not verified texts live in the card markup itself. */
   var VS_SAMPLES = {
     high: {
       input: 'http://192.168.1.122/login', type: 'url', risk: 'high', score: 90,
-      reasons: ['Insecure HTTP link', 'IP-address hostnames'],
-      recommendation: 'Do not visit this link or enter any information on the page.'
+      reasons: ['Uses unencrypted HTTP protocol', 'Hostname is a raw IP address instead of a domain name'],
+      recommendation: 'Do not open, click, or interact with this content. Severe risk indicators identified.'
     },
     medium: {
       input: 'http://www.news-portal-385.org/articles', type: 'url', risk: 'medium', score: 45,
-      reasons: ['Urgent language.'],
-      recommendation: 'Be cautious — check the source before trusting the content.'
+      reasons: ['Uses unencrypted HTTP protocol', 'Hostname contains 1 suspicious keyword(s)'],
+      recommendation: 'Exercise caution. Verify source before proceeding or sharing credentials.'
     },
     low: {
       input: 'https://example.com', type: 'url', risk: 'low', score: 5,
@@ -642,7 +643,8 @@
     },
     unverified: {
       input: 'htp:/malformed-url', type: 'url', risk: 'unverified',
-      details: 'Unable to verify: Malformed URL.'
+      details: 'Malformed URL format: relative URL without a base',
+      recommendation: 'Unable to complete inspection safely. Treat as untrusted and do not proceed.'
     }
   };
   var VS_ORDER = ['high', 'medium', 'low', 'unverified'];
@@ -718,45 +720,90 @@
     if (!fromPicker && vsModal.picker) vsModal.picker.set(hex, { silent: true });
   }
 
-  /* The real verdict card for one verdict, with its animated visuals. Handles
-     are collected so modal close can destroy every one of them. */
+  /* The REAL verdict card for one verdict — TD.components.verdictCard, the
+     same builder + markup the dashboard result card uses, in a container
+     that mirrors the dashboard shell classes (card result-panel). Ids are
+     omitted (ids:false): several preview copies coexist with the dashboard's
+     ids in one document. The visual (ring / check / dashed ring) is mounted
+     after the card is in the DOM, like the dashboard does. */
   function vsRenderCard(key) {
-    var rec = VS_SAMPLES[key];
-    var h = DAC.ui.detailsCard(rec);
-    h.card.classList.add('vs-card');
-    DAC.ui.attachDetailVisuals(h, rec, function (handle) {
-      if (handle) vsModal.vis.push(handle);
-    });
-    return h.card;
+    var host = document.createElement('div');
+    host.className = 'card result-panel verdict-card vs-card';
+    host.setAttribute('data-risk', key);
+    host.__refs = window.TD.components.verdictCard.render(host, key, VS_SAMPLES[key], { ids: false });
+    return host;
+  }
+
+  function vsMountVisual(key, refs) {
+    var V = DAC.visuals || {};
+    var push = function (h) { if (h) vsModal.vis.push(h); };
+    if (!refs || !vsModal) return;
+    if (key === 'low' && typeof V.checkCircle === 'function') {
+      push(V.checkCircle(refs.checkHost));
+    } else if (key === 'unverified' && typeof V.unverifiedRing === 'function') {
+      push(V.unverifiedRing(refs.ringHost));
+    } else if (typeof V.scoreRing === 'function') {
+      var score = VS_SAMPLES[key] && typeof VS_SAMPLES[key].score === 'number' ? VS_SAMPLES[key].score : 0;
+      push(V.scoreRing(refs.ringHost, Math.min(score, 99), key));
+    }
+  }
+
+  /* Keep the stacked-state wrapper's height in step with its (absolute)
+     state, exactly like the dashboard's syncHeight. */
+  function vsSyncHeight(card) {
+    var wrap = card.querySelector('.result-states');
+    var st = card.querySelector('.result-state');
+    if (wrap && st) wrap.style.height = st.offsetHeight + 'px';
   }
 
   /* Thumbnails: the three verdicts that are not selected, fixed order.
-     Gradients read --vs-* inherited from the preview container, so a draft
-     recolors the matching thumb with no extra DOM work. */
+     Each is a scaled-down REAL render of the shared card (transform:scale()
+     in a fixed-size wrapper, pointer-events:none, aria-hidden inside) plus
+     the verdict title as visible text, inside a real button. Draft shades
+     reach every render via --vs-* inherited from the preview container.
+     The unscaled render is the SAME width as the .vs-stage card, so a thumb
+     is an exact scaled copy of the big preview; scale is derived from the
+     real stage width (no hardcoded pair that can drift). */
+  var VS_THUMB_W = 129;        /* visual thumbnail width, px */
   function vsRenderThumbs() {
     if (!vsModal) return;
     vsModal.thumbs.textContent = '';
+    var stageW = vsModal.stage.getBoundingClientRect().width || VS_THUMB_W * 3;
+    var scale = +(VS_THUMB_W / stageW).toFixed(4);
     VS_ORDER.forEach(function (key) {
       if (key === vsModal.verdict) return;
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'vs-thumb';
       btn.setAttribute('data-risk', key);
-      var ico = document.createElement('span');
-      ico.className = 'vs-ico' + (key === 'high' || key === 'medium' ? ' vs-ico-ring' : '');
-      ico.setAttribute('aria-hidden', 'true');
-      if (key === 'low' && DAC.glyphs && typeof DAC.svgGlyph === 'function') {
-        ico.appendChild(DAC.svgGlyph(DAC.glyphs.check));
-      } else if (key === 'unverified' && DAC.glyphs && typeof DAC.svgGlyph === 'function') {
-        ico.appendChild(DAC.svgGlyph(DAC.glyphs.alert));
-      }
+      btn.setAttribute('aria-label', 'Show ' + vsVerdictLabel(key) + ' preview');
+
+      var shot = document.createElement('span');
+      shot.className = 'vs-thumb-shot';
+      shot.setAttribute('aria-hidden', 'true');
+      var card = document.createElement('div');
+      card.className = 'card result-panel verdict-card';
+      card.setAttribute('data-risk', key);
+      card.style.width = stageW + 'px';            /* same layout as the stage */
+      card.style.transform = 'scale(' + scale + ')'; /* shrink to VS_THUMB_W */
+      var refs = window.TD.components.verdictCard.render(card, key, VS_SAMPLES[key], { ids: false });
+      shot.appendChild(card);
+      btn.appendChild(shot);
+
       var title = document.createElement('span');
       title.className = 'vs-thumb-title';
       title.textContent = vsVerdictLabel(key);
-      btn.appendChild(ico);
       btn.appendChild(title);
       btn.addEventListener('click', function () { vsShowVerdict(key); });
       vsModal.thumbs.appendChild(btn);
+
+      /* Fit the fixed wrapper to this card's natural height (scaled): sync
+         the state wrapper first, then measure and size the shot. */
+      vsSyncHeight(card);
+      var natural = card.offsetHeight || 0;
+      shot.style.height = Math.round(natural * scale) + 'px';
+      shot.style.width = VS_THUMB_W + 'px';
+      if (refs && refs.wrap) refs.wrap.setAttribute('aria-hidden', 'true');
     });
   }
 
@@ -769,6 +816,8 @@
     var card = vsRenderCard(key);
     card.classList.add('vs-enter');
     vsModal.stage.appendChild(card);
+    vsSyncHeight(card);
+    vsMountVisual(key, card.__refs);
     void card.offsetWidth; /* compute the start state, then release it */
     card.classList.remove('vs-enter');
     vsModal.verdict = key;
@@ -926,7 +975,10 @@
     if (!vsModal) return;
     vsModal.verdict = key;
     vsRenderThumbs();
-    vsModal.stage.appendChild(vsRenderCard(key));
+    var card = vsRenderCard(key);
+    vsModal.stage.appendChild(card);
+    vsSyncHeight(card);
+    vsMountVisual(key, card.__refs);
   }
 
   /* ---------- initial render from persisted settings ---------- */

@@ -216,21 +216,22 @@ html[data-motion="reduced"] .set-wrap *, html[data-motion="reduced"] .set-wrap *
 .vs-preview-col, .vs-controls-col { min-width: 0; display: flex; flex-direction: column; gap: var(--space-3); }
 .vs-side-label { margin: 0; font-size: .82rem; font-weight: 600; color: var(--text-muted); }
 
-/* Large preview: the real details card on the edited theme's surface. The
-   empty foot the builder appends stays out of the preview. */
+/* Large preview: the REAL verdict card (card result-panel verdict-card, from
+   TD.components.verdictCard + css/components/verdict-card.css) on the edited
+   theme's surface. Structure and styles come from the shared component;
+   nothing is faked here. The stacked-state wrapper's height is set by
+   vsSyncHeight (same mechanism as the dashboard's syncHeight). */
 .vs-stage { position: relative; }
-.vs-stage .modal-detail {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
-}
-.vs-stage .modal-foot { display: none; }
-/* The preview card is ~430px wide at every viewport width (it lives in the
-   modal's preview column), so it needs the same narrow treatment
-   analysis-card.css applies at <=639px: labels stack above their values,
-   otherwise the fixed 150px dt column leaves ~60px for the value. */
-.vs-stage .detail-pair { grid-template-columns: 1fr; gap: var(--space-1); }
+
+/* The picker column (~430px) and the thumb shots (320px) are always narrower
+   than the card's natural layout (896px on the dashboard). Every render
+   inside this modal gets the same ≤600px treatment the card has on phones:
+   labels stack above values and the floating ring gets its own top strip
+   (same values as css/components/verdict-card.css and css/analysis-card.css
+   — change those together). */
+.vs-modal .verdict-card .detail-rows { grid-template-columns: minmax(0, 1fr); }
+.vs-modal .verdict-card .dash-threat-inner,
+.vs-modal .verdict-card .dash-unv-inner { padding-top: 108px; }
 
 /* Cross-fade on verdict switch (transform + opacity only, ~200ms; the reduced
    motion kill below makes it instant) */
@@ -242,14 +243,16 @@ html[data-motion="reduced"] .set-wrap *, html[data-motion="reduced"] .set-wrap *
   pointer-events: none;
 }
 
-/* Thumbnails: small cards with the same gradient recipe as .modal-detail
-   (risk-glow.css), tinted via --risk-color ← --vs-* inherited from the
-   preview container. Icon + title only; icons keep the ENGINE risk colors
-   (only the gradient tint is user-controlled). */
+/* Thumbnails: small real renders of the shared card — the card is laid out
+   at the .vs-stage width by JS (settings.js), then transform:scale() shrinks
+   it into a fixed-size wrapper (scale + wrapper size set per card by
+   vsRenderThumbs, so a thumb is always an exact copy of the big preview).
+   The wrapper clips overflow and blocks interaction; the verdict title
+   stays visible text. */
 .vs-thumbs { display: flex; flex-wrap: wrap; gap: var(--space-3); }
 .vs-thumb {
   display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2);
-  min-width: 128px; padding: var(--space-3) var(--space-4);
+  padding: var(--space-2); min-width: 0;
   font: inherit; text-align: start; color: var(--text); cursor: pointer;
   background-color: var(--bg-card);
   border: 1px solid var(--border); border-radius: var(--radius-lg);
@@ -257,22 +260,15 @@ html[data-motion="reduced"] .set-wrap *, html[data-motion="reduced"] .set-wrap *
 }
 .vs-thumb:hover { border-color: var(--border-strong); }
 .vs-thumb:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-.vs-thumb[data-risk] {
-  background-image: radial-gradient(85% 120% at 100% 100%,
-    color-mix(in srgb, var(--risk-color) calc(var(--risk-corner-a) * 100%), transparent), transparent 60%);
+.vs-thumb-shot {
+  display: block; overflow: hidden; pointer-events: none;
 }
-.vs-thumb[data-risk="high"]       { --risk-color: var(--vs-high); }
-.vs-thumb[data-risk="medium"]     { --risk-color: var(--vs-medium); }
-.vs-thumb[data-risk="low"]        { --risk-color: var(--vs-low); }
-.vs-thumb[data-risk="unverified"] { --risk-color: var(--vs-unverified); }
+.vs-thumb-shot .verdict-card {
+  /* width + scale come from JS (vsRenderThumbs) so thumbs always match the
+     stage render exactly; only the origin is fixed here */
+  transform-origin: 0 0;
+}
 .vs-thumb-title { font-weight: 600; font-size: .9rem; }
-.vs-ico { display: inline-flex; width: 22px; height: 22px; color: var(--na); }
-.vs-ico svg { width: 22px; height: 22px; display: block; }
-.vs-ico-ring { width: 20px; height: 20px; border: 2px solid var(--na); border-radius: 50%; }
-.vs-thumb[data-risk="high"] .vs-ico       { color: var(--high); border-color: var(--high); }
-.vs-thumb[data-risk="medium"] .vs-ico     { color: var(--medium); border-color: var(--medium); }
-.vs-thumb[data-risk="low"] .vs-ico        { color: var(--low); }
-.vs-thumb[data-risk="unverified"] .vs-ico { color: var(--na); }
 
 /* Current / Selected color dots */
 .vs-dots { display: flex; flex-direction: column; gap: var(--space-2); }

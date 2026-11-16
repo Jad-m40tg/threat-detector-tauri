@@ -656,3 +656,53 @@ Facts established by direct inspection of the user's machine:
   check the address bar of the stale tab. No code changes until the user's
   sketch-specific feedback arrives (avoid churning against their intent).
 
+### Verdict-colors FIX round (2026-11-16, after the user's sketch feedback)
+Scope: shades retargeted to the dashboard result card ONLY, preview = real card,
+light mode fixed, modal layout fixed. Frontend only (`src/`), no new libraries.
+
+- Shared card: NEW `src/js/components/verdictCard.js`
+  (`TD.components.verdictCard.render(host, verdict, data, opts)`) + NEW
+  `src/css/components/verdict-card.css` (card styles moved here + ONE tint
+  block reading only `--vs-*`, hex-safe via color-mix). index.html +
+  settings.html load both. Dashboard boots the three static shells through the
+  builder (identical markup) and `presentResult` fills via the builder
+  (ids kept); preview builds with `{ ids:false }` (unique ids in one doc).
+- `css/risk-glow.css`: `#result-panel` tint block removed (moved to
+  verdict-card.css); `.modal-detail` restored to the engine
+  `rgb(var(--risk-rgb)/var(--risk-corner-a))` radial (shade-immune); light-mode
+  `[data-theme-scope="light"]` `--vs-*` mirror added.
+- `css/pages/index.css`: `.batch-row` follows the shades again
+  (`--risk-color: var(--vs-*)` + color-mix gradient); borders unchanged.
+- `css/analysis-card.css`: `.verdict-card` twins for word-break + narrow
+  detail-rows (same values the card has on phones).
+- `css/pages/settings.css`: `.vs-stage`/`.vs-thumb-shot` render the REAL card;
+  `.vs-modal .verdict-card` gets the phone treatment (picker column ~430px is
+  narrower than the card's natural 896px layout); old `.modal-detail` fakes
+  and `.vs-ico` removed.
+- `js/pages/settings.js`: preview + thumbs rebuilt on the builder
+  (VS_SAMPLES = exact engine strings; thumbs = scaled real renders, scale
+  derived from the live stage width; ~200ms cross-fade; height sync mirrors
+  the dashboard's syncHeight). NOTE: this file has a legacy IIFE-local
+  `var TD = window.TDSettings` - builder calls must use `window.TD.components`.
+- `js/pages/index.js`: builder adoption at boot + in `presentResult`.
+
+Verification (playwright-core + msedge, current src vs
+`Desktop/_restore/before-verdict-fix` snapshot on :8421):
+1. Dashboard card unchanged at defaults: 0 diffs (bg, ::after border, radius,
+   label/dt/dd colors, ring, padding; both themes, all verdicts + scanned).
+2. Shades: 8/8 (theme x verdict) changed, green reads back, other theme
+   untouched, Reset restores; Reset all clears.
+3. History page + modal immune (no `.verdict-card`, bg identical with/without
+   shades, numerically equal to restore).
+4. Batch rows follow shades (high #FF5A5F -> #00aa00), med/low untouched,
+   borders unchanged; Threat Summary correct; CSV run OK.
+5. Preview == dashboard card: computed styles equal 8/8 (both themes x 4
+   verdicts; unverified via stubbed DAC.analyze -> real presentResult path so
+   the ring compares too; exact engine texts on both sides).
+6. Thumbs: real buttons, aria-labels, scaled real renders, pointer-events:none
+   + aria-hidden inside, visible titles; nothing saved before Apply (spy on
+   verdictShade.set); Apply persists, repaints swatch, survives reload.
+7. Modal fits viewport at 1366x768, 1920x1080 and the user-real 911x512;
+   thumbs reachable (body scrolls, header stays put).
+8. Console clean: 0 page errors / 0 console errors across all suites.
+

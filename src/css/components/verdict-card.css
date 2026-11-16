@@ -1,0 +1,127 @@
+/* ==========================================================================
+   css/components/verdict-card.css — the standard verdict result card
+   One component for the dashboard result card AND the Settings preview.
+   The card root carries class .verdict-card and data-risk="low|medium|
+   high|unverified"; the dashboard instance is #result-panel (keeps its id
+   and .result-panel shell). Markup comes from TD.components.verdictCard
+   (js/components/verdictCard.js) on both pages.
+
+   Rules here were MOVED unchanged from css/pages/index.css and
+   css/risk-glow.css, retargeting #result-panel X → .verdict-card X so the
+   same card can render outside the dashboard.
+
+   [D1] cascade trap (kept from index.css): the float rings must stay
+   absolutely parked while core.css pins .ring-wrap and .unv-ring
+   {position:relative} later in its own cascade. The two-class selector
+   (.verdict-card .result-ring-float, 0,2,0) keeps beating those (0,1,0);
+   top/right still come from the shared float hook in core.css
+   (.result-ring-float, .ring-float). The card root must be positioned for
+   the masked border overlay — the dashboard panel gets position:relative
+   from .result-panel (core.css); the Settings preview reuses that class.
+
+   Tint rules read ONLY --vs-* (defaults + JS overrides live in
+   css/risk-glow.css; doc: docs/VERDICT_COLORS.md). --risk-rgb (borders)
+   stays at the engine colors on purpose: only the gradient tint follows a
+   user shade. Tint colors go through color-mix(), so hex overrides work in
+   both themes (no hex inside rgb(var(--risk-rgb)) on the tint path).
+   ========================================================================== */
+
+/* --- Verdict tint (moved from css/risk-glow.css — single source) ---------- */
+.verdict-card[data-risk="low"]        { --risk-rgb: var(--risk-low-rgb); --risk-color: var(--vs-low); }
+.verdict-card[data-risk="medium"]     { --risk-rgb: var(--risk-medium-rgb); --risk-color: var(--vs-medium); }
+.verdict-card[data-risk="high"]       { --risk-rgb: var(--risk-high-rgb); --risk-color: var(--vs-high); }
+.verdict-card[data-risk="unverified"] { --risk-rgb: var(--risk-unverified-rgb); --risk-color: var(--vs-unverified); }
+
+/* Right-side-only glow (allowlist B, geometry unchanged): .card keeps the
+   background-color, border width/style and radius. The tint is two
+   right-anchored gradients whose fade completes ~52% of the card width from
+   the right edge; the tinted 1px border lives on the masked ::after
+   overlay below (the former inset box-shadow stays removed). */
+.verdict-card[data-risk="low"],
+.verdict-card[data-risk="medium"],
+.verdict-card[data-risk="high"],
+.verdict-card[data-risk="unverified"] {
+  background-image:
+    radial-gradient(90% 130% at 100% 100%, color-mix(in srgb, var(--risk-color, var(--vs-unverified)) calc(var(--risk-edge-a) * 100%), transparent), transparent 58%),
+    radial-gradient(75% 120% at 100% 0%, color-mix(in srgb, var(--risk-color, var(--vs-unverified)) calc(var(--risk-corner-a) * 100%), transparent), transparent 55%);
+  transition: background-color 300ms ease;
+}
+
+/* Masked border overlay: right half only (allowlist B). Defined on the bare
+   root with a transparent border so the tint cross-fades over 300ms on risk
+   change (idle scenes render it fully invisible). pointer-events:none keeps
+   the card interactive; border-radius:inherit matches the .card corners. */
+.verdict-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid transparent;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to left, #000, transparent 52%);
+          mask-image: linear-gradient(to left, #000, transparent 52%);
+  transition: border-color 300ms ease;
+}
+.verdict-card[data-risk]::after {
+  border-color: rgb(var(--risk-rgb) / var(--risk-border-a));
+}
+
+/* Reduced motion: no cross-fade (codebase [data-motion="reduced"] pattern) */
+html[data-motion="reduced"] .verdict-card[data-risk] { transition: none; }
+html[data-motion="reduced"] .verdict-card::after { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .verdict-card[data-risk],
+  .verdict-card::after { transition: none; }
+}
+
+/* --- Stacked result states (moved from css/pages/index.css) --------------- */
+.verdict-card .result-states{position:relative;min-height:220px;transition:height var(--dur-in) var(--ease-out)}
+.verdict-card .result-state{position:absolute;top:0;left:0;width:100%;padding:var(--space-4) var(--space-5);opacity:0;visibility:hidden;transition:opacity var(--dur-in) var(--ease-out),visibility 0s linear var(--dur-in)}
+/* [D1] Idle text floats mid-panel: the state spans the wrapper's full used
+   height (top:0+bottom:0 — percentage heights don't resolve against the
+   wrapper's auto+min-height) and centers its content vertically. */
+.verdict-card .state-idle{bottom:0;display:flex;flex-direction:column;justify-content:center}
+.verdict-card .result-state.is-active{opacity:1;visibility:visible;transition:opacity var(--dur-in) var(--ease-out)}
+.verdict-card .dash-c{text-align:center}
+.verdict-card .dash-c h3{margin:0 0 var(--space-1);font-size:1.15em}
+.verdict-card .dash-c p{margin:0;color:var(--text-muted)}
+
+/* --- Heading, risk label, rows (moved from css/pages/index.css) ------------ */
+.verdict-card .panel-heading{margin:0 0 var(--space-3);display:flex;align-items:baseline;gap:var(--space-3);flex-wrap:wrap}
+.verdict-card .panel-heading h3{margin:0;font-size:1.05em}
+.verdict-card .risk-label{font-weight:700}
+.verdict-card .risk-label[data-risk="medium"]{color:var(--medium)}
+.verdict-card .risk-label[data-risk="high"]{color:var(--high)}
+.verdict-card .risk-label[data-risk="error"]{color:var(--high)}
+.verdict-card .detail-rows{margin:0;display:grid;gap:var(--space-2)}
+.verdict-card .detail-rows .detail-dt{color:var(--text-faint);font-weight:600}
+.verdict-card .detail-rows .detail-dd{margin:0 0 var(--space-2);color:var(--text)}
+.verdict-card .dash-prewrap{white-space:pre-wrap;word-break:break-word}
+.verdict-card .reason-list{margin:0 0 var(--space-2);padding-left:var(--space-4);display:grid;gap:var(--space-1)}
+
+/* --- State inners (moved from css/pages/index.css) ------------------------ */
+.verdict-card .dash-threat-inner{padding-top:0}
+/* [D1] Float rings park top-right like the threat wheel. .unv-ring's
+   position:relative (core.css, later in the cascade) otherwise beats
+   .result-ring-float's absolute and drops the Not Verified logo into
+   flow at the left; top/right still come from the shared float hook. */
+.verdict-card .result-ring-float{position:absolute}
+@media (min-width:600px){.verdict-card .dash-threat-inner{padding-right:132px}.verdict-card .dash-unv-inner{padding-right:132px}}
+@media (max-width:599.98px){.verdict-card .dash-threat-inner{padding-top:108px}.verdict-card .dash-unv-inner{padding-top:108px}}
+.verdict-card .ring-safe-wrap{margin:0 auto}
+
+/* --- Low-risk (safe) state (moved from css/pages/index.css) ---------------- */
+.verdict-card .dash-safe-wrap{display:grid;justify-items:center;padding:var(--space-4) 0;text-align:center}
+.verdict-card .dash-safe-wrap h3{margin:0 0 var(--space-1)}
+.verdict-card .dash-safe-wrap p:last-child{margin:var(--space-1) 0 0;color:var(--text-muted);font-size:.92em}
+
+/* --- Motion (moved from css/pages/index.css) ------------------------------- */
+[data-motion="reduced"] .verdict-card .result-states,[data-motion="reduced"] .verdict-card .result-state{transition:none}
+@media (prefers-reduced-motion:reduce){.verdict-card .result-states,.verdict-card .result-state{transition:none}}
+html[data-motion="full"] .verdict-card .reason-list li{opacity:0;animation:dashReason var(--dur-in) var(--ease-out) forwards}
+html[data-motion="full"] .verdict-card .reason-list li:nth-child(2){animation-delay:80ms}
+html[data-motion="full"] .verdict-card .reason-list li:nth-child(3){animation-delay:160ms}
+html[data-motion="full"] .verdict-card .reason-list li:nth-child(4){animation-delay:240ms}
+@keyframes dashReason{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.verdict-card .reason-list li{opacity:1;animation:none;transform:none}}
+[data-motion="reduced"] .verdict-card .reason-list li{opacity:1;animation:none;transform:none}

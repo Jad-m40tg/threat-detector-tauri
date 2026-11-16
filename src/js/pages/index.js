@@ -162,30 +162,18 @@
 
   function presentResult(res) {
     lastRes = res;
+    var card = TD.components.verdictCard;
     if (res.risk === 'medium' || res.risk === 'high') {
-      var lbl = $('threat-risk-label');
-      lbl.textContent = RISK_LABEL[res.risk];
-      lbl.setAttribute('data-risk', res.risk);
       setPanelRisk(res.risk);
-      $('detail-input').textContent = money.mask ? money.mask(res.input) : res.input;
-      $('detail-score').textContent = String(clampN(res.score, 99));
-      var ul = $('detail-reasons');
-      ul.textContent = '';
-      var rs = res.reasons || [];
-      for (var j = 0; j < rs.length; j++) {
-        var li = document.createElement('li');
-        li.textContent = rs[j];
-        ul.appendChild(li);
-      }
-      $('detail-action').textContent = res.recommendation || '';
+      /* Fill via the shared builder (markup source for dashboard + preview). */
+      if (card && typeof card.render === 'function') card.render(stateEls.threat, res.risk, res);
       setState('threat');
       if (typeof V.scoreRing === 'function') {
         ringT = V.scoreRing($('vis-ring-threat'), clampN(res.score, 99), res.risk);
       }
     } else if (res.risk === 'unverified') {
       setPanelRisk('unverified');
-      $('unv-reason').textContent = res.details || 'Connection timeout.';
-      $('unv-action').textContent = res.recommendation || 'Unable to verify. Treat as untrusted and try again later.';
+      if (card && typeof card.render === 'function') card.render(stateEls.unverified, 'unverified', res);
       setState('unverified');
       /* Single-scan Not Verified shows the grey dashed unverified ring — the
          same glyph batch rows use. Never a % wheel: an unverifiable link gets
@@ -1109,5 +1097,15 @@
   rebuildTable();
   updateSummary();
   growInput();
+  /* Adopt the shared verdict-card builder as the single markup source for the
+     three verdict states: replaces the static shells with identical builder
+     markup (same classes/ids). Visuals still mount per result in setState. */
+  (function () {
+    var card = TD.components.verdictCard;
+    if (!card || typeof card.render !== 'function') return;
+    card.render(stateEls.threat, 'medium');   /* placeholder matches the static shell */
+    card.render(stateEls.safe, 'low');
+    card.render(stateEls.unverified, 'unverified');
+  })();
   setState('idle');
 })();
