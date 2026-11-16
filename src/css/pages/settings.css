@@ -227,19 +227,14 @@ html[data-motion="reduced"] .set-wrap *, html[data-motion="reduced"] .set-wrap *
    vsSyncHeight (same mechanism as the dashboard's syncHeight). */
 .vs-stage { position: relative; }
 
-/* Sketch round 2 — ring and rows per card size:
-   - The big stage card (~500px) uses the card's natural ≥600px treatment:
-     the floating ring parks top-right BESIDE the content (padding-right
-     132px, from css/components/verdict-card.css) — no 108px ring strip
-     above the content. Labels/values stack via the scoped rule below
-     (core.css lays .detail-rows out as max-content 1fr two columns).
-   - Thumbs are ~150px copies of the FULL card → they keep the phone
-     treatment: ring gets its own 108px top strip (same values as
-     verdict-card.css / analysis-card.css — change those together). */
+/* Sketch round 2 / user round 3 — the thumbs are mini copies of the big
+   preview: same compact card, same layout width (the stage's), same
+   >=600px treatment (ring parked top-right beside the content via
+   padding-right:132px from css/components/verdict-card.css — no 108px
+   strip), ring/check visual mounted. Only the rows-stack override below
+   is shared (core.css lays .detail-rows out as max-content 1fr). */
 .vs-modal .vs-stage .verdict-card .detail-rows,
 .vs-modal .vs-thumb .verdict-card .detail-rows { grid-template-columns: minmax(0, 1fr); }
-.vs-modal .vs-thumb .verdict-card .dash-threat-inner,
-.vs-modal .vs-thumb .verdict-card .dash-unv-inner { padding-top: 108px; }
 
 /* Cross-fade on verdict switch (transform + opacity only, ~200ms; the reduced
    motion kill below makes it instant) */
@@ -253,12 +248,13 @@ html[data-motion="reduced"] .set-wrap *, html[data-motion="reduced"] .set-wrap *
 
 /* Thumbnails: small real renders of the shared card — the card is laid out
    at the .vs-stage width by JS (settings.js), then transform:scale() shrinks
-   it into the shot wrapper. The wrapper is one grid cell wide (three equal
-   columns, auto-fit → shrink-to-fit, never overflows: sketch round 2 chose
-   "3 across, no scrollbar"); scale is derived from the measured shot width,
-   so a thumb is always an exact copy of the big preview. The wrapper clips
-   overflow and blocks interaction; the verdict title stays visible text. */
-.vs-thumbs { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: var(--space-3); align-items: start; }
+   it into the shot wrapper. Always exactly 3 thumbs (the three verdicts that
+   are not selected) in three equal columns — shrink-to-fit, never a
+   scrollbar; JS derives the scale from the measured cell and gives every
+   card the tallest state's height, so all thumbs are identical in size. The
+   wrapper clips overflow and blocks interaction; the verdict title stays
+   visible text. */
+.vs-thumbs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); align-items: start; }
 .vs-thumb {
   display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2);
   padding: var(--space-2); min-width: 0;

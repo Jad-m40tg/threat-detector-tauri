@@ -66,7 +66,7 @@ Invalid theme/verdict args return `null`/`false` (never throws). Overrides are
 applied to `<html>` at load (end-of-body core.js — earliest the script-order
 contract allows; theme-init.js must not read `td.*` keys).
 
-## Settings UI (Phase 3, reworked in the FIX + the user's sketch round 2)
+## Settings UI (Phase 3, reworked in the FIX + the user's sketch rounds 2 and 3)
 Settings → "Verdict colors": 8 swatch buttons (light/dark × 4 verdicts) show the
 effective color and open the shared modal (DAC.ui.modal) with:
 
@@ -81,17 +81,26 @@ effective color and open the shared modal (DAC.ui.modal) with:
   parks top-right BESIDE the content (`padding-right:132px`, no 108px strip).
   Width-invariant styles (tint, border, radius, colors, ring size) still match
   the dashboard card 8/8.
-- **Thumbnails** — "the other verdicts:" as a prominent bold heading, then
-  three thumbs in ONE row (grid `repeat(auto-fit, minmax(0,1fr))`,
-  shrink-to-fit, never a scrollbar), fixed sketch order unverified → medium →
-  low (selected verdict excluded). Each is a scaled REAL render of the FULL
-  card (all rows, phone ring-strip treatment — they are ~150px wide): the
-  card is laid out at the stage width, the shot wrapper is one grid cell
-  wide, and the scale is derived from the measured cell (two-phase render:
-  mount all buttons, then measure, then render cards — measuring during the
-  append loop would give each thumb a different scale). Titles stay visible
-  text; inside the wrapper `pointer-events:none` + `aria-hidden`; clicking
-  swaps the big preview with a ~200ms cross-fade.
+- **Thumbnails** (user round 3) — "the other verdicts:" as a prominent bold
+  heading, then ALWAYS three thumbs: the three verdicts that are NOT
+  selected (`vsThumbKeys()` — sketch slots `unverified → medium → low` with
+  the SELECTED verdict's slot replaced by `high`, so high selected reads
+  unverified/medium/low and e.g. medium selected reads unverified/high/low).
+  Grid fixed `repeat(3, minmax(0,1fr))`. Each thumb is a COMPACT mini copy
+  of the big preview: the same `TD.components.verdictCard` `compact:true`
+  render the stage shows, laid out at the stage width with the stage's
+  ≥600px treatment (`padding-right:132px` ring zone — the old 108px thumb
+  ring-strip rule was removed), with the ring/check/dashed-ring visual
+  MOUNTED (`vsModal.thumbVis` handles, destroyed on every re-render and in
+  `vsCloseModal`; mounted BEFORE the height pass — the low card's check
+  circle is in-flow), then shrunk with `transform:scale()`. Two-phase
+  render (mount buttons → settled grid → one scale from the measured cell,
+  ≈0.2819 at the 1000px modal's 505px stage → ~142×90 shots). Uniform size:
+  every card's stacked states get the TALLEST state's height before
+  scaling, so all three thumbs are identical (~160×138 buttons / 142×90
+  shots). Titles stay visible text; inside the wrapper
+  `pointer-events:none` + `aria-hidden`; clicking swaps the big preview
+  with a ~200ms cross-fade.
 - **Dev-mode note** (sketch): below the thumbnails in the left column, always
   visible — the shared `.callout[data-type="info"]` style + ⓘ icon
   (`DAC.ui.callouts.upgrade` paints it right after the modal opens), text
@@ -108,4 +117,7 @@ Nothing is saved before Apply (the picker's onChange only updates the draft +
 preview); the saved value survives reload. Verified: the preview card matches
 the dashboard card on computed styles (background, ::after border, radius,
 padding, label/dt/dd/reason colors, ring size) in both themes for all 4
-verdicts.
+verdicts. Round 3 verified: thumbs always exactly 3 + identical size (after
+picking medium the row reflows to unverified/high/low, still 3), compact mini
+copies with the ring visual mounted; the light gradient is visible on the big
+card AND every thumb for all 4 verdicts (alphas .16/.08, border .28).

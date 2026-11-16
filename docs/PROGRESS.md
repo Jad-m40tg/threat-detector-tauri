@@ -764,3 +764,65 @@ Verification (same harness; all suites re-run after the changes):
    old-vs-current comparator reports a STRING-format difference only
    (rgba(61,220,132,0.1) vs color(srgb .../0.1) - numerically identical).
 
+### Sketch round 3 (2026-11-16, user feedback on round 2)
+Three asks: thumbs must be mini copies of the preview, ALL the same size;
+check the gradient in light mode; the thumb list must ALWAYS show the three
+other verdicts (enter yellow → red, green, grey thumbnails — and the same for
+every verdict). The last one was a real round-2 bug: `high` was never in
+`VS_THUMB_ORDER`, so picking medium showed only [unverified, low].
+Restore point: round-2 commit `01f4824`.
+
+- Always-3 rule (settings.js): `vsThumbKeys()` = sketch slots
+  `['unverified','medium','low']` with the SELECTED verdict's slot replaced
+  by `high` — high selected → [unverified,medium,low]; medium →
+  [unverified,high,low]; low → [unverified,medium,high]; unverified →
+  [high,medium,low].
+- Thumbs are COMPACT mini copies of the big preview: the same
+  `TD.components.verdictCard` `compact:true` render the stage shows, same
+  layout width (the stage's), same ≥600px treatment — the 108px thumb
+  ring-strip rule was REMOVED from settings.css (ring parks top-right beside
+  the content; stacked `.detail-rows` override kept). Ring/check/dashed-ring
+  visual is MOUNTED in thumbs: `vsMountVisual` gained a sink param, handles
+  tracked in `vsModal.thumbVis`, destroyed on every re-render and in
+  `vsCloseModal`. Mounted BEFORE the uniform-height pass (the low card's
+  check circle is in-flow and can grow it).
+- Uniform size: two-phase render (mount buttons → settled grid → one scale
+  from the measured cell), then every card's stacked states get the TALLEST
+  state's height (the states are absolutely positioned, so the slack stays
+  inside the card under the content — tint included) and every shot gets
+  that scaled height. Measured: all three buttons 160×138, all shots 142×90,
+  one scale 0.2819 (505px stage at the 1000px modal).
+- `.vs-thumbs` grid fixed `repeat(3, minmax(0,1fr))` (was auto-fit).
+- Light gradient re-verified on the live page for ALL 4 verdicts, big card
+  AND thumbs: alphas [0.16, 0.08], borders rgba(194,38,59/.28) high,
+  rgba(180,83,9/.28) medium, rgba(18,122,72/.28) low, rgba(85,96,106/.28)
+  unverified (lightcheck.js + light-*.png screenshots). The user's "no
+  gradient" report is the known stale-cache issue on their localhost:8420
+  tab — a fresh browser context renders the fix.
+
+Verification (all suites re-run after the changes):
+1. verify_preview.js: 8/8 preview==dashboard width-invariant parity +
+   textsOk; thumbs always count=3 — after picking medium the row reflows to
+   [unverified,high,low], still 3; uniform buttons/shots/scale
+   (160×138 / 142×90 / 0.2819); compactNoReasons + ring visual mounted
+   (hasVisualSvg) + innerPad `0px | 132px`; one row, no horizontal scroll,
+   3 grid columns; Apply/persist/reset intact; 0 console errors.
+2. lightcheck.js (fresh page, light theme, all 4 verdicts): the alphas/
+   borders above on big card + thumbs, white card surface, screenshots
+   confirm a visible tint; 0 errors.
+3. verify_dashboard.js (re-run): 14 default diffs vs the restore snapshot
+   are EXACTLY the approved light-alpha raise (0.12→0.16, 0.06→0.08, border
+   0.25→0.28); dark untouched; shades 8/8 (changed / other theme untouched /
+   reset restored); batch rows follow shades with medium/low untouched and
+   borders unchanged; 0 console errors.
+4. verify_history.js (re-run): shade-immune (bg identical with/without
+   shades, no `.verdict-card` on the page); `matchesOld=false` remains a
+   STRING-format-only difference (rgba(61,220,132,0.1) vs color(srgb .../0.1)
+   — numerically identical).
+
+NOT RUN (real window): the feel of the ~142×90 mini thumbs at the user's
+150% display scaling, and whether the ~40px-mini ring is legible enough by
+eye — the headless harness measures but cannot judge taste. If the mini
+rings read as too small at a glance, the fallback is title-only thumbs
+(no ring inside the shot), NOT shrinking the shot.
+

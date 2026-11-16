@@ -738,9 +738,10 @@
     return host;
   }
 
-  function vsMountVisual(key, refs) {
+  function vsMountVisual(key, refs, sink) {
     var V = DAC.visuals || {};
-    var push = function (h) { if (h) vsModal.vis.push(h); };
+    var list = sink || (vsModal && vsModal.vis);
+    var push = function (h) { if (h && list) list.push(h); };
     if (!refs || !vsModal) return;
     if (key === 'low' && typeof V.checkCircle === 'function') {
       push(V.checkCircle(refs.checkHost));
@@ -760,30 +761,43 @@
     if (wrap && st) wrap.style.height = st.offsetHeight + 'px';
   }
 
-  /* Thumbnails: the other verdicts in the sketch's fixed left-to-right order
-     (unverified, medium, low), excluding the selected one. Each is a
-     scaled-down REAL render of the FULL shared card (transform:scale() in
-     the shot wrapper, pointer-events:none, aria-hidden inside) plus the
-     verdict title as visible text, inside a real button. Draft shades reach
-     every render via --vs-* inherited from the preview container.
-     The unscaled render is the SAME width as the .vs-stage card, so a thumb
-     is an exact scaled copy of the big preview; the wrapper is one grid
-     cell wide (CSS: three equal columns, shrink-to-fit) and the scale is
-     derived from its measured width — three thumbs always fit one row with
-     no scrollbar (sketch round 2). */
-  var VS_THUMB_ORDER = ['unverified', 'medium', 'low']; /* sketch order */
+  /* Thumbnails: ALWAYS the three verdicts that are not selected (user round 3:
+     "if I enter the yellow it shows thumbnails of the red and green and grey").
+     unverified/medium/low keep their sketch positions; high fills the slot of
+     whichever one is selected, so the sketch case (high selected) still reads
+     unverified -> medium -> low. Each thumb is a COMPACT render of the same
+     card the big preview shows, laid out at the stage width with the SAME
+     treatment (ring parked top-right, ring/check visual mounted) and shrunk
+     with transform:scale() — a mini copy of the preview. All three get the
+     tallest state's height, so the thumbs are identical in size. Titles stay
+     visible text; inside the wrapper pointer-events:none + aria-hidden.
+     Draft shades reach every render via --vs-* inherited from the preview
+     container. */
+  var VS_THUMB_ORDER = ['unverified', 'medium', 'low']; /* sketch slots */
   var VS_THUMB_W = 129;        /* fallback width if measuring fails */
+  function vsThumbKeys() {
+    var keys = VS_THUMB_ORDER.slice();
+    var i = keys.indexOf(vsModal.verdict);
+    if (i !== -1) keys[i] = 'high'; /* the three OTHER verdicts, always 3 */
+    return keys;
+  }
   function vsRenderThumbs() {
     if (!vsModal) return;
+    /* Re-render tears the old thumbs down: stop their visuals first (they
+       animate via rAF and would keep running on detached nodes). */
+    if (vsModal.thumbVis && vsModal.thumbVis.length) {
+      vsModal.thumbVis.forEach(function (h) {
+        try { if (typeof h.destroy === 'function') h.destroy(); } catch (e) { /* isolated */ }
+      });
+      vsModal.thumbVis.length = 0;
+    }
     vsModal.thumbs.textContent = '';
     var stageW = vsModal.stage.getBoundingClientRect().width || VS_THUMB_W * 3;
-    /* Phase 1: mount every button (button + empty shot + title) so the
-       auto-fit grid settles on its final tracks. Measuring during the
-       append loop would read 1-then-2-column widths (each append adds a
-       track) and give every thumb a different scale. */
+    /* Phase 1: mount every button (button + empty shot + title) so the grid
+       settles on its final tracks. Measuring during the append loop would
+       read growing widths and give every thumb a different scale. */
     var parts = [];
-    VS_THUMB_ORDER.forEach(function (key) {
-      if (key === vsModal.verdict) return;
+    vsThumbKeys().forEach(function (key) {
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'vs-thumb';
@@ -801,26 +815,40 @@
       vsModal.thumbs.appendChild(btn);
       parts.push({ key: key, btn: btn, shot: shot });
     });
-    /* Phase 2: the grid is final — measure each shot's real width (one
-       grid cell), derive the scale from the stage layout width, render the
-       full card and size the shot to its scaled height. */
+    /* Phase 2: the grid is final — one scale from the (equal) cell width. */
+    var cellW = parts[0].shot.getBoundingClientRect().width || VS_THUMB_W;
+    var scale = +(cellW / stageW).toFixed(4);
     parts.forEach(function (p) {
-      var shotW = p.shot.getBoundingClientRect().width || VS_THUMB_W;
-      var scale = +(shotW / stageW).toFixed(4);
       var card = document.createElement('div');
       card.className = 'card result-panel verdict-card';
       card.setAttribute('data-risk', p.key);
       card.style.width = stageW + 'px';            /* same layout as the stage */
       card.style.transform = 'scale(' + scale + ')'; /* shrink into the shot */
-      var refs = window.TD.components.verdictCard.render(card, p.key, VS_SAMPLES[p.key], { ids: false });
+      p.refs = window.TD.components.verdictCard.render(card, p.key, VS_SAMPLES[p.key],
+        { ids: false, compact: true });
       p.shot.appendChild(card);
-
-      /* Fit the fixed wrapper to this card's natural height (scaled): sync
-         the state wrapper first, then measure and size the shot. */
-      vsSyncHeight(card);
-      var natural = card.offsetHeight || 0;
+      p.card = card;
+      p.state = card.querySelector('.result-state');
+      /* ring / check / dashed ring visual — same as the big preview; mount
+         BEFORE the height pass (the check circle sits in the low card's
+         flow and may grow it) */
+      vsMountVisual(p.key, p.refs, vsModal.thumbVis);
+      p.state.offsetHeight; /* flush layout before the uniform-height pass */
+    });
+    /* Uniform size: every card gets the tallest state's height (the stacked
+       states are absolutely positioned, so the extra space just stays inside
+       the card under the content — tint included), then every shot box gets
+       that same scaled height. All three thumbs end up identical. */
+    var maxState = 0;
+    parts.forEach(function (p) { maxState = Math.max(maxState, p.state.offsetHeight); });
+    parts.forEach(function (p) {
+      var wrap = p.card.querySelector('.result-states');
+      if (wrap) wrap.style.height = maxState + 'px';
+    });
+    var natural = parts[0].card.offsetHeight || 0;
+    parts.forEach(function (p) {
       p.shot.style.height = Math.round(natural * scale) + 'px';
-      if (refs && refs.wrap) refs.wrap.setAttribute('aria-hidden', 'true');
+      if (p.refs && p.refs.wrap) p.refs.wrap.setAttribute('aria-hidden', 'true');
     });
   }
 
@@ -876,7 +904,7 @@
   function vsCloseModal() {
     if (!vsModal) return;
     if (vsModal.picker && typeof vsModal.picker.destroy === 'function') vsModal.picker.destroy();
-    vsModal.vis.forEach(function (h) {
+    vsModal.vis.concat(vsModal.thumbVis || []).forEach(function (h) {
       try { if (typeof h.destroy === 'function') h.destroy(); } catch (e) { /* isolated */ }
     });
     vsModal = null;
@@ -1002,7 +1030,8 @@
       picker: picker,
       currentDot: currentDot,
       selectedDot: selectedDot,
-      vis: []
+      vis: [],
+      thumbVis: []
     };
 
     vsShowVerdictInitial(verdictKey);
