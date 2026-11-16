@@ -613,3 +613,21 @@ switched in the script's `$Model` line for the successful run.
   verdictShade.set -> load-time apply chain).
 - `_restore\before-verdict-phase1/2/3` snapshots exist for rollback.
 
+### User feedback round (2026-11-16, after first real-app look)
+User sketch re-clarified the target: the changeable gradient is the ANALYSIS
+DETAILS CARD (the card in the picker preview), not the batch rows.
+- `cbe2539`: `.batch-row` drops its `--risk-color` (`--vs-*`) mapping and its
+  left gradient reverts to the engine recipe `rgb(var(--risk-rgb) / .10)`
+  (fix-2 look). Targets are now exactly the analysis-details family:
+  `#result-panel`, `.modal-detail`, plus the settings preview and its thumbs.
+- Verified live on http://127.0.0.1:8420 (fresh origin): 8/8 - settings serves
+  the new UI, preview gradient follows the picker live, Apply saves,
+  result-panel AND modal-detail follow the override, batch-row stays engine
+  (194,38,59 = light high, empty --risk-color), defaults restored after the
+  test, no page errors.
+- Thumbnails in the picker modal already match the sketch: icon + title only,
+  no body text; the big preview keeps its text (gradient visible while
+  dragging).
+- User's own window sits on localhost:8420, which caches scripts heuristically -
+  hard refresh (Ctrl+F5) or restart run-dev.bat to load the new code.
+
