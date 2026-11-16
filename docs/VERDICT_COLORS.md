@@ -26,6 +26,11 @@ every dark variant (grey / OLED). Registered in `js/settings.js` (`hex: true`).
   per current theme.
 - `--vs-<verdict>-<theme>-o` — JS override variables (e.g. `--vs-high-light-o`)
   set on `document.documentElement` by `DAC.verdictShade`; removed on reset.
+- Gradient alphas (shared by the verdict card and the details modal):
+  dark `--risk-edge-a: .22` / `--risk-corner-a: .10` / `--risk-border-a: .35`;
+  light `.16` / `.08` / `.28` (raised from .12/.06/.25 in sketch round 2 —
+  the old values made the gradient invisible on the white card; light stays
+  softer than dark by user pick).
 
 ## Selectors
 - Defaults: `:root` (dark) and `:root[data-theme="light"]` (light).
@@ -61,25 +66,40 @@ Invalid theme/verdict args return `null`/`false` (never throws). Overrides are
 applied to `<html>` at load (end-of-body core.js — earliest the script-order
 contract allows; theme-init.js must not read `td.*` keys).
 
-## Settings UI (Phase 3, reworked in the verdict-colors FIX)
+## Settings UI (Phase 3, reworked in the FIX + the user's sketch round 2)
 Settings → "Verdict colors": 8 swatch buttons (light/dark × 4 verdicts) show the
 effective color and open the shared modal (DAC.ui.modal) with:
 
-- **Real dashboard card** (`TD.components.verdictCard`, `css/components/
-  verdict-card.css`) inside `card result-panel verdict-card` — the same markup
-  source the dashboard boots with, built per verdict with exact engine sample
-  strings. Preview copies use `{ ids: false }` so ids stay unique in one
-  document. The card gets the same ≤600px treatment the card has on phones
-  (labels stack above values, ring gets its own strip) because the picker
-  column is ~430px — see `.vs-modal .verdict-card` in `css/pages/settings.css`.
-- **Thumbnails** — scaled REAL renders (`transform: scale()`, width derived
-  from the live stage width so a thumb is an exact copy of the big preview),
-  fixed-size `.vs-thumb-shot` wrapper with `pointer-events:none` and
-  `aria-hidden` inside, verdict title as visible text, real `<button>` with
-  aria-label; clicking one swaps the big preview with a ~200ms cross-fade.
-- **Shade picker** (maxSat .3 for Not verified) + Current/Selected dots +
-  Apply/Reset. Drafts set `--vs-<verdict>` on the scoped preview container
-  only; Apply saves via `verdictShade.set`, Reset/Reset all restore defaults.
+- **Compact preview card** (sketch round 2): the big preview is the REAL card
+  component (`TD.components.verdictCard` with the new `opts.compact` flag) —
+  only the prominent verdict label + Selected input + Risk score + ring; the
+  muted "Analysis details" heading and the reasons/action rows are omitted
+  (unverified keeps "Unable to verify" + Reason). The modal is 1000px wide,
+  putting the preview column at ~505px (`.modal-vs` + `.vs-modal` in
+  `css/pages/settings.css`), so the card uses its natural ≥600px treatment:
+  rows stack label-above-value (scoped `.detail-rows` override) and the ring
+  parks top-right BESIDE the content (`padding-right:132px`, no 108px strip).
+  Width-invariant styles (tint, border, radius, colors, ring size) still match
+  the dashboard card 8/8.
+- **Thumbnails** — "the other verdicts:" as a prominent bold heading, then
+  three thumbs in ONE row (grid `repeat(auto-fit, minmax(0,1fr))`,
+  shrink-to-fit, never a scrollbar), fixed sketch order unverified → medium →
+  low (selected verdict excluded). Each is a scaled REAL render of the FULL
+  card (all rows, phone ring-strip treatment — they are ~150px wide): the
+  card is laid out at the stage width, the shot wrapper is one grid cell
+  wide, and the scale is derived from the measured cell (two-phase render:
+  mount all buttons, then measure, then render cards — measuring during the
+  append loop would give each thumb a different scale). Titles stay visible
+  text; inside the wrapper `pointer-events:none` + `aria-hidden`; clicking
+  swaps the big preview with a ~200ms cross-fade.
+- **Dev-mode note** (sketch): below the thumbnails in the left column, always
+  visible — the shared `.callout[data-type="info"]` style + ⓘ icon
+  (`DAC.ui.callouts.upgrade` paints it right after the modal opens), text
+  "Note: this feature is dev mode only".
+- **Shade picker** (320px square, maxSat .3 for Not verified) + Current/
+  Selected dots + Apply/Reset. Drafts set `--vs-<verdict>` on the scoped
+  preview container only; Apply saves via `verdictShade.set`, Reset/Reset all
+  restore defaults.
 - Scope: `[data-theme-scope=…]` mirrors the edited theme's tokens onto the
   preview container (core.css + risk-glow.css), so text/bullets stay readable
   when editing the opposite theme.

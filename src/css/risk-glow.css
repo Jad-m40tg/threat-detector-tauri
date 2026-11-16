@@ -49,9 +49,14 @@
   --risk-high-rgb: 194 38 59;
   --risk-unverified-rgb: 85 96 106;
 
-  --risk-edge-a: .12;
-  --risk-corner-a: .06;
-  --risk-border-a: .25;
+  /* Light theme — same hue family (contract §2.3). Alphas raised from the
+     old .12/.06/.25, which made the gradient invisible on the white card
+     (user report, sketch round 2); still softer than dark (.22/.10/.35) so
+     light stays gentle on white surfaces. Also nudges the light history
+     .modal-detail tint slightly (shared tokens). */
+  --risk-edge-a: .16;
+  --risk-corner-a: .08;
+  --risk-border-a: .28;
 }
 
 /* --- Verdict shade tokens (Phase 1 — docs/VERDICT_COLORS.md) ---------------
@@ -95,7 +100,7 @@
    in the ENGINE risk color: the History/details modal deliberately does NOT
    follow the --vs-* verdict shades (user decision — the shade targets only
    the dashboard result card). --risk-rgb below maps per state from the
-   engine colors; alpha capped at --risk-corner-a (.10 dark / .06 light) so
+   engine colors; alpha capped at --risk-corner-a (.10 dark / .08 light) so
    body text keeps AA contrast over the modal surface. Not Verified rows tint
    with the neutral grey — never green, never a verdict color. Error rows
    carry NO data-risk attribute (contract §2.2) and stay unglowed. */

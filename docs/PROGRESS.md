@@ -706,3 +706,61 @@ Verification (playwright-core + msedge, current src vs
    thumbs reachable (body scrolls, header stays put).
 8. Console clean: 0 page errors / 0 console errors across all suites.
 
+### Sketch round 2 (2026-11-16, user's sketch of the preview modal)
+The user's sketch redefined the modal layout; all questions answered. Changes:
+
+- Wider modal: `.modal-vs` 860px -> 1000px; the existing 1.2fr/1fr grid now
+  puts the preview column at ~505px (the sketch's ~500px card).
+- Compact big preview: NEW `opts.compact` flag in verdictCard.js - the stage
+  card renders only the prominent verdict label + Selected input + Risk
+  score + ring (no muted "Analysis details" heading, no reasons/action rows;
+  unverified keeps "Unable to verify" + Reason; low unchanged). Thumbs still
+  render the FULL card.
+- Ring beside content: the 108px ring-strip override is now scoped to the
+  thumbs only; the ~505px stage card uses the card's natural >=600px
+  treatment (`padding-right:132px` ring zone, rows stacked via scoped
+  `.detail-rows` override).
+- Thumbs: one row of three, shrink-to-fit, never a scrollbar
+  (`repeat(auto-fit, minmax(0,1fr))`); sketch order unverified -> medium ->
+  low (VS_THUMB_ORDER; VS_ORDER removed); titles kept. Scale is derived from
+  the measured grid cell - TWO-PHASE render (mount all buttons, measure the
+  settled grid, then render cards), because measuring during the append loop
+  gives each thumb a different scale (caught by the verify script: scales
+  0.96/0.45/0.28 -> uniform 0.2819).
+- "the other verdicts:" is now a prominent bold heading (was a muted caption).
+- Dev-mode note: `.callout[data-type=info]` below the thumbnails in the left
+  column, always visible, "Note: this feature is dev mode only", icon painted
+  via DAC.ui.callouts.upgrade(body) right after the modal opens.
+- Shade picker square cap 280px -> 320px (sketch shows a larger square).
+- Light gradient made visible: light alphas raised to edge .16 / corner .08 /
+  border .28 (were .12/.06/.25 - invisible on white), still softer than dark
+  (.22/.10/.35) per the user's "stronger but still softer" pick. Shared
+  tokens: the light .modal-detail tint strengthens slightly too (approved).
+
+Verification (same harness; all suites re-run after the changes):
+1. Preview == dashboard card, width-invariant styles: 8/8 equal (both themes
+   x 4 verdicts; tint bg, ::after border, radius, state padding, label/dt/dd
+   colors, ring width). Preview texts match VS_SAMPLES 8/8. The 14 default
+   diffs vs the restore snapshot are EXACTLY the approved light-alpha raise
+   (0.12->0.16, 0.06->0.08, border 0.25->0.28); dark untouched.
+2. Compact layout 8/8: no heading, no reasons, no action; dt rows exactly
+   ["Selected input","Risk score:"] (threat) / ["Reason"] (unverified);
+   inner padding `0px | 132px` (ring parked top-right, no strip); ring rect
+   fully inside the 132px zone.
+3. Gradient alphas read off the live card: dark [0.22, 0.1], light
+   [0.16, 0.08].
+4. Thumbs: order [unverified, medium, low], one row (equal tops), no
+   horizontal overflow, uniform scale 0.2819, titles visible, shots
+   pointer-events:none + aria-hidden; after clicking a thumb the remaining
+   list reflows ([unverified, low]) and the big card switches.
+5. "the other verdicts:" weight 700; note callout present with painted icon,
+   exact text, below the thumbs.
+6. Apply flow unchanged: nothing saved before Apply, Apply persists +
+   repaints the swatch, survives reload; Reset/Reset all intact.
+7. Fit: 1366x768 modal 1000px / preview col 505px; 1920x1080 same; 911x512
+   modal shrinks to 879px / col 439px, within viewport, thumbs reachable.
+8. Console clean: 0 errors across preview + dashboard + history suites.
+   History still shade-immune (bg identical with/without shades); its
+   old-vs-current comparator reports a STRING-format difference only
+   (rgba(61,220,132,0.1) vs color(srgb .../0.1) - numerically identical).
+

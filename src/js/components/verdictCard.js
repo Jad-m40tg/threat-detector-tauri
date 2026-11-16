@@ -23,24 +23,30 @@
     return e;
   }
 
-  /* build(verdict, ids) → refs for one verdict's card content.
+  /* build(verdict, ids, compact) → refs for one verdict's card content.
      The markup mirrors the dashboard's static states (index.html) exactly.
      ids: the dashboard keeps the real ids (other code targets them); preview
-     copies pass ids:false because several cards coexist in one document. */
-  function build(verdict, ids) {
+     copies pass ids:false because several cards coexist in one document.
+     compact: short card for the Settings preview (sketch round 2) — only the
+     prominent label + Selected input + Risk score + ring; drops the muted
+     "Analysis details" heading and the reasons/action rows. The thumbs still
+     render the FULL card (compact stays falsy there). */
+  function build(verdict, ids, compact) {
     var refs = { ringHost: null, checkHost: null, label: null, input: null, score: null,
                  reasons: null, action: null, unvReason: null, unvAction: null };
     var wrap;
     if (verdict === 'high' || verdict === 'medium') {
       wrap = el('div', 'dash-threat-inner');
       var head = el('div', 'panel-heading');
-      var h = el('h3');
-      h.textContent = 'Analysis details';
+      if (!compact) {
+        var h = el('h3');
+        h.textContent = 'Analysis details';
+        head.appendChild(h);
+      }
       var lbl = el('span', 'risk-label');
       if (ids) lbl.id = 'threat-risk-label';
       lbl.setAttribute('data-risk', verdict);
       lbl.textContent = LABELS[verdict];
-      head.appendChild(h);
       head.appendChild(lbl);
       var ring = el('div', 'ring-wrap ring-float result-ring-float');
       if (ids) ring.id = 'vis-ring-threat';
@@ -52,21 +58,24 @@
       var num = el('span'); if (ids) num.id = 'detail-score'; num.textContent = '0';
       dd2.appendChild(num);
       dd2.appendChild(document.createTextNode('/100'));
-      var dt3 = el('dt', 'detail-dt'); dt3.textContent = 'Detection reasons';
-      var dd3 = el('dd', 'detail-dd');
-      var ul = el('ul', 'reason-list'); if (ids) ul.id = 'detail-reasons';
-      dd3.appendChild(ul);
-      var dt4 = el('dt', 'detail-dt'); dt4.textContent = 'Recommended action';
-      var dd4 = el('dd', 'detail-dd'); if (ids) dd4.id = 'detail-action';
       dl.appendChild(dt1); dl.appendChild(dd1);
       dl.appendChild(dt2); dl.appendChild(dd2);
-      dl.appendChild(dt3); dl.appendChild(dd3);
-      dl.appendChild(dt4); dl.appendChild(dd4);
+      if (!compact) {
+        var dt3 = el('dt', 'detail-dt'); dt3.textContent = 'Detection reasons';
+        var dd3 = el('dd', 'detail-dd');
+        var ul = el('ul', 'reason-list'); if (ids) ul.id = 'detail-reasons';
+        dd3.appendChild(ul);
+        var dt4 = el('dt', 'detail-dt'); dt4.textContent = 'Recommended action';
+        var dd4 = el('dd', 'detail-dd'); if (ids) dd4.id = 'detail-action';
+        dl.appendChild(dt3); dl.appendChild(dd3);
+        dl.appendChild(dt4); dl.appendChild(dd4);
+        refs.reasons = ul; refs.action = dd4;
+      }
       wrap.appendChild(head);
       wrap.appendChild(ring);
       wrap.appendChild(dl);
       refs.inner = wrap; refs.ringHost = ring; refs.label = lbl;
-      refs.input = dd1; refs.score = num; refs.reasons = ul; refs.action = dd4;
+      refs.input = dd1; refs.score = num;
       return refs;
     }
     if (verdict === 'low') {
@@ -90,15 +99,18 @@
     var dlu = el('dl', 'detail-rows');
     var dtR = el('dt', 'detail-dt'); dtR.textContent = 'Reason';
     var ddR = el('dd', 'detail-dd'); if (ids) ddR.id = 'unv-reason';
-    var dtA = el('dt', 'detail-dt'); dtA.textContent = 'Recommended action';
-    var ddA = el('dd', 'detail-dd'); if (ids) ddA.id = 'unv-action';
     dlu.appendChild(dtR); dlu.appendChild(ddR);
-    dlu.appendChild(dtA); dlu.appendChild(ddA);
+    if (!compact) {
+      var dtA = el('dt', 'detail-dt'); dtA.textContent = 'Recommended action';
+      var ddA = el('dd', 'detail-dd'); if (ids) ddA.id = 'unv-action';
+      dlu.appendChild(dtA); dlu.appendChild(ddA);
+      refs.unvAction = ddA;
+    }
     wrap.appendChild(ringU);
     wrap.appendChild(headU);
     wrap.appendChild(dlu);
     refs.inner = wrap; refs.ringHost = ringU;
-    refs.unvReason = ddR; refs.unvAction = ddA;
+    refs.unvReason = ddR;
     return refs;
   }
 
@@ -173,13 +185,14 @@
   function render(host, verdict, data, opts) {
     opts = opts || {};
     var ids = opts.ids !== false;
+    var compact = opts.compact === true;
     if (!host || !STATE_OF[verdict]) return null;
     if (host.classList && host.classList.contains('result-state')) {
       var found = host.querySelector('.dash-threat-inner,.dash-safe-wrap,.dash-unv-inner');
       var refs;
       if (!found || found.getAttribute('data-vs') !== '1') {
         host.textContent = '';
-        refs = build(verdict, ids);
+        refs = build(verdict, ids, compact);
         refs.inner.setAttribute('data-vs', '1');
         host.appendChild(refs.inner);
       } else {
@@ -194,7 +207,7 @@
     var wrap = el('div', 'result-states');
     var state = el('div', 'result-state is-active state-' + STATE_OF[verdict]);
     state.setAttribute('data-state', STATE_OF[verdict]);
-    var crefs = build(verdict, ids);
+    var crefs = build(verdict, ids, compact);
     crefs.inner.setAttribute('data-vs', '1');
     state.appendChild(crefs.inner);
     wrap.appendChild(state);

@@ -647,7 +647,6 @@
       recommendation: 'Unable to complete inspection safely. Treat as untrusted and do not proceed.'
     }
   };
-  var VS_ORDER = ['high', 'medium', 'low', 'unverified'];
   var vsSwatches = {};
   var vsModal = null;
 
@@ -725,12 +724,17 @@
      that mirrors the dashboard shell classes (card result-panel). Ids are
      omitted (ids:false): several preview copies coexist with the dashboard's
      ids in one document. The visual (ring / check / dashed ring) is mounted
-     after the card is in the DOM, like the dashboard does. */
-  function vsRenderCard(key) {
+     after the card is in the DOM, like the dashboard does.
+     compact=true (big stage card only, sketch round 2): short card — the
+     prominent verdict label + Selected input + Risk score + ring; the muted
+     "Analysis details" heading and the reasons/action rows are omitted.
+     Thumbs pass compact=false and render the FULL card. */
+  function vsRenderCard(key, compact) {
     var host = document.createElement('div');
     host.className = 'card result-panel verdict-card vs-card';
     host.setAttribute('data-risk', key);
-    host.__refs = window.TD.components.verdictCard.render(host, key, VS_SAMPLES[key], { ids: false });
+    host.__refs = window.TD.components.verdictCard.render(host, key, VS_SAMPLES[key],
+      { ids: false, compact: compact === true });
     return host;
   }
 
@@ -756,53 +760,66 @@
     if (wrap && st) wrap.style.height = st.offsetHeight + 'px';
   }
 
-  /* Thumbnails: the three verdicts that are not selected, fixed order.
-     Each is a scaled-down REAL render of the shared card (transform:scale()
-     in a fixed-size wrapper, pointer-events:none, aria-hidden inside) plus
-     the verdict title as visible text, inside a real button. Draft shades
-     reach every render via --vs-* inherited from the preview container.
+  /* Thumbnails: the other verdicts in the sketch's fixed left-to-right order
+     (unverified, medium, low), excluding the selected one. Each is a
+     scaled-down REAL render of the FULL shared card (transform:scale() in
+     the shot wrapper, pointer-events:none, aria-hidden inside) plus the
+     verdict title as visible text, inside a real button. Draft shades reach
+     every render via --vs-* inherited from the preview container.
      The unscaled render is the SAME width as the .vs-stage card, so a thumb
-     is an exact scaled copy of the big preview; scale is derived from the
-     real stage width (no hardcoded pair that can drift). */
-  var VS_THUMB_W = 129;        /* visual thumbnail width, px */
+     is an exact scaled copy of the big preview; the wrapper is one grid
+     cell wide (CSS: three equal columns, shrink-to-fit) and the scale is
+     derived from its measured width — three thumbs always fit one row with
+     no scrollbar (sketch round 2). */
+  var VS_THUMB_ORDER = ['unverified', 'medium', 'low']; /* sketch order */
+  var VS_THUMB_W = 129;        /* fallback width if measuring fails */
   function vsRenderThumbs() {
     if (!vsModal) return;
     vsModal.thumbs.textContent = '';
     var stageW = vsModal.stage.getBoundingClientRect().width || VS_THUMB_W * 3;
-    var scale = +(VS_THUMB_W / stageW).toFixed(4);
-    VS_ORDER.forEach(function (key) {
+    /* Phase 1: mount every button (button + empty shot + title) so the
+       auto-fit grid settles on its final tracks. Measuring during the
+       append loop would read 1-then-2-column widths (each append adds a
+       track) and give every thumb a different scale. */
+    var parts = [];
+    VS_THUMB_ORDER.forEach(function (key) {
       if (key === vsModal.verdict) return;
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'vs-thumb';
       btn.setAttribute('data-risk', key);
       btn.setAttribute('aria-label', 'Show ' + vsVerdictLabel(key) + ' preview');
-
       var shot = document.createElement('span');
       shot.className = 'vs-thumb-shot';
       shot.setAttribute('aria-hidden', 'true');
-      var card = document.createElement('div');
-      card.className = 'card result-panel verdict-card';
-      card.setAttribute('data-risk', key);
-      card.style.width = stageW + 'px';            /* same layout as the stage */
-      card.style.transform = 'scale(' + scale + ')'; /* shrink to VS_THUMB_W */
-      var refs = window.TD.components.verdictCard.render(card, key, VS_SAMPLES[key], { ids: false });
-      shot.appendChild(card);
       btn.appendChild(shot);
-
       var title = document.createElement('span');
       title.className = 'vs-thumb-title';
       title.textContent = vsVerdictLabel(key);
       btn.appendChild(title);
       btn.addEventListener('click', function () { vsShowVerdict(key); });
       vsModal.thumbs.appendChild(btn);
+      parts.push({ key: key, btn: btn, shot: shot });
+    });
+    /* Phase 2: the grid is final — measure each shot's real width (one
+       grid cell), derive the scale from the stage layout width, render the
+       full card and size the shot to its scaled height. */
+    parts.forEach(function (p) {
+      var shotW = p.shot.getBoundingClientRect().width || VS_THUMB_W;
+      var scale = +(shotW / stageW).toFixed(4);
+      var card = document.createElement('div');
+      card.className = 'card result-panel verdict-card';
+      card.setAttribute('data-risk', p.key);
+      card.style.width = stageW + 'px';            /* same layout as the stage */
+      card.style.transform = 'scale(' + scale + ')'; /* shrink into the shot */
+      var refs = window.TD.components.verdictCard.render(card, p.key, VS_SAMPLES[p.key], { ids: false });
+      p.shot.appendChild(card);
 
       /* Fit the fixed wrapper to this card's natural height (scaled): sync
          the state wrapper first, then measure and size the shot. */
       vsSyncHeight(card);
       var natural = card.offsetHeight || 0;
-      shot.style.height = Math.round(natural * scale) + 'px';
-      shot.style.width = VS_THUMB_W + 'px';
+      p.shot.style.height = Math.round(natural * scale) + 'px';
       if (refs && refs.wrap) refs.wrap.setAttribute('aria-hidden', 'true');
     });
   }
@@ -813,7 +830,7 @@
   function vsShowVerdict(key) {
     if (!vsModal || vsModal.verdict === key) return;
     var old = vsModal.stage.querySelector('.vs-card:not(.vs-leave)');
-    var card = vsRenderCard(key);
+    var card = vsRenderCard(key, true);
     card.classList.add('vs-enter');
     vsModal.stage.appendChild(card);
     vsSyncHeight(card);
@@ -884,12 +901,29 @@
     preview.appendChild(stage);
     var otherLabel = document.createElement('p');
     otherLabel.className = 'vs-side-label';
-    otherLabel.textContent = 'The other verdicts';
+    otherLabel.textContent = 'the other verdicts:'; /* sketch copy, prominent */
     var thumbs = document.createElement('div');
     thumbs.className = 'vs-thumbs';
     preview.appendChild(otherLabel);
     preview.appendChild(thumbs);
     previewCol.appendChild(preview);
+
+    /* Sketch note, always visible, below the thumbnails in the left column:
+       the shared callout style + ⓘ icon (DAC.ui.callouts.upgrade paints the
+       icon right after the modal is in the DOM). App theme — the note is
+       modal chrome, not preview content, so no theme scope. */
+    var note = document.createElement('div');
+    note.className = 'callout';
+    note.setAttribute('data-type', 'info');
+    note.setAttribute('role', 'note');
+    var noteText = document.createElement('p');
+    noteText.className = 'callout__text';
+    var noteLead = document.createElement('strong');
+    noteLead.textContent = 'Note:';
+    noteText.appendChild(noteLead);
+    noteText.appendChild(document.createTextNode(' this feature is dev mode only'));
+    note.appendChild(noteText);
+    previewCol.appendChild(note);
 
     /* Right: shade picker (maxSat 0.3 for Not verified), Current/Selected dots,
        Apply + Reset. */
@@ -951,8 +985,12 @@
 
     var modal = DAC.ui.modal.open({ title: 'Preview', body: body, onClose: vsCloseModal });
     /* Wider shell for the two columns; close button stays in its default
-       .modal-head position (top-right, existing style). */
+       .modal-head position (top-right, existing style). Paint the note's
+       ⓘ icon now that the modal is in the document. */
     modal.classList.add('modal-vs');
+    if (DAC.ui.callouts && typeof DAC.ui.callouts.upgrade === 'function') {
+      DAC.ui.callouts.upgrade(body);
+    }
 
     vsModal = {
       theme: theme,
@@ -975,7 +1013,7 @@
     if (!vsModal) return;
     vsModal.verdict = key;
     vsRenderThumbs();
-    var card = vsRenderCard(key);
+    var card = vsRenderCard(key, true);
     vsModal.stage.appendChild(card);
     vsSyncHeight(card);
     vsMountVisual(key, card.__refs);
