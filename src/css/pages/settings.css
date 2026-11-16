@@ -220,6 +220,14 @@ html[data-motion="reduced"] .set-wrap *, html[data-motion="reduced"] .set-wrap *
    muted caption. */
 .vs-side-label { margin: 0; font-size: .92rem; font-weight: 700; color: var(--text); }
 
+/* User round 4: Apply and Reset must be the EXACT same size ("Apply is just
+   slightly bigger than Reset"). Both are .btn (same height/typography
+   already); the width difference came from the words' natural width. Equal
+   halves of the actions row — identical width and height at any label
+   length. Scoped to the picker modal; other pages' action rows untouched. */
+.modal-vs .set-actions { flex-wrap: nowrap; }
+.modal-vs .set-actions .btn { flex: 1 1 0; min-width: 0; }
+
 /* Large preview: the REAL verdict card (card result-panel verdict-card, from
    TD.components.verdictCard + css/components/verdict-card.css) on the edited
    theme's surface. Structure and styles come from the shared component;
