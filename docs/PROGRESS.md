@@ -631,3 +631,28 @@ DETAILS CARD (the card in the picker preview), not the batch rows.
 - User's own window sits on localhost:8420, which caches scripts heuristically -
   hard refresh (Ctrl+F5) or restart run-dev.bat to load the new code.
 
+### Visibility diagnosis round (2026-11-16 ~08:00, user still reports nothing)
+Facts established by direct inspection of the user's machine:
+- The running app is the dev build (target\debug\threat-detector.exe, PID 19788),
+  restarted 07:58 - AFTER every verdict commit (last code commit 06:25). A
+  PrintWindow capture of the real window (.taste-skill/vs/app-window.png) shows
+  the Preview modal OPEN and running in the app: the feature is live there.
+- The capture looked right-cropped: cause is the user's 150% display scaling
+  (DPI-virtualized capture), NOT a layout bug - Playwright at the same window
+  size (1200x697 etc.) shows the modal centered, no overflow at any size.
+- No installed app copy exists (Program Files / Programs searched) - only the
+  dev build. No service workers in src, so nothing intercepts reloads.
+- localhost:8420 is a python http.server (PID 38956, started 14 Nov,
+  `--directory src`) serving the live src folder; localhost and 127.0.0.1
+  return identical fresh bytes; a brand-new browser context on
+  localhost:8420/settings.html renders 8 swatches, zero page errors
+  (.taste-skill/vs/proof-settings-page.png, proof-modal.png).
+- The "Verdict colors" heading is static HTML - even with all JS broken the
+  heading would render. A tab showing no card at all after Ctrl+F5 is therefore
+  loading an old copy of the page, i.e. its URL is not today's server.
+- User confirms via question round: gradient look wrong, preview/thumbnails
+  look wrong (details to follow); Opera tab still shows no card after Ctrl+F5.
+  Next user test: paste http://127.0.0.1:8420/settings.html into a NEW tab and
+  check the address bar of the stale tab. No code changes until the user's
+  sketch-specific feedback arrives (avoid churning against their intent).
+
