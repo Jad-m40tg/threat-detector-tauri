@@ -732,10 +732,14 @@ The user's sketch redefined the modal layout; all questions answered. Changes:
   column, always visible, "Note: this feature is dev mode only", icon painted
   via DAC.ui.callouts.upgrade(body) right after the modal opens.
 - Shade picker square cap 280px -> 320px (sketch shows a larger square).
-- Light gradient made visible: light alphas raised to edge .16 / corner .08 /
-  border .28 (were .12/.06/.25 - invisible on white), still softer than dark
-  (.22/.10/.35) per the user's "stronger but still softer" pick. Shared
-  tokens: the light .modal-detail tint strengthens slightly too (approved).
+- Light gradient made visible (raised TWICE — user still found it "barely
+  visible" after round 2): light alphas now edge .28 / corner .14 / border
+  .40 (was .12/.06/.25 → .16/.08/.28 → current), i.e. light now EXCEEDS dark
+  (.22/.10/.35) by design — a white surface needs a higher alpha for the same
+  perceived strength, and the mini thumbs (~142×90) had proportionally almost
+  no tint. Verified live on all 4 verdicts, big card + thumbs, with screenshots
+  (light-*.png). Shared tokens: the light .modal-detail tint strengthens
+  slightly too (approved).
 
 Verification (same harness; all suites re-run after the changes):
 1. Preview == dashboard card, width-invariant styles: 8/8 equal (both themes
@@ -793,12 +797,17 @@ Restore point: round-2 commit `01f4824`.
   that scaled height. Measured: all three buttons 160×138, all shots 142×90,
   one scale 0.2819 (505px stage at the 1000px modal).
 - `.vs-thumbs` grid fixed `repeat(3, minmax(0,1fr))` (was auto-fit).
-- Light gradient re-verified on the live page for ALL 4 verdicts, big card
-  AND thumbs: alphas [0.16, 0.08], borders rgba(194,38,59/.28) high,
-  rgba(180,83,9/.28) medium, rgba(18,122,72/.28) low, rgba(85,96,106/.28)
-  unverified (lightcheck.js + light-*.png screenshots). The user's "no
-  gradient" report is the known stale-cache issue on their localhost:8420
-  tab — a fresh browser context renders the fix.
+- Light gradient: user round-3 follow-up ("still barely visible on the
+  thumbnails and the preview") — light alphas raised a second time to edge
+  .28 / corner .14 / border .40 (was .16/.08/.28), now STRONGER than dark
+  (.22/.10/.35) by design: a white surface needs a higher alpha for the same
+  perceived strength, and the ~142×90 mini thumbs had proportionally almost
+  no tint. One token block (risk-glow.css, shared by the
+  `[data-theme-scope="light"]` mirror) → preview, thumbs AND dashboard card
+  all raised together. Verified live for ALL 4 verdicts, big card AND thumbs:
+  alphas [0.28, 0.14], borders rgba(194,38,59/.40) high, rgba(180,83,9/.40)
+  medium, rgba(18,122,72/.40) low, rgba(85,96,106/.40) unverified
+  (lightcheck.js + light-*.png screenshots).
 
 Verification (all suites re-run after the changes):
 1. verify_preview.js: 8/8 preview==dashboard width-invariant parity +
@@ -811,14 +820,16 @@ Verification (all suites re-run after the changes):
    borders above on big card + thumbs, white card surface, screenshots
    confirm a visible tint; 0 errors.
 3. verify_dashboard.js (re-run): 14 default diffs vs the restore snapshot
-   are EXACTLY the approved light-alpha raise (0.12→0.16, 0.06→0.08, border
-   0.25→0.28); dark untouched; shades 8/8 (changed / other theme untouched /
-   reset restored); batch rows follow shades with medium/low untouched and
-   borders unchanged; 0 console errors.
+   are EXACTLY the approved light-alpha raises (now 0.12→0.28, 0.06→0.14,
+   0.25→0.40; light only — nonLightDiffs=0); dark untouched; shades 8/8
+   (changed / other theme untouched / reset restored); batch rows follow
+   shades with medium/low untouched and borders unchanged; 0 console
+   errors.
 4. verify_history.js (re-run): shade-immune (bg identical with/without
    shades, no `.verdict-card` on the page); `matchesOld=false` remains a
    STRING-format-only difference (rgba(61,220,132,0.1) vs color(srgb .../0.1)
-   — numerically identical).
+   — numerically identical). Its .modal-detail tint is slightly stronger now
+   (shared --risk-corner-a token, approved).
 
 NOT RUN (real window): the feel of the ~142×90 mini thumbs at the user's
 150% display scaling, and whether the ~40px-mini ring is legible enough by

@@ -28,9 +28,10 @@ every dark variant (grey / OLED). Registered in `js/settings.js` (`hex: true`).
   set on `document.documentElement` by `DAC.verdictShade`; removed on reset.
 - Gradient alphas (shared by the verdict card and the details modal):
   dark `--risk-edge-a: .22` / `--risk-corner-a: .10` / `--risk-border-a: .35`;
-  light `.16` / `.08` / `.28` (raised from .12/.06/.25 in sketch round 2 —
-  the old values made the gradient invisible on the white card; light stays
-  softer than dark by user pick).
+  light `.28` / `.14` / `.40` — raised twice after user reports (`.12/.06/.25`
+  → `.16/.08/.28` in sketch round 2 → current, round 3: "still barely visible
+  on white"). Light now EXCEEDS dark by design: a white surface needs a higher
+  alpha for the same perceived strength. `risk-glow.css` keeps the history.
 
 ## Selectors
 - Defaults: `:root` (dark) and `:root[data-theme="light"]` (light).
