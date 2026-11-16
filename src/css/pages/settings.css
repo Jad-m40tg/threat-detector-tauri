@@ -216,18 +216,24 @@ html[data-motion="reduced"] .set-wrap *, html[data-motion="reduced"] .set-wrap *
   .vs-modal { grid-template-columns: 1fr; }
 }
 .vs-preview-col, .vs-controls-col { min-width: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+/* User r6/r7: Reset/Apply sit on the LEFT edge, directly under the
+   Current/Selected dot rows; the shade picker (square + hex input) shares
+   that same left edge — the brief r6 centering was moved left in r7 ("move
+   the color selector square with the hex input slightly to the left too to
+   be aligning with current selected and the buttons"). No rule needed for
+   the picker: the column's default stretch left-aligns it (its max-width
+   caps the square at 320px). Scoped to the picker modal. */
 /* Sketch round 2: "the other verdicts:" is a prominent bold heading, not a
    muted caption. */
 .vs-side-label { margin: 0; font-size: .92rem; font-weight: 700; color: var(--text); }
 
-/* User round 4/5: Apply and Reset must be the EXACT same size, but compact
-   (their natural word width — "make their width smaller just like their
-   exact previous width"). Equal halves of the actions row (flex:1) was the
-   round-4 answer, rejected in round 5 as too wide. Final: both buttons size
-   to the WIDER label (Reset sets the width, Apply stretches to match) and
-   the pair is centered in the column — compact AND exactly equal, at any
-   label length. Scoped to the picker modal. */
-.modal-vs .set-actions { flex-wrap: nowrap; justify-content: center; }
+/* User r4-r7: Apply/Reset sizing + placement. r4 "exact same size" -> equal
+   halves (rejected as too wide in r5); r5 "their exact previous width" ->
+   fixed 96x44, compact AND exactly equal at any label length; r6 pushed to
+   the left under the dots; r7 "give the buttons top margins some space" ->
+   extra 12px above the row (on top of the column's 12px gap). Scoped to
+   the picker modal. */
+.modal-vs .set-actions { flex-wrap: nowrap; justify-content: flex-start; margin-top: var(--space-3); }
 .modal-vs .set-actions .btn { flex: 0 0 auto; width: 96px; min-width: 0; }
 
 /* Large preview: the REAL verdict card (card result-panel verdict-card, from

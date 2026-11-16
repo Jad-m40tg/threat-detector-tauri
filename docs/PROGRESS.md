@@ -732,19 +732,21 @@ The user's sketch redefined the modal layout; all questions answered. Changes:
   column, always visible, "Note: this feature is dev mode only", icon painted
   via DAC.ui.callouts.upgrade(body) right after the modal opens.
 - Shade picker square cap 280px -> 320px (sketch shows a larger square).
-- Apply/Reset button sizing (user r4: "exact same size" -> equal halves;
-  user r5: "make their width smaller just like their exact previous width"):
-  both buttons fixed at 96x44, centered in the controls column — compact
-  natural-looking width AND exactly equal at any label length (`.modal-vs
-  .set-actions .btn`, scoped to this modal).
-- Light gradient made visible (raised TWICE — user still found it "barely
-  visible" after round 2): light alphas now edge .28 / corner .14 / border
-  .40 (was .12/.06/.25 → .16/.08/.28 → current), i.e. light now EXCEEDS dark
-  (.22/.10/.35) by design — a white surface needs a higher alpha for the same
-  perceived strength, and the mini thumbs (~142×90) had proportionally almost
-  no tint. Verified live on all 4 verdicts, big card + thumbs, with screenshots
-  (light-*.png). Shared tokens: the light .modal-detail tint strengthens
-  slightly too (approved).
+- Apply/Reset buttons + picker alignment (user r4-r7, final state): both
+  buttons fixed 96x44 — exactly equal at any label length (r4 "exact same
+  size" -> equal halves, rejected as too wide in r5 -> fixed width; r5 "their
+  exact previous width"). Both sit on the LEFT edge, directly under the
+  Current/Selected dot rows (r6); the shade picker square + hex input share
+  the same left edge (r7 — the brief r6 centering was removed; default
+  stretch left-aligns it). Extra 12px above the button row (r7: "give the
+  buttons top margins some space"; 24px total with the column gap).
+  Scoped to the picker modal (`.modal-vs .set-actions`). Verified live:
+  square/hex/dot/Reset all at the same left edge, Apply at +108px, row gap
+  24px, 0 console errors.
+- Light gradient & card surface (r2-r5, final state — full history in the
+  "Sketch round 3" section below): light alphas .50/.30/.55 + 10% risk-tint
+  base wash on the card surface; light exceeds dark by design (white needs
+  much more); dark untouched.
 
 Verification (same harness; all suites re-run after the changes):
 1. Preview == dashboard card, width-invariant styles: 8/8 equal (both themes
