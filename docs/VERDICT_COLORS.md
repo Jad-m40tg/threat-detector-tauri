@@ -25,9 +25,10 @@ every dark variant (grey / OLED). Registered in `js/settings.js` (`hex: true`).
   - `#result-panel[data-risk="low|medium|high|unverified"]` — dashboard verdict
     card; maps `--risk-color` to `var(--vs-*)`.
   - `.modal-detail[data-risk="…"]` — shared details modal (dashboard + history).
-  - `.batch-row[data-risk="…"]` — CSV batch rows (also `data-risk="na"` →
-    `--vs-unverified`); border keeps reading `--risk-rgb` (unchanged).
-  - NOT covered: `.batch-tally-dot` header dots (solid, not a row gradient).
+  - NOT covered (user sketch 2026-11-16: only the analysis-details cards are
+    targets): `.batch-row` CSV rows keep the engine `--risk-rgb` gradient and
+    border — they do NOT follow `--vs-*` overrides; `.batch-tally-dot` header
+    dots (solid, not a row gradient).
 
 ## Defaults
 | Theme | high | medium | low | unverified |

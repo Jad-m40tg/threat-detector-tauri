@@ -149,15 +149,15 @@
 .batch-list::-webkit-scrollbar-track{background:transparent}
 .batch-list::-webkit-scrollbar-thumb{border:3px solid transparent;border-radius:999px;background-color:var(--border-strong);background-clip:padding-box}
 /* risk mapping per row (reuses risk-glow.css tokens): --risk-rgb keeps the
-   border tint at engine defaults (border colors do not change); --risk-color
-   feeds the gradient tint via the verdict shade tokens (--vs-*, so
-   DAC.verdictShade overrides recolor the rows automatically too) */
-.batch-row[data-risk="low"]{--risk-rgb:var(--risk-low-rgb);--risk-color:var(--vs-low)}
-.batch-row[data-risk="medium"]{--risk-rgb:var(--risk-medium-rgb);--risk-color:var(--vs-medium)}
-.batch-row[data-risk="high"]{--risk-rgb:var(--risk-high-rgb);--risk-color:var(--vs-high)}
-.batch-row[data-risk="unverified"]{--risk-rgb:var(--risk-unverified-rgb);--risk-color:var(--vs-unverified)}
-.batch-row[data-risk="na"]{--risk-rgb:var(--risk-unverified-rgb);--risk-color:var(--vs-unverified)}
-.batch-row{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3);border:1px solid color-mix(in srgb, var(--border) 75%, rgb(var(--risk-rgb, 138 147 160)) 25%);border-radius:var(--radius);background-color:var(--bg-card);background-image:linear-gradient(to left, color-mix(in srgb, var(--risk-color, var(--vs-unverified)) 10%, transparent), transparent 65%);content-visibility:auto;contain-intrinsic-size:auto 5em}
+   border tint and the left gradient at engine defaults. Batch rows are NOT
+   verdict-color targets (user sketch: only the analysis-details cards —
+   #result-panel and .modal-detail — follow the --vs-* overrides). */
+.batch-row[data-risk="low"]{--risk-rgb:var(--risk-low-rgb)}
+.batch-row[data-risk="medium"]{--risk-rgb:var(--risk-medium-rgb)}
+.batch-row[data-risk="high"]{--risk-rgb:var(--risk-high-rgb)}
+.batch-row[data-risk="unverified"]{--risk-rgb:var(--risk-unverified-rgb)}
+.batch-row[data-risk="na"]{--risk-rgb:var(--risk-unverified-rgb)}
+.batch-row{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3);border:1px solid color-mix(in srgb, var(--border) 75%, rgb(var(--risk-rgb, 138 147 160)) 25%);border-radius:var(--radius);background-color:var(--bg-card);background-image:linear-gradient(to left, rgb(var(--risk-rgb, 138 147 160) / .10), transparent 65%);content-visibility:auto;contain-intrinsic-size:auto 5em}
 .batch-row-main{flex:1 1 auto;min-width:0}
 .batch-row-top{display:flex;align-items:baseline;gap:var(--space-3);min-width:0}
 .batch-row .risk-label{white-space:nowrap}
