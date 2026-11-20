@@ -56,6 +56,7 @@
     density: "comfortable",
     reduceAnimations: false,
     showHero: true,
+    showHardware: true,
     sensitivity: "balanced",
     detectors: {
       httpInsecure: true,
@@ -1287,6 +1288,17 @@
   /* -------------------------------- boot -------------------------------- */
   /* Injects the CONTRACT §14 shell before <main> and the footer after it.
      Idempotent via [data-shell-ready]. */
+  /* Hardware nav visibility is a settings choice; keep it live while the
+     settings page toggles it (the shell is rebuilt on every navigation). */
+  DAC.ui.refreshNav = function () {
+    var showHardware = true;
+    try {
+      showHardware = DAC.settings.get("showHardware") !== false;
+    } catch (e) { showHardware = true; }
+    var link = document.getElementById("nav-hardware");
+    if (link) link.style.display = showHardware ? "" : "none";
+  };
+
   DAC.ui.boot = function (opts) {
     opts = opts || {};
     var page = opts.page || "index";
@@ -1315,6 +1327,11 @@
     var actions = document.createElement("div");
     actions.className = "nav-actions";
 
+    var showHardware = true;
+    try {
+      showHardware = DAC.settings.get("showHardware") !== false;
+    } catch (eShowHardware) { /* defaults keep the link visible */ }
+
     var defs = [
       { id: "nav-dashboard", href: "index.html", tip: "Dashboard", glyph: "home", sr: "Dashboard" },
       { id: "nav-settings", href: "settings.html", tip: "Settings", glyph: "gear", sr: "Settings" },
@@ -1326,6 +1343,7 @@
       var a = document.createElement("a");
       a.id = d.id;
       a.className = "navlink";
+      if (d.id === "nav-hardware" && !showHardware) a.style.display = "none";
       a.href = d.href;
       a.setAttribute("aria-label", d.tip);
       a.setAttribute("data-tip", d.tip);
@@ -1418,7 +1436,7 @@
     footer.className = "app-footer";
     var fNote = document.createElement("p");
     fNote.className = "footer-note";
-    fNote.textContent = "Heuristic analysis. Low risk does not guarantee safety. All results on this page are fictional demonstration data.";
+    fNote.textContent = "Heuristic analysis. Low risk does not guarantee safety.";
     var chip = document.createElement("span");
     chip.className = "status-chip";
     var chipDot = document.createElement("span");

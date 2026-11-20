@@ -320,7 +320,7 @@
       function clearAll() {
         ui.confirm.open({
           title: 'Clear history',
-          message: 'This removes all scans from the demo history. Demo results are fictional and the demo data can be restored afterwards.',
+          message: 'This removes all scans from your history. This action cannot be undone.',
           confirmLabel: 'Clear history',
           cancelLabel: 'Cancel',
           danger: true
@@ -331,12 +331,6 @@
           ui.toast('History cleared', 'success');
         });
       }
-      function restoreDemo() {
-        hist.restoreDemo();
-        render();
-        ui.toast('Demo data restored', 'success');
-      }
-
       /* ---------- events (wired once; rows/pagination use delegation) ---------- */
       el.search.addEventListener('input', utils.debounce(function () {
         var v = el.search.value;
@@ -390,7 +384,7 @@
 
       el.exportBtn.addEventListener('click', exportCsv);
       el.clearBtn.addEventListener('click', clearAll);
-      el.restore.addEventListener('click', restoreDemo);
+      /* restoreDemo removed: real backend, no demo data to restore */
       el.reset.addEventListener('click', resetFilters);
 
       /* settings (mask/time format/theme data) can change anywhere -> re-derive display */
