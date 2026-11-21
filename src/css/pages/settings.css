@@ -323,5 +323,6 @@ html[data-motion="reduced"] .vs-modal *, html[data-motion="reduced"] .vs-swatch 
 .ai-test-msg.is-error{color:var(--high)}
 .ai-consent{display:flex;align-items:flex-start;gap:var(--space-2);font-size:.88rem;color:var(--text);cursor:pointer}
 .ai-consent input{margin-top:.2em;accent-color:var(--accent)}
-.ai-remove{color:var(--high)}
+.ai-remove{background:#ff1c23;color:#fff;border-color:#ff1c23}
+.ai-remove:hover:not(:disabled){background:#e0131a;border-color:#e0131a;color:#fff}
 .ai-remove[hidden]{display:none}
