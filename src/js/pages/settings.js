@@ -1097,6 +1097,10 @@
     });
     var consent = $('ai-consent-input');
     if (consent) consent.checked = !!aiStatus.consentGiven;
+    var consentHint = $('ai-consent-hint');
+    if (consentHint) {
+      consentHint.hidden = !(aiStatus.providers.some(function (p) { return p.hasKey; }) && !aiStatus.consentGiven);
+    }
   }
   function aiRefresh() {
     if (!AI) return;
