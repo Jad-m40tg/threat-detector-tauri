@@ -1055,7 +1055,8 @@
   /* ---------- AI overview settings (keys stay in the Rust backend) ----------
      Write-only keys: this page only ever sees hasKey / keyHint / model / state.
      In browser mock mode the same controls drive the mock adapter. */
-  var AI = (window.TD && TD.services && TD.services.ai) || null;
+  var AI = (window.TD && window.TD.services && window.TD.services.ai) || null;
+  var aiStatus = null;
   var AI_PROVIDERS = ['groq', 'gemini', 'custom'];
 
   function aiHintBase(id) {
