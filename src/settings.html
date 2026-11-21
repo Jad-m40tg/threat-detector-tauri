@@ -373,7 +373,12 @@
           <p class="set-help ai-keyhint" id="ai-hint-groq">Free key: console.groq.com/keys</p>
           <form class="ai-form" id="ai-form-groq" data-provider="groq" novalidate>
             <input class="input" type="password" id="ai-key-groq" placeholder="Paste API key" autocomplete="off" spellcheck="false" aria-label="Groq API key">
-            <input class="input" type="text" id="ai-model-groq" placeholder="Model, empty = auto" autocomplete="off" spellcheck="false" aria-label="Groq model override">
+            <div class="ai-model-row">
+              <input class="input" type="text" id="ai-model-groq" placeholder="Model, empty = auto" autocomplete="off" spellcheck="false" aria-label="Groq model override">
+              <button class="btn btn-secondary ai-models-btn" type="button" data-ai-models="groq">Show models</button>
+            </div>
+            <select class="input ai-model-select" id="ai-models-groq" aria-label="Available Groq models" hidden></select>
+            <p class="ai-test-msg" id="ai-models-msg-groq" role="status" aria-live="polite" hidden></p>
             <div class="ai-actions">
               <button class="btn btn-primary" type="submit">Save key</button>
               <button class="btn btn-secondary" type="button" data-ai-test="groq">Test connection</button>
@@ -391,7 +396,12 @@
           <p class="set-help ai-keyhint" id="ai-hint-gemini">Free key: aistudio.google.com</p>
           <form class="ai-form" id="ai-form-gemini" data-provider="gemini" novalidate>
             <input class="input" type="password" id="ai-key-gemini" placeholder="Paste API key" autocomplete="off" spellcheck="false" aria-label="Google Gemini API key">
-            <input class="input" type="text" id="ai-model-gemini" placeholder="Model, empty = auto" autocomplete="off" spellcheck="false" aria-label="Gemini model override">
+            <div class="ai-model-row">
+              <input class="input" type="text" id="ai-model-gemini" placeholder="Model, empty = auto" autocomplete="off" spellcheck="false" aria-label="Gemini model override">
+              <button class="btn btn-secondary ai-models-btn" type="button" data-ai-models="gemini">Show models</button>
+            </div>
+            <select class="input ai-model-select" id="ai-models-gemini" aria-label="Available Gemini models" hidden></select>
+            <p class="ai-test-msg" id="ai-models-msg-gemini" role="status" aria-live="polite" hidden></p>
             <div class="ai-actions">
               <button class="btn btn-primary" type="submit">Save key</button>
               <button class="btn btn-secondary" type="button" data-ai-test="gemini">Test connection</button>
@@ -410,7 +420,12 @@
           <form class="ai-form" id="ai-form-custom" data-provider="custom" novalidate>
             <input class="input" type="url" id="ai-base-custom" placeholder="Base URL, e.g. https://openrouter.ai/api/v1" autocomplete="off" spellcheck="false" aria-label="Custom provider base URL">
             <input class="input" type="password" id="ai-key-custom" placeholder="Paste API key" autocomplete="off" spellcheck="false" aria-label="Custom provider API key">
-            <input class="input" type="text" id="ai-model-custom" placeholder="Model, empty = auto" autocomplete="off" spellcheck="false" aria-label="Custom provider model override">
+            <div class="ai-model-row">
+              <input class="input" type="text" id="ai-model-custom" placeholder="Model, empty = auto" autocomplete="off" spellcheck="false" aria-label="Custom provider model override">
+              <button class="btn btn-secondary ai-models-btn" type="button" data-ai-models="custom">Show models</button>
+            </div>
+            <select class="input ai-model-select" id="ai-models-custom" aria-label="Available custom provider models" hidden></select>
+            <p class="ai-test-msg" id="ai-models-msg-custom" role="status" aria-live="polite" hidden></p>
             <div class="ai-actions">
               <button class="btn btn-primary" type="submit">Save key</button>
               <button class="btn btn-secondary" type="button" data-ai-test="custom">Test connection</button>

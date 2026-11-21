@@ -1166,6 +1166,64 @@
         });
       });
     }
+    var modelsBtn = document.querySelector('[data-ai-models="' + id + '"]');
+    if (modelsBtn) {
+      modelsBtn.addEventListener('click', function () {
+        if (!AI) return;
+        var select = $('ai-models-' + id);
+        var msg = $('ai-models-msg-' + id);
+        modelsBtn.disabled = true;
+        if (msg) { msg.hidden = false; msg.className = 'ai-test-msg'; msg.textContent = 'Loading models...'; }
+        AI.listModels(id).then(function (models) {
+          models = Array.isArray(models) ? models : [];
+          if (select) {
+            select.textContent = '';
+            var placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = models.length ? 'Choose a model...' : 'No models';
+            select.appendChild(placeholder);
+            models.forEach(function (name) {
+              var option = document.createElement('option');
+              option.value = name;
+              option.textContent = name;
+              select.appendChild(option);
+            });
+            var current = String($('ai-model-' + id).value || '');
+            if (models.indexOf(current) >= 0) select.value = current;
+            select.hidden = models.length === 0;
+          }
+          if (msg) {
+            msg.hidden = false;
+            msg.className = 'ai-test-msg is-ok';
+            msg.textContent = models.length + ' models available for this key. Pick one below.';
+          }
+        }).catch(function (err) {
+          if (!msg) return;
+          msg.hidden = false;
+          msg.className = 'ai-test-msg is-error';
+          msg.textContent = String((err && err.message) || err || 'Could not load models.');
+        }).then(function () { modelsBtn.disabled = false; });
+      });
+    }
+    var modelSelect = $('ai-models-' + id);
+    if (modelSelect) {
+      modelSelect.addEventListener('change', function () {
+        var chosen = modelSelect.value;
+        if (!chosen || !AI) return;
+        $('ai-model-' + id).value = chosen;
+        AI.saveSettings({
+          provider: id,
+          apiKey: null,
+          model: chosen,
+          baseUrl: id === 'custom' ? String($('ai-base-custom').value || '').trim() : null
+        }).then(function () {
+          aiToast('Model set to ' + chosen, 'success');
+          aiRefresh();
+        }).catch(function (err) {
+          aiToast(String((err && err.message) || err || 'Could not save the model.'), 'error');
+        });
+      });
+    }
   });
   var aiConsent = $('ai-consent-input');
   if (aiConsent && AI) {

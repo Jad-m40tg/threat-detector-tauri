@@ -28,6 +28,7 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
             services::ai::commands::ai_save_settings,
             services::ai::commands::ai_clear_key,
             services::ai::commands::ai_test_connection,
+            services::ai::commands::ai_list_models,
             services::ai::commands::ai_overview,
         ])
         .run(tauri::generate_context!())

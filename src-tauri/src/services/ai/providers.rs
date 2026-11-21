@@ -22,11 +22,12 @@ pub enum AttemptError {
     Timeout,
     Network,
     BadResponse,
+    ModelNotFound,
 }
 
 pub fn default_model(id: &str) -> &'static str {
     match id {
-        PROVIDER_GROQ => "llama-3.3-70b-versatile",
+        PROVIDER_GROQ => "openai/gpt-oss-120b",
         PROVIDER_GEMINI => "gemini-3.1-flash-lite",
         _ => "",
     }
@@ -35,9 +36,11 @@ pub fn default_model(id: &str) -> &'static str {
 pub fn preferred_models(id: &str) -> &'static [&'static str] {
     match id {
         PROVIDER_GROQ => &[
-            "llama-3.3-70b-versatile",
             "openai/gpt-oss-120b",
             "openai/gpt-oss-20b",
+            "qwen/qwen3.8-27b",
+            "allam-2-7b",
+            "llama-3.3-70b-versatile",
             "llama-3.1-8b-instant",
         ],
         PROVIDER_GEMINI => &[
@@ -48,6 +51,20 @@ pub fn preferred_models(id: &str) -> &'static [&'static str] {
         ],
         _ => &[],
     }
+}
+
+/// Audio, embedding and classifier endpoints are not chat models.
+pub fn chat_capable(id: &str, model: &str) -> bool {
+    if id == PROVIDER_GEMINI {
+        return true;
+    }
+    let lower = model.to_lowercase();
+    !(lower.contains("whisper")
+        || lower.contains("orpheus")
+        || lower.contains("tts")
+        || lower.contains("prompt-guard")
+        || lower.contains("embed")
+        || lower.contains("moderation"))
 }
 
 pub fn base_url(id: &str, cfg: &ProviderConfig) -> String {
@@ -82,6 +99,7 @@ fn status_error(status: u16, retry_after: Option<u64>) -> Option<AttemptError> {
         429 => Some(AttemptError::RateLimited(retry_after)),
         503 | 529 => Some(AttemptError::Overloaded),
         500..=599 => Some(AttemptError::Server),
+        404 => Some(AttemptError::ModelNotFound),
         _ => Some(AttemptError::BadResponse),
     }
 }
@@ -97,12 +115,13 @@ fn choose_model(id: &str, models: &[String]) -> Option<String> {
         .find(|m| match id {
             PROVIDER_GEMINI => m.contains("flash-lite"),
             PROVIDER_GROQ => {
-                (m.contains("llama") || m.contains("gpt-oss"))
-                    && !m.contains("guard")
-                    && !m.contains("whisper")
-                    && !m.contains("tts")
+                chat_capable(id, m)
+                    && (m.contains("llama")
+                        || m.contains("gpt-oss")
+                        || m.contains("qwen")
+                        || m.contains("allam"))
             }
-            _ => true,
+            _ => chat_capable(id, m),
         })
         .cloned()
 }
@@ -387,6 +406,7 @@ mod tests {
     #[tokio::test]
     async fn maps_401_503_500_and_timeout() {
         assert_eq!(chat_error(401, None).await, AttemptError::Unauthorized);
+        assert_eq!(chat_error(404, None).await, AttemptError::ModelNotFound);
         assert_eq!(chat_error(503, None).await, AttemptError::Overloaded);
         assert_eq!(chat_error(529, None).await, AttemptError::Overloaded);
         assert_eq!(chat_error(500, None).await, AttemptError::Server);
@@ -480,5 +500,7 @@ mod tests {
             pick_model(PROVIDER_GEMINI, &gemini).as_deref(),
             Some("gemini-3.1-flash-lite")
         );
+        assert!(!chat_capable(PROVIDER_GROQ, "whisper-large-v3"));
+        assert!(chat_capable(PROVIDER_GROQ, "openai/gpt-oss-120b"));
     }
 }

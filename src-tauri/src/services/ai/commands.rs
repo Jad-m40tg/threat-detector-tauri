@@ -4,7 +4,9 @@
 use tauri::State;
 
 use super::service::AiService;
-use super::types::{AiError, AiStatus, Overview, OverviewRequest, SettingsPatch, TestResult};
+use super::types::{
+    AiError, AiStatus, ModelList, Overview, OverviewRequest, SettingsPatch, TestResult,
+};
 
 #[tauri::command]
 pub async fn ai_get_status(state: State<'_, AiService>) -> Result<AiStatus, AiError> {
@@ -30,6 +32,15 @@ pub async fn ai_test_connection(
     provider: String,
 ) -> Result<TestResult, AiError> {
     Ok(state.test_connection(&provider).await)
+}
+
+#[tauri::command]
+pub async fn ai_list_models(
+    state: State<'_, AiService>,
+    provider: String,
+) -> Result<ModelList, AiError> {
+    let models = state.list_models_for(&provider).await?;
+    Ok(ModelList { models })
 }
 
 #[tauri::command]

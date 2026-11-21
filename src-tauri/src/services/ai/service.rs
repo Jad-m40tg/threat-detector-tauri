@@ -54,6 +54,7 @@ struct Inner {
     day: u64,
     counts: HashMap<&'static str, u32>,
     models: HashMap<&'static str, String>,
+    bad_models: HashSet<&'static str>,
     last_attempt: Option<Instant>,
     cache: VecDeque<(u64, Overview)>,
 }
@@ -68,6 +69,7 @@ impl Inner {
             day: today(),
             counts: HashMap::new(),
             models: HashMap::new(),
+            bad_models: HashSet::new(),
             last_attempt: None,
             cache: VecDeque::new(),
         }
@@ -114,6 +116,7 @@ impl AiService {
                     cooldown_until,
                     cooldown_secs,
                     models,
+                    bad_models,
                     cache,
                     ..
                 } = inner;
@@ -132,6 +135,7 @@ impl AiService {
                     cooldown_until.remove(provider);
                     cooldown_secs.remove(provider);
                     models.remove(provider);
+                    bad_models.remove(provider);
                     cache.clear();
                 }
                 if let Some(model) = patch.model.as_deref() {
@@ -142,6 +146,7 @@ impl AiService {
                         Some(model.to_string())
                     };
                     models.remove(provider);
+                    bad_models.remove(provider);
                     cache.clear();
                 }
                 if let Some(base) = patch.base_url.as_deref() {
@@ -175,6 +180,7 @@ impl AiService {
             inner.cooldown_until.remove(provider);
             inner.cooldown_secs.remove(provider);
             inner.models.remove(provider);
+            inner.bad_models.remove(provider);
             inner.cache.clear();
             inner
                 .config
@@ -208,14 +214,18 @@ impl AiService {
         .await
         {
             Ok(models) => {
-                let model = match cfg
+                let usable: Vec<String> = models
+                    .into_iter()
+                    .filter(|model| providers::chat_capable(provider, model))
+                    .collect();
+                let saved = cfg
                     .model
                     .as_deref()
                     .map(str::trim)
-                    .filter(|m| !m.is_empty())
-                {
-                    Some(model) => model.to_string(),
-                    None => providers::pick_model(provider, &models)
+                    .filter(|model| !model.is_empty());
+                let model = match saved {
+                    Some(model) if usable.iter().any(|item| item == model) => model.to_string(),
+                    _ => providers::pick_model(provider, &usable)
                         .unwrap_or_else(|| providers::default_model(provider).to_string()),
                 };
                 if !model.is_empty() {
@@ -246,6 +256,69 @@ impl AiService {
                 failed_test("Could not reach the provider.")
             }
             Err(_) => failed_test("The provider did not answer correctly."),
+        }
+    }
+
+    /// Lists the chat-capable models this provider key can use.
+    pub async fn list_models_for(&self, provider: &str) -> Result<Vec<String>, AiError> {
+        let cfg = {
+            let inner = self.inner.lock().await;
+            inner
+                .config
+                .providers
+                .get(provider)
+                .cloned()
+                .ok_or_else(|| AiError::new("BadResponse", "Unknown provider."))?
+        };
+        if !cfg.has_key() {
+            return Err(AiError::no_key());
+        }
+        if provider == PROVIDER_CUSTOM && providers::base_url(provider, &cfg).is_empty() {
+            return Err(AiError::new("BadResponse", "Set a base URL first."));
+        }
+        match providers::list_models(
+            self.transport.as_ref(),
+            provider,
+            &cfg,
+            self.limits.attempt_timeout,
+        )
+        .await
+        {
+            Ok(models) => {
+                let usable: Vec<String> = models
+                    .into_iter()
+                    .filter(|model| providers::chat_capable(provider, model))
+                    .collect();
+                if usable.is_empty() {
+                    return Err(AiError::new(
+                        "BadResponse",
+                        "No usable models were returned.",
+                    ));
+                }
+                Ok(usable)
+            }
+            Err(AttemptError::Unauthorized) => {
+                self.inner
+                    .lock()
+                    .await
+                    .invalid
+                    .insert(provider_id(provider));
+                Err(AiError::new(
+                    "Unauthorized",
+                    "The key was rejected by the provider.",
+                ))
+            }
+            Err(AttemptError::RateLimited(retry_after)) => {
+                Err(AiError::all_failed(Some(retry_after.unwrap_or(60))))
+            }
+            Err(AttemptError::Timeout) => Err(AiError::new(
+                "Timeout",
+                "The provider did not answer in time.",
+            )),
+            Err(AttemptError::Network) => {
+                Err(AiError::new("Network", "Could not reach the provider."))
+            }
+            Err(_) => Err(AiError::all_failed(None)),
         }
     }
 
@@ -339,7 +412,7 @@ impl AiService {
                 continue;
             }
 
-            let model = match self.model_for(id, &cfg).await {
+            let mut model = match self.model_for(id, &cfg).await {
                 Ok(model) => model,
                 Err(AttemptError::Unauthorized) => {
                     self.inner.lock().await.invalid.insert(id);
@@ -364,6 +437,7 @@ impl AiService {
             }
 
             let mut retried = false;
+            let mut model_retried = false;
             let outcome = loop {
                 let remaining = deadline.saturating_duration_since(Instant::now());
                 if remaining.is_zero() {
@@ -376,6 +450,17 @@ impl AiService {
                         .await;
                 match result {
                     Ok(text) => break Ok(text),
+                    Err(AttemptError::ModelNotFound) if !model_retried => {
+                        model_retried = true;
+                        self.inner.lock().await.bad_models.insert(id);
+                        match self.discover_model(id, &cfg).await {
+                            Ok(fresh) => {
+                                model = fresh;
+                                continue;
+                            }
+                            Err(err) => break Err(err),
+                        }
+                    }
                     Err(err) if !retried && retryable(err) && Instant::now() < deadline => {
                         retried = true;
                         tokio::time::sleep(random_delay()).await;
@@ -439,17 +524,31 @@ impl AiService {
         id: &'static str,
         cfg: &ProviderConfig,
     ) -> Result<String, AttemptError> {
-        if let Some(model) = cfg
-            .model
-            .as_deref()
-            .map(str::trim)
-            .filter(|m| !m.is_empty())
-        {
-            return Ok(model.to_string());
+        let (override_bad, cached) = {
+            let inner = self.inner.lock().await;
+            (inner.bad_models.contains(id), inner.models.get(id).cloned())
+        };
+        if !override_bad {
+            if let Some(model) = cfg
+                .model
+                .as_deref()
+                .map(str::trim)
+                .filter(|m| !m.is_empty())
+            {
+                return Ok(model.to_string());
+            }
         }
-        if let Some(model) = self.inner.lock().await.models.get(id) {
-            return Ok(model.clone());
+        if let Some(model) = cached {
+            return Ok(model);
         }
+        self.discover_model(id, cfg).await
+    }
+
+    async fn discover_model(
+        &self,
+        id: &'static str,
+        cfg: &ProviderConfig,
+    ) -> Result<String, AttemptError> {
         match providers::list_models(
             self.transport.as_ref(),
             id,
@@ -459,7 +558,11 @@ impl AiService {
         .await
         {
             Ok(models) => {
-                let chosen = providers::pick_model(id, &models).or_else(|| {
+                let usable: Vec<String> = models
+                    .into_iter()
+                    .filter(|model| providers::chat_capable(id, model))
+                    .collect();
+                let chosen = providers::pick_model(id, &usable).or_else(|| {
                     providers::preferred_models(id)
                         .first()
                         .map(|model| (*model).to_string())
@@ -496,7 +599,8 @@ impl AiService {
             AttemptError::Server
             | AttemptError::Timeout
             | AttemptError::Network
-            | AttemptError::BadResponse => {}
+            | AttemptError::BadResponse
+            | AttemptError::ModelNotFound => {}
         }
     }
 }
@@ -554,11 +658,11 @@ fn classify_failures(failures: &[AttemptError], inner: &Inner) -> AiError {
     }
     if failures
         .iter()
-        .all(|f| matches!(f, AttemptError::BadResponse))
+        .all(|f| matches!(f, AttemptError::BadResponse | AttemptError::ModelNotFound))
     {
         return AiError::new(
             "BadResponse",
-            "The AI provider returned an unusable answer.",
+            "The AI provider returned an unusable answer. Check the model in Settings.",
         );
     }
     let mut retry: Option<u64> = None;
@@ -639,14 +743,21 @@ fn build_status(inner: &Inner, daily_cap: u32) -> AiStatus {
                 None
             }
         });
-        let model = cfg
-            .model
-            .as_deref()
-            .map(str::trim)
-            .filter(|m| !m.is_empty())
-            .map(str::to_string)
-            .or_else(|| inner.models.get(id).cloned())
-            .unwrap_or_else(|| providers::default_model(id).to_string());
+        let model = if inner.bad_models.contains(id) {
+            inner
+                .models
+                .get(id)
+                .cloned()
+                .unwrap_or_else(|| providers::default_model(id).to_string())
+        } else {
+            cfg.model
+                .as_deref()
+                .map(str::trim)
+                .filter(|m| !m.is_empty())
+                .map(str::to_string)
+                .or_else(|| inner.models.get(id).cloned())
+                .unwrap_or_else(|| providers::default_model(id).to_string())
+        };
         let base_url = if id == PROVIDER_CUSTOM {
             providers::base_url(id, cfg)
         } else {
@@ -1140,5 +1251,71 @@ mod tests {
             Some("sk-secret-value-9876")
         );
         let _ = std::fs::remove_file(&service.config_path);
+    }
+
+    #[tokio::test]
+    async fn stale_model_rediscovers_and_retries_once() {
+        let fake = Arc::new(Fake::with(vec![
+            Reply::Status {
+                status: 404,
+                retry_after: None,
+                body: json!({ "error": { "message": "model not found" } }),
+            },
+            Reply::Status {
+                status: 200,
+                retry_after: None,
+                body: json!({
+                    "data": [
+                        { "id": "openai/gpt-oss-120b" },
+                        { "id": "whisper-large-v3" }
+                    ]
+                }),
+            },
+        ]));
+        let service = test_service(fake.clone(), cfg_with(&[GROQ]), fast_limits());
+        let result = service
+            .overview(request("https://evil.example"))
+            .await
+            .expect("rediscovered model works");
+        assert_eq!(result.provider, GROQ);
+        assert_eq!(result.model, "openai/gpt-oss-120b");
+        {
+            let calls = fake.calls.lock().expect("lock");
+            assert_eq!(calls.len(), 3);
+            assert!(calls[1].ends_with("/models"));
+            assert!(calls[2].ends_with("/chat/completions"));
+        }
+
+        let status = service.get_status().await;
+        let groq = status
+            .providers
+            .iter()
+            .find(|p| p.id == GROQ)
+            .expect("groq");
+        assert_eq!(groq.model, "openai/gpt-oss-120b");
+    }
+
+    #[tokio::test]
+    async fn list_models_keeps_only_chat_capable_entries() {
+        let fake = Arc::new(Fake::with(vec![Reply::Status {
+            status: 200,
+            retry_after: None,
+            body: json!({
+                "data": [
+                    { "id": "openai/gpt-oss-120b" },
+                    { "id": "whisper-large-v3" },
+                    { "id": "llama-3.1-8b-instant" }
+                ]
+            }),
+        }]));
+        let service = test_service(fake.clone(), cfg_with(&[GROQ]), fast_limits());
+        let models = service.list_models_for(GROQ).await.expect("list");
+        assert_eq!(models, vec!["openai/gpt-oss-120b", "llama-3.1-8b-instant"]);
+
+        let no_key = test_service(fake, Config::default(), fast_limits());
+        assert_eq!(
+            no_key.list_models_for(GROQ).await.expect_err("no key").code,
+            "NoKey"
+        );
     }
 }

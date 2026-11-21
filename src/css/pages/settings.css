@@ -316,6 +316,10 @@ html[data-motion="reduced"] .vs-modal *, html[data-motion="reduced"] .vs-swatch 
 .ai-state[data-state="invalid"]{color:var(--high);border-color:color-mix(in srgb, var(--high) 45%, var(--border));background:color-mix(in srgb, var(--high) 10%, var(--bg-card))}
 .ai-form{display:grid;gap:var(--space-2);min-width:0}
 .ai-form .input{width:100%}
+.ai-model-row{display:flex;flex-wrap:wrap;gap:var(--space-2);align-items:stretch}
+.ai-model-row .input{flex:1 1 200px;min-width:0}
+.ai-models-btn{flex:0 0 auto}
+.ai-model-select{margin-top:2px}
 .ai-actions{display:flex;flex-wrap:wrap;gap:var(--space-2)}
 .ai-keyhint{font-size:.78rem;word-break:break-word}
 .ai-test-msg{margin:0;font-size:.82rem;color:var(--text-muted)}

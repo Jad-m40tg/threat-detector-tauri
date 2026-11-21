@@ -129,3 +129,9 @@ pub struct TestResult {
     pub message: String,
     pub model: String,
 }
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModelList {
+    pub models: Vec<String>,
+}

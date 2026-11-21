@@ -49,7 +49,7 @@
     var cfg = {
       consent: mode !== "nokey",
       providers: {
-        groq: { hasKey: mode !== "nokey", keyHint: "Y9k2", model: "llama-3.3-70b-versatile", baseUrl: "" },
+        groq: { hasKey: mode !== "nokey", keyHint: "Y9k2", model: "openai/gpt-oss-120b", baseUrl: "" },
         gemini: { hasKey: mode === "failover", keyHint: "m4Qa", model: "gemini-3.1-flash-lite", baseUrl: "" },
         custom: { hasKey: false, keyHint: "", model: "", baseUrl: "" }
       }
@@ -146,11 +146,25 @@
         return new Promise(function (resolve) {
           setTimeout(function () {
             if (!p || !p.hasKey) { resolve({ ok: false, message: "No key saved for this provider.", model: "" }); return; }
-            var model = provider === "gemini" ? (p.model || "gemini-3.1-flash-lite") : (p.model || "llama-3.3-70b-versatile");
+            var model = provider === "gemini" ? (p.model || "gemini-3.1-flash-lite") : (p.model || "openai/gpt-oss-120b");
             if (mode === "error") { resolve({ ok: false, message: "The provider is busy. Try again later.", model: model }); return; }
             resolve({ ok: true, message: "Connection simulated in mock mode.", model: model });
           }, 700);
         });
+      },
+      listModels: function (provider) {
+        var p = cfg.providers[provider];
+        if (!p || !p.hasKey) {
+          return Promise.reject(makeError("NoKey", "No key saved for this provider."));
+        }
+        var lists = {
+          groq: ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b", "allam-2-7b", "llama-3.1-8b-instant"],
+          gemini: ["gemini-3.1-flash-lite", "gemini-2.5-flash-lite", "gemini-2.0-flash-lite"],
+          custom: ["openai/gpt-4o-mini", "openai/gpt-4o", "llama-3.3-70b-versatile"]
+        };
+        var models = (lists[provider] || []).slice();
+        if (p.model && models.indexOf(p.model) < 0) models.unshift(p.model);
+        return Promise.resolve(models);
       },
       overview: function (request) {
         request = request || {};
@@ -201,6 +215,11 @@
       },
       clearKey: function (provider) { return call("ai_clear_key", { provider: provider }); },
       testConnection: function (provider) { return call("ai_test_connection", { provider: provider }); },
+      listModels: function (provider) {
+        return call("ai_list_models", { provider: provider }).then(function (res) {
+          return (res && res.models) || [];
+        });
+      },
       overview: function (request) {
         return call("ai_overview", {
           request: { scope: request.scope, payload: request.payload }
@@ -270,6 +289,9 @@
       });
     },
     testConnection: function (provider) { return getImpl().testConnection(provider); },
+    listModels: function (provider) {
+      return getImpl().listModels(provider).catch(function (err) { throw normalizeError(err); });
+    },
     overview: overview,
     providerLabel: function (id) { return PROVIDER_LABEL[id] || id; },
     clearCache: function () { cache.clear(); },

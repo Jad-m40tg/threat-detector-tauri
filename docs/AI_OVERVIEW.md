@@ -20,6 +20,7 @@ the card, and late responses for older scans are ignored via a per-scan token.
 | `ai_save_settings` | `{patch: {provider, apiKey, baseUrl, model, consent}}` | status |
 | `ai_clear_key` | `{provider}` | - |
 | `ai_test_connection` | `{provider}` | `{ok, message, model}` |
+| `ai_list_models` | `{provider}` | `{models[]}` |
 | `ai_overview` | `{request: {scope, payload}}` | `{headline, summary, explanation, tips, provider, model}` |
 
 Provider states: `ready`, `no_key`, `cooling` (with `cooldownUntil`),
@@ -53,8 +54,12 @@ future improvement. `ai-overview.json` is git-ignored as a guard.
 
 Failover order: Groq (`api.groq.com/openai/v1`), Google Gemini
 (`generativelanguage.googleapis.com/v1beta`), then a custom OpenAI-compatible
-base URL. Models are auto-selected from `/models` (Groq
-`llama-3.3-70b-versatile` first; Gemini Flash-Lite first) and can be overridden.
+base URL. Models are auto-selected from `/models` (Groq `gpt-oss-120b`
+first; Gemini Flash-Lite first) and can be overridden. Settings has a
+Show models button that lists the chat-capable models for the saved key so
+one can be picked instead of typed. If an override returns HTTP 404, the
+model is marked stale, rediscovered from `/models` and the call is retried
+once.
 
 - One overview at a time; at least 4 s between calls.
 - 8 s per attempt, 15 s total, at most 2 providers attempted.
