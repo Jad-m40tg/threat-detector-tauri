@@ -22,6 +22,12 @@
       attr: "data-nav-style",
       def: "ring"
     },
+    aiMode: {
+      store: "td.ai.mode",
+      values: ["off", "click", "auto"],
+      attr: "data-ai-mode",
+      def: "auto"
+    },
     /* Verdict shade overrides (Phase 1 — docs/VERDICT_COLORS.md). hex: true keys
        store a lowercase "#rrggbb" (or "" meaning "unset / back to default");
        def: null (absent key = default tint). Input normalization and validation

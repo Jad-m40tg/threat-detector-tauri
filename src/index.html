@@ -253,31 +253,78 @@
 
         <!-- ===== SPEC 7.5 THREAT SUMMARY (side column) ===== -->
         <aside class="dash-aside" aria-label="Threat summary">
-          <section id="summary-card" class="card dash-reveal" aria-labelledby="summary-title">
-            <div class="card-head">
-              <h2 class="card-title" id="summary-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M12 2.2 20 5.1v5.4c0 4.7-3.2 8.5-8 9.8-4.8-1.3-8-5.1-8-9.8V5.1Z"></path><path d="m9.2 12.2 2.2 2.2 4-4.4"></path></svg>
-                Threat Summary
-              </h2>
-            </div>
-            <div class="dash-summary-visual">
-              <div class="shield-wrap" id="vis-shield-summary"></div>
-              <svg class="wave-deco" viewBox="0 0 300 42" preserveAspectRatio="none" focusable="false" aria-hidden="true">
-                <path d="M0 24c25-14 55-14 80 0s55 14 80 0 55-14 80 0 40 10 60 4" fill="none" stroke-width="2" stroke-opacity=".3"></path>
-              </svg>
-            </div>
-            <p class="dash-state-title" id="summary-state-title" data-state="secure">Your system is secure</p>
-            <p class="dash-state-desc" id="summary-state-desc">No active threats detected</p>
-            <dl id="stmt-stats" class="dash-stats">
-              <div class="dash-stat"><dt>Scans today</dt><dd id="stat-today">0</dd></div>
-              <div class="dash-stat"><dt>High risk</dt><dd id="stat-high" data-risk="high">0</dd></div>
-              <div class="dash-stat"><dt>Medium risk</dt><dd id="stat-medium" data-risk="medium">0</dd></div>
-            </dl>
-            <div class="dash-summary-foot">
-              <a id="summary-review" class="link-arrow" href="history.html#risk=low">
-                Review
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.6 6.6 18 12l-5.4 5.4"></path></svg>
-              </a>
+          <section id="summary-card" class="card summary-card dash-reveal" aria-labelledby="summary-title" data-ai-pane="summary">
+            <div class="summary-viewport">
+              <div class="summary-track">
+                <div class="summary-pane pane-summary is-active" data-pane="summary" role="group" aria-labelledby="summary-title">
+                  <div class="card-head summary-head">
+                    <h2 class="card-title" id="summary-title">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M12 2.2 20 5.1v5.4c0 4.7-3.2 8.5-8 9.8-4.8-1.3-8-5.1-8-9.8V5.1Z"></path><path d="m9.2 12.2 2.2 2.2 4-4.4"></path></svg>
+                      Threat Summary
+                    </h2>
+                    <button type="button" id="btn-ai-open" class="ai-toggle" aria-controls="summary-card" aria-expanded="false" hidden>
+                      <span class="ai-dot" id="ai-dot" aria-hidden="true"></span>
+                      <span>AI overview</span>
+                    </button>
+                  </div>
+                  <div class="dash-summary-visual">
+                    <div class="shield-wrap" id="vis-shield-summary"></div>
+                    <svg class="wave-deco" viewBox="0 0 300 42" preserveAspectRatio="none" focusable="false" aria-hidden="true">
+                      <path d="M0 24c25-14 55-14 80 0s55 14 80 0 55-14 80 0 40 10 60 4" fill="none" stroke-width="2" stroke-opacity=".3"></path>
+                    </svg>
+                  </div>
+                  <p class="dash-state-title" id="summary-state-title" data-state="secure">Your system is secure</p>
+                  <p class="dash-state-desc" id="summary-state-desc">No active threats detected</p>
+                  <dl id="stmt-stats" class="dash-stats">
+                    <div class="dash-stat"><dt>Scans today</dt><dd id="stat-today">0</dd></div>
+                    <div class="dash-stat"><dt>High risk</dt><dd id="stat-high" data-risk="high">0</dd></div>
+                    <div class="dash-stat"><dt>Medium risk</dt><dd id="stat-medium" data-risk="medium">0</dd></div>
+                  </dl>
+                  <div class="dash-summary-foot">
+                    <a id="summary-review" class="link-arrow" href="history.html#risk=low">
+                      Review
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.6 6.6 18 12l-5.4 5.4"></path></svg>
+                    </a>
+                  </div>
+                </div>
+
+                <div class="summary-pane pane-ai" data-pane="ai" role="group" aria-labelledby="ai-title" inert aria-hidden="true">
+                  <div class="card-head ai-head">
+                    <button type="button" id="btn-ai-back" class="ai-back" aria-label="Back to Threat Summary">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"></path></svg>
+                    </button>
+                    <h2 class="card-title" id="ai-title" tabindex="-1">AI overview</h2>
+                    <button type="button" id="btn-ai-close" class="ai-toggle">Threat Summary</button>
+                  </div>
+                  <p class="ai-about" id="ai-about">About: this scan</p>
+                  <div class="ai-scroll" id="ai-scroll">
+                    <div class="ai-loading" id="ai-loading">
+                      <span class="ai-bar ai-bar-headline"></span>
+                      <span class="ai-bar ai-bar-summary"></span>
+                      <div class="ai-box ai-skel-box" aria-hidden="true">
+                        <span class="ai-line"></span><span class="ai-line"></span><span class="ai-line short"></span>
+                      </div>
+                      <span class="sr-only" role="status">Generating AI overview</span>
+                    </div>
+                    <div class="ai-error" id="ai-error" hidden>
+                      <p class="ai-error-msg" id="ai-error-msg"></p>
+                      <button type="button" id="btn-ai-retry" class="btn btn-secondary">Retry</button>
+                    </div>
+                    <div class="ai-content" id="ai-content" hidden>
+                      <p class="ai-headline" id="ai-headline"></p>
+                      <p class="ai-summary" id="ai-summary"></p>
+                      <div class="ai-box">
+                        <p class="ai-explanation" id="ai-explanation"></p>
+                        <ul class="ai-tips" id="ai-tips"></ul>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="ai-foot">
+                    <span class="ai-via" id="ai-via" hidden></span>
+                    <span class="ai-note">AI-generated, may be wrong. The scanner's verdict is final.</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
         </aside>
@@ -329,6 +376,7 @@
 <script src="js/core/events.js"></script>
 <script src="js/services/bridge.js"></script>
 <script src="js/services/analysisService.js"></script>
+<script src="js/services/aiService.js"></script>
 <script src="js/components/verdictCard.js"></script>
 <script src="js/features/motion-governor.js"></script>
 <script src="js/pages/index.js"></script>

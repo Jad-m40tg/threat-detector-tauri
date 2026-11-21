@@ -47,7 +47,26 @@
       scanCount = $('scan-progress-count'),
       tableBody = $('table-results-body'),
       summaryCard = $('summary-card'),
-      reviewLink = $('summary-review');
+      reviewLink = $('summary-review'),
+      aiViewport = summaryCard.querySelector('.summary-viewport'),
+      aiPaneSummary = summaryCard.querySelector('[data-pane="summary"]'),
+      aiPaneAi = summaryCard.querySelector('[data-pane="ai"]'),
+      aiOpenBtn = $('btn-ai-open'),
+      aiDot = $('ai-dot'),
+      aiBackBtn = $('btn-ai-back'),
+      aiCloseBtn = $('btn-ai-close'),
+      aiAbout = $('ai-about'),
+      aiLoading = $('ai-loading'),
+      aiErrorBox = $('ai-error'),
+      aiErrorMsg = $('ai-error-msg'),
+      aiContent = $('ai-content'),
+      aiHeadline = $('ai-headline'),
+      aiSummaryText = $('ai-summary'),
+      aiExplanation = $('ai-explanation'),
+      aiTips = $('ai-tips'),
+      aiVia = $('ai-via'),
+      aiRetryBtn = $('btn-ai-retry'),
+      aiTitle = $('ai-title');
 
   var stateEls = {};
   var stateDivs = statesWrap.querySelectorAll('.result-state');
@@ -204,6 +223,7 @@
        stale result cannot overwrite a newer one (mock path had no guard before). */
     var run = ++scanRun;
     clearTimers();
+    aiReset(true); /* a new scan always returns the card to Threat Summary */
 
     setBusy(true);
     setPanelRisk(null); /* T2a: no stale verdict tint while the new scan runs */
@@ -264,6 +284,7 @@
     presentResult(res);
     pushRow(res);
     updateSummary();
+    aiStartForItem(res); /* one overview per finished single scan */
     announce('Analysis complete — ' + (res.risk === 'low' ? 'no issues detected' : RISK_LABEL[res.risk]));
     if ((res.risk === 'medium' || res.risk === 'high') && S.get('autoOpenDetails') !== false && !reducedMotion()) {
       panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -466,10 +487,275 @@
     countUpEl($('stat-medium'), med);
   }
   summaryCard.addEventListener('click', function (e) {
-    if (e.target && e.target.closest && e.target.closest('a')) return; /* link clicks navigate natively */
+    if (e.target && e.target.closest && e.target.closest('a,button')) return; /* links and AI controls keep their own behavior */
+    if (summaryCard.getAttribute('data-ai-pane') === 'ai') return; /* the AI pane is not a shortcut */
     var href = reviewLink.getAttribute('href');
     if (href) window.location.href = href;
   });
+
+  /* ============ AI OVERVIEW (Threat Summary card, pane 2) ============ */
+  var AI = (window.TD && TD.services && TD.services.ai) || null;
+  var aiStatus = null, aiAvailable = false, aiScan = null, aiToken = 0, aiView = 'idle', aiBatchSeq = 0;
+
+  function aiMode() {
+    try { return (window.TDSettings && TDSettings.get('aiMode')) || 'auto'; } catch (e) { return 'auto'; }
+  }
+  function aiTrunc(s, n) {
+    s = String(s == null ? '' : s);
+    return s.length > n ? s.slice(0, n - 1) + '\u2026' : s;
+  }
+  function aiSetDot(state) {
+    if (!aiDot) return;
+    aiDot.hidden = (aiMode() !== 'auto');
+    if (state) aiDot.setAttribute('data-state', state);
+  }
+  function aiShowButton(state) {
+    if (!aiOpenBtn) return;
+    aiOpenBtn.hidden = false;
+    aiOpenBtn.setAttribute('aria-expanded', summaryCard.getAttribute('data-ai-pane') === 'ai' ? 'true' : 'false');
+    aiSetDot(state);
+  }
+  function aiHideButton() {
+    if (!aiOpenBtn) return;
+    aiOpenBtn.hidden = true;
+    if (aiDot) aiDot.hidden = true;
+  }
+  function aiSetView(v) {
+    aiView = v;
+    if (aiLoading) aiLoading.hidden = (v !== 'loading');
+    if (aiErrorBox) aiErrorBox.hidden = (v !== 'error');
+    if (aiContent) aiContent.hidden = (v !== 'ready');
+  }
+  function aiSyncHeight() {
+    if (summaryCard.getAttribute('data-ai-pane') !== 'ai') return;
+    var prev = aiViewport.style.height;
+    aiViewport.style.height = 'auto';
+    var h = aiPaneSummary.offsetHeight;
+    aiViewport.style.height = (h || 0) + 'px' || prev;
+  }
+  function aiShowPane() {
+    if (!aiScan) return;
+    aiViewport.style.height = 'auto';
+    var h = aiPaneSummary.offsetHeight;
+    if (h) aiViewport.style.height = h + 'px';
+    summaryCard.setAttribute('data-ai-pane', 'ai');
+    summaryCard.setAttribute('aria-labelledby', 'ai-title');
+    aiPaneSummary.setAttribute('inert', '');
+    aiPaneSummary.setAttribute('aria-hidden', 'true');
+    aiPaneAi.removeAttribute('inert');
+    aiPaneAi.removeAttribute('aria-hidden');
+    aiOpenBtn.setAttribute('aria-expanded', 'true');
+    aiAbout.textContent = aiScan.about;
+    aiAbout.title = aiScan.about;
+    try { aiTitle.focus({ preventScroll: true }); } catch (e) { aiTitle.focus(); }
+  }
+  function aiShowSummary(focusBack) {
+    summaryCard.setAttribute('data-ai-pane', 'summary');
+    summaryCard.setAttribute('aria-labelledby', 'summary-title');
+    aiPaneAi.setAttribute('inert', '');
+    aiPaneAi.setAttribute('aria-hidden', 'true');
+    aiPaneSummary.removeAttribute('inert');
+    aiPaneSummary.removeAttribute('aria-hidden');
+    aiOpenBtn.setAttribute('aria-expanded', 'false');
+    aiViewport.style.height = '';
+    if (focusBack) {
+      try { aiOpenBtn.focus({ preventScroll: true }); } catch (e) { aiOpenBtn.focus(); }
+    }
+  }
+  function aiReset(hideButton) {
+    aiToken++;
+    aiScan = null;
+    aiSetView('idle');
+    if (summaryCard.getAttribute('data-ai-pane') === 'ai') aiShowSummary(false);
+    aiViewport.style.height = '';
+    if (hideButton) aiHideButton();
+  }
+  function aiItemPayload(res) {
+    var risk = (res.risk === 'error') ? 'not_verified' : res.risk;
+    return {
+      type: res.type === 'message' ? 'message' : 'url',
+      content: aiTrunc(res.input, 600),
+      riskLevel: risk,
+      status: (res.status === 'verified') ? 'verified' : 'not_verified',
+      score: (typeof res.score === 'number') ? res.score : null,
+      statusReason: aiTrunc(res.details, 200),
+      rules: (res.reasons || []).slice(0, 10).map(function (d, i) {
+        return { id: 'rule-' + (i + 1), description: aiTrunc(d, 120) };
+      })
+    };
+  }
+  function aiBatchPayload(total) {
+    var c = counts || {};
+    var freq = {}, order = [];
+    (batchRows || []).forEach(function (r) {
+      if (r.risk !== 'medium' && r.risk !== 'high') return;
+      (r.reasons || []).forEach(function (x) {
+        var k = String(x);
+        if (!(k in freq)) { freq[k] = 0; order.push(k); }
+        freq[k]++;
+      });
+    });
+    var topRules = order.map(function (k) {
+      return { id: 'rule-' + aiTrunc(k, 16), description: aiTrunc(k, 120), count: freq[k] };
+    }).sort(function (a, b) { return b.count - a.count; }).slice(0, 5);
+    var nv = {}, nvOrder = [];
+    (batchRows || []).forEach(function (r) {
+      if (r.risk !== 'unverified' && r.risk !== 'error') return;
+      var d = aiTrunc(r.details || 'This item could not be verified.', 140);
+      if (!(d in nv)) { nv[d] = 0; nvOrder.push(d); }
+      nv[d]++;
+    });
+    var notVerifiedReasons = nvOrder.map(function (d) {
+      return { reason: d, count: nv[d] };
+    }).sort(function (a, b) { return b.count - a.count; }).slice(0, 3);
+    return {
+      total: total,
+      counts: {
+        low: c.low || 0, medium: c.medium || 0, high: c.high || 0,
+        notVerified: (c.unverified || 0) + (c.error || 0)
+      },
+      notVerifiedReasons: notVerifiedReasons,
+      topRules: topRules
+    };
+  }
+  function aiFriendly(err) {
+    var code = err && err.code;
+    if (code === 'Unauthorized') return 'The saved provider key was rejected. Update it in Settings.';
+    if (code === 'NoKey' || code === 'Disabled' || code === 'NoConsent') return 'AI overview is unavailable. Check the AI settings.';
+    if (code === 'DailyCap') return 'The local daily AI limit was reached. Try again tomorrow.';
+    if (code === 'Timeout' || code === 'Network') return 'The AI provider did not answer in time. Try again.';
+    if (code === 'Rejected' || code === 'BadResponse') return 'The AI answer did not pass the safety check.';
+    if (code === 'AllProvidersFailed') {
+      var s = err.retryAfterSeconds;
+      return s ? 'All free providers are busy. Try again in ' + s + ' s.' : 'All AI providers are unavailable right now.';
+    }
+    return 'AI overview is unavailable right now.';
+  }
+  function aiRender(res) {
+    aiHeadline.textContent = res.headline || '';
+    aiSummaryText.textContent = res.summary || '';
+    aiExplanation.textContent = res.explanation || '';
+    aiTips.textContent = '';
+    (res.tips || []).slice(0, 3).forEach(function (t) {
+      var li = document.createElement('li');
+      li.textContent = t;
+      aiTips.appendChild(li);
+    });
+    aiVia.hidden = false;
+    aiVia.textContent = 'via ' + (res.providerName || res.provider || 'AI provider');
+    aiVia.title = res.model ? ('Model: ' + res.model) : '';
+    aiSetView('ready');
+  }
+  function aiShowError(err) {
+    aiErrorMsg.textContent = aiFriendly(err);
+    aiVia.hidden = true;
+    aiErrorBox.hidden = false;
+    aiSetView('error');
+  }
+  function aiRun() {
+    if (!AI || !aiScan) return;
+    var t = aiToken, scan = aiScan;
+    aiSetView('loading');
+    aiShowButton('loading');
+    AI.overview({ scope: scan.scope, payload: scan.payload, cacheKey: scan.cacheKey }).then(function (res) {
+      if (t !== aiToken) return; /* a newer scan owns the card now */
+      aiRender(res);
+      aiShowButton('ready');
+    }, function (err) {
+      if (t !== aiToken) return;
+      aiShowError(err);
+      aiShowButton('error');
+    });
+  }
+  function aiStartScanCall(makeScan) {
+    if (!AI) { aiHideButton(); return; }
+    aiReset(true);
+    if (aiMode() === 'off') return;
+    var t = aiToken;
+    AI.getStatus().then(function (st) {
+      if (t !== aiToken) return;
+      aiStatus = st;
+      aiAvailable = !!(st && st.available && aiMode() !== 'off');
+      if (!aiAvailable) { aiHideButton(); return; }
+      aiScan = makeScan();
+      if (aiMode() === 'auto') {
+        aiShowButton('loading');
+        aiRun(); /* background: the summary pane stays visible */
+      } else {
+        aiShowButton('ready');
+      }
+    }).catch(function () {
+      aiAvailable = false;
+      aiHideButton();
+    });
+  }
+  function aiStartForItem(res) {
+    var run = scanRun;
+    aiStartScanCall(function () {
+      return {
+        scope: 'item',
+        payload: aiItemPayload(res),
+        cacheKey: 'item:' + run,
+        about: 'About: ' + aiTrunc(String(res.input == null ? '' : res.input), 64)
+      };
+    });
+  }
+  function aiStartForBatch(total) {
+    aiBatchSeq++;
+    var id = activeBatchId || ('mock-batch-' + aiBatchSeq);
+    aiStartScanCall(function () {
+      return {
+        scope: 'batch',
+        payload: aiBatchPayload(total),
+        cacheKey: 'batch:' + id,
+        about: 'About: batch of ' + total
+      };
+    });
+  }
+  function aiOpen() {
+    if (!aiScan || !aiAvailable || aiMode() === 'off') return;
+    aiShowPane();
+    if (aiView === 'ready' || aiView === 'loading') return;
+    aiRun();
+  }
+  if (aiOpenBtn) {
+    aiOpenBtn.addEventListener('click', aiOpen);
+    aiBackBtn.addEventListener('click', function () { aiShowSummary(true); });
+    aiCloseBtn.addEventListener('click', function () { aiShowSummary(true); });
+    aiRetryBtn.addEventListener('click', function () { aiRun(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && summaryCard.getAttribute('data-ai-pane') === 'ai') aiShowSummary(true);
+    });
+    window.addEventListener('resize', function () {
+      if (summaryCard.getAttribute('data-ai-pane') === 'ai') aiSyncHeight();
+    });
+  }
+  function aiRefreshAvailability() {
+    if (!AI) { aiHideButton(); return; }
+    AI.getStatus().then(function (st) {
+      aiStatus = st;
+      aiAvailable = !!(st && st.available && aiMode() !== 'off');
+      if (!aiAvailable) {
+        aiHideButton();
+        if (summaryCard.getAttribute('data-ai-pane') === 'ai') aiShowSummary(false);
+      } else if (aiScan && summaryCard.getAttribute('data-ai-pane') !== 'ai') {
+        aiShowButton(aiView === 'error' ? 'error' : (aiView === 'loading' ? 'loading' : 'ready'));
+      }
+    }).catch(function () { aiAvailable = false; aiHideButton(); });
+  }
+  if (window.TDSettings && typeof TDSettings.onChange === 'function') {
+    TDSettings.onChange(function (e) {
+      var d = e && e.detail;
+      if (!d || d.key !== 'aiMode') return;
+      if (d.value === 'off') {
+        aiAvailable = false;
+        aiHideButton();
+        if (summaryCard.getAttribute('data-ai-pane') === 'ai') aiShowSummary(false);
+      } else {
+        aiRefreshAvailability();
+      }
+    });
+  }
 
   /* ============ CSV BATCH (SPEC 7.2) ============ */
   function analyzeSafe(text) {
@@ -590,6 +876,7 @@
   function startBatchTauri(name) {
     batchActive = true;
     cancelRequested = false; /* this run has not been asked to cancel */
+    aiReset(true);
     counts = { low: 0, medium: 0, high: 0, unverified: 0, error: 0 };
     batchRows = []; /* [T2b] fresh verdict list per batch */
     setBusy(true);
@@ -617,6 +904,7 @@
     batchActive = true;
     batchEntries = entries;
     cancelRequested = false; /* this run has not been asked to cancel */
+    aiReset(true);
     counts = { low: 0, medium: 0, high: 0, unverified: 0, error: 0 };
     batchRows = []; /* [T2b] fresh verdict list per batch */
     setBusy(true);
@@ -637,6 +925,7 @@
     batchEntries = null;
     setBusy(false);
     updateSummary();
+    aiStartForBatch(total); /* ONE overview for the whole batch, after it ends */
     /* compact risk tally (replaces the old count-pill list) */
     if (batchTallyEl) { batchTallyEl.textContent = ''; }
     renderTally(counts);
@@ -963,6 +1252,7 @@
       A.cancelBatch().catch(function () {}); /* SPEC 7.2: Clear = cancel (best effort) */
     }
     scanRun++; /* invalidate any in-flight single-scan answer */
+    aiReset(true); /* and any in-flight AI answer for the cleared scan */
     activeBatchId = null; /* events of the cleared batch can no longer match */
     clearTimers();
     batchActive = false;
@@ -1090,6 +1380,7 @@
   setMode(S.get('defaultInputMode') || 'single', false);
   rebuildTable();
   updateSummary();
+  aiRefreshAvailability();
   growInput();
   /* Adopt the shared verdict-card builder as the single markup source for the
      three verdict states: replaces the static shells with identical builder
