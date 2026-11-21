@@ -84,12 +84,6 @@
   var A = (window.TD && TD.services && TD.services.analysis) || null;
   function usingTauri() { return !!(A && A.backend === 'tauri'); }
 
-  /* Task 5: the "Demo mode" callout is only truthful in browser mode — the Rust
-     backend performs real analysis. The callout ships hidden in the HTML and is
-     shown here only when the mock backend is active. */
-  var demoNotice = $('demo-notice');
-  if (demoNotice) demoNotice.hidden = usingTauri();
-
   /* Backend IPC result (docs/IPC_CONTRACT.md) → UI result shape. Pure field
      rename: the backend owns the NotVerified invariants, no re-scoring here. */
   function ipcToUi(r) {

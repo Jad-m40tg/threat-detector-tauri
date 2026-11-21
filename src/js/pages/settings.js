@@ -305,6 +305,7 @@
   var SWITCHES = [
     ['set-reduce', 'reduceAnimations'],
     ['set-hero', 'showHero'],
+    ['set-hardware', 'showHardware'],
     ['set-autoopen', 'autoOpenDetails'],
     ['set-savehistory', 'saveHistory'],
     ['set-mask', 'maskSensitive'],
@@ -318,6 +319,7 @@
     if (!btn) return;
     btn.addEventListener('click', function () {
       commit(def[1], !S.get(def[1]));
+      if (def[1] === 'showHardware') DAC.ui.refreshNav();
     });
   });
 
