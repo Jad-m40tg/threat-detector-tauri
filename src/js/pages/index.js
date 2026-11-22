@@ -73,6 +73,9 @@
   for (var i = 0; i < stateDivs.length; i++) stateEls[stateDivs[i].getAttribute('data-state')] = stateDivs[i];
 
   /* ---- module state ---- */
+  /* The Threat Summary covers this app session only. Persisted history stays
+     on the History page; without this a relaunch would replay an old verdict. */
+  var sessionStart = Date.now();
   var curState = null,
       scanTimer = null, subTimer = null, batchTimer = null,
       scannerH = null, ringT = null, ringU = null, checkH = null,
@@ -452,28 +455,27 @@
   function updateSummary() {
     /* Definitions (kept in sync with docs/PROGRESS.md):
        - one "scan" = one analyzed entry (a single input, or one CSV row);
-       - "Scans today" counts every entry analyzed since local midnight —
-         Not Verified and errored entries included, they were still analyzed;
-       - High/Medium risk count today's entries that were verified at that
-         risk level (Not Verified is neither — it was never risk-assessed);
-       - the window is "today" everywhere (the old last-10 slice under-counted
-         long batches); demo seed rows are excluded via history.userScans(). */
+       - the window is the current app session: a relaunch starts at zero, so
+         the idle card always defaults to "No active threats detected";
+       - "Scans" counts every entry analyzed this session, Not Verified and
+         errored entries included, they were still analyzed;
+       - High/Medium risk count this session's entries verified at that risk
+         level (Not Verified is neither — it was never risk-assessed);
+       - demo seed rows are excluded via history.userScans(). */
     var src = (DAC.history && typeof DAC.history.userScans === 'function') ? DAC.history.userScans()
             : (DAC.history && typeof DAC.history.all === 'function' ? DAC.history.all() : []);
     var high = 0, med = 0, today = 0;
-    var midnight = new Date(); midnight.setHours(0, 0, 0, 0);
-    var mt = midnight.getTime();
     for (var j = 0; j < src.length; j++) {
       var r = src[j];
-      if (r.ts >= mt) {
+      if (r.ts >= sessionStart) {
         today++;
         if (r.risk === 'high') high++;
         else if (r.risk === 'medium') med++;
       }
     }
     var state, title, desc, href;
-    if (high > 0) { state = 'threat'; title = 'Threat detected'; desc = high + ' high-risk results today'; href = 'history.html#risk=high'; }
-    else if (med > 0) { state = 'caution'; title = 'Use caution'; desc = med + ' medium-risk results today'; href = 'history.html#risk=medium'; }
+    if (high > 0) { state = 'threat'; title = 'Threat detected'; desc = high + ' high-risk results this session'; href = 'history.html#risk=high'; }
+    else if (med > 0) { state = 'caution'; title = 'Use caution'; desc = med + ' medium-risk results this session'; href = 'history.html#risk=medium'; }
     else { state = 'secure'; title = 'Your system is secure'; desc = 'No active threats detected'; href = 'history.html#risk=low'; }
     var tEl = $('summary-state-title');
     tEl.textContent = title;
