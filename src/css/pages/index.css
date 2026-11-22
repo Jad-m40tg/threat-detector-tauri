@@ -306,26 +306,53 @@ html[data-motion="full"] #table-results.is-entering{animation:dashRise var(--dur
 .ai-error[hidden]{display:none}
 .ai-error-msg{margin:0;color:var(--text-muted);font-size:.92em;line-height:1.5}
 .ai-content[hidden]{display:none}
-/* calm skeleton: two bars + one large box */
+/* calm skeleton: mirrors the final answer, soft sheen instead of a hard pulse */
 .ai-loading{display:grid;gap:var(--space-3)}
 .ai-loading[hidden]{display:none}
-.ai-bar{display:block;height:16px;border-radius:999px;background:var(--bg-card-2);border:1px solid var(--border)}
-.ai-bar-headline{width:72%}
-.ai-bar-summary{width:92%;height:12px}
-.ai-skel-box{display:grid;gap:var(--space-2);align-content:start;min-height:150px;padding-top:var(--space-4)}
-.ai-line{display:block;height:11px;width:100%;border-radius:999px;background:var(--bg-card);border:1px solid var(--border)}
-.ai-line.short{width:64%}
-html[data-motion="full"] .ai-loading{animation:ai-skel-pulse 1.7s ease-in-out infinite}
+.ai-skel-head{display:grid;gap:8px;padding-top:2px}
+.ai-skel-bar,.ai-skel-line,.ai-skel-tip::after{
+  display:block;border-radius:999px;
+  background-color:color-mix(in srgb, var(--text) 7%, var(--bg-card-2));
+  background-image:linear-gradient(90deg,
+    transparent 22%,
+    color-mix(in srgb, var(--text) 14%, transparent) 38%,
+    transparent 55%);
+  background-size:300% 100%;
+  background-repeat:no-repeat;
+}
+.ai-skel-title{height:17px;width:66%;background-color:color-mix(in srgb, var(--accent) 9%, var(--bg-card-2))}
+.ai-skel-sub{height:11px;width:96%}
+.ai-skel-sub.is-short{width:74%}
+.ai-skel-box{display:grid;gap:10px;align-content:start;min-height:150px;padding-top:var(--space-4)}
+.ai-skel-line{height:11px;width:100%}
+.ai-skel-line.is-92{width:92%}
+.ai-skel-line.is-short{width:54%}
+.ai-skel-tip{display:flex;align-items:center;gap:9px;margin-top:4px}
+.ai-skel-tip::before{content:"";flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:color-mix(in srgb, var(--accent) 50%, transparent)}
+.ai-skel-tip::after{content:"";flex:0 1 auto;width:78%;height:10px}
+.ai-skel-tip.is-short::after{width:58%}
+html[data-motion="full"] .ai-skel-bar,
+html[data-motion="full"] .ai-skel-line,
+html[data-motion="full"] .ai-skel-tip::after{animation:ai-sheen 1.9s var(--ease-out) infinite}
+html[data-motion="full"] .ai-skel-head .ai-skel-bar:nth-child(2){animation-delay:.16s}
+html[data-motion="full"] .ai-skel-head .ai-skel-bar:nth-child(3){animation-delay:.32s}
+html[data-motion="full"] .ai-skel-box .ai-skel-line:nth-child(2){animation-delay:.18s}
+html[data-motion="full"] .ai-skel-box .ai-skel-line:nth-child(3){animation-delay:.36s}
+html[data-motion="full"] .ai-skel-box .ai-skel-line:nth-child(4){animation-delay:.54s}
+html[data-motion="full"] .ai-skel-box .ai-skel-tip:nth-child(5)::after{animation-delay:.72s}
+html[data-motion="full"] .ai-skel-box .ai-skel-tip:nth-child(6)::after{animation-delay:.9s}
 html[data-motion="full"] .ai-dot[data-state="loading"]{animation:ai-dot-pulse 1.1s ease-in-out infinite}
-@keyframes ai-skel-pulse{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes ai-sheen{0%{background-position:100% 50%}100%{background-position:0 50%}}
 html[data-motion="reduced"] .summary-viewport,
 html[data-motion="reduced"] .pane-summary,
 html[data-motion="reduced"] .pane-ai{transition:none}
-html[data-motion="reduced"] .ai-loading,
+html[data-motion="reduced"] .ai-skel-bar,
+html[data-motion="reduced"] .ai-skel-line,
+html[data-motion="reduced"] .ai-skel-tip::after,
 html[data-motion="reduced"] .ai-dot{animation:none !important}
 @media (prefers-reduced-motion:reduce){
   .summary-viewport,.pane-summary,.pane-ai{transition:none}
-  .ai-loading,.ai-dot{animation:none !important}
+  .ai-skel-bar,.ai-skel-line,.ai-skel-tip::after,.ai-dot{animation:none !important}
 }
 
 /* Page-load stagger (SPEC §12) */
