@@ -48,7 +48,6 @@
       tableBody = $('table-results-body'),
       summaryCard = $('summary-card'),
       reviewLink = $('summary-review'),
-      aiViewport = summaryCard.querySelector('.summary-viewport'),
       aiPaneSummary = summaryCard.querySelector('[data-pane="summary"]'),
       aiPaneAi = summaryCard.querySelector('[data-pane="ai"]'),
       aiOpenBtn = $('btn-ai-open'),
@@ -60,7 +59,6 @@
       aiErrorBox = $('ai-error'),
       aiErrorMsg = $('ai-error-msg'),
       aiContent = $('ai-content'),
-      aiScroll = $('ai-scroll'),
       aiHeadline = $('ai-headline'),
       aiFindings = $('ai-findings'),
       aiMoreBtn = $('btn-ai-more'),
@@ -549,47 +547,8 @@
     if (aiErrorBox) aiErrorBox.hidden = (v !== 'error');
     if (aiContent) aiContent.hidden = (v !== 'ready');
   }
-  function aiNaturalHeight() {
-    var total = 0;
-    var head = aiPaneAi.querySelector('.ai-head');
-    if (head) total += head.offsetHeight;
-    if (aiAbout) {
-      var am = window.getComputedStyle(aiAbout);
-      total += aiAbout.offsetHeight + (parseFloat(am.marginTop) || 0) + (parseFloat(am.marginBottom) || 0);
-    }
-    if (aiScroll) {
-      var active = aiView === 'error' ? aiErrorBox : (aiView === 'loading' ? aiLoading : aiContent);
-      var sc = window.getComputedStyle(aiScroll);
-      var pad = (parseFloat(sc.paddingTop) || 0) + (parseFloat(sc.paddingBottom) || 0);
-      total += (active ? active.offsetHeight : 0) + pad;
-    }
-    var foot = aiPaneAi.querySelector('.ai-foot');
-    if (foot) total += foot.offsetHeight;
-    return total;
-  }
-  function aiMaxHeight() {
-    var cap = window.innerHeight;
-    var aside = summaryCard.closest ? summaryCard.closest('.dash-aside') : null;
-    if (aside) {
-      var asideMax = parseFloat(window.getComputedStyle(aside).maxHeight);
-      if (asideMax > 0) cap = asideMax;
-    }
-    var cs = window.getComputedStyle(summaryCard);
-    var chrome = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0) +
-      (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0);
-    return Math.max(160, cap - chrome - 2);
-  }
-  function aiSyncHeight() {
-    if (summaryCard.getAttribute('data-ai-pane') !== 'ai') return;
-    var natural = aiNaturalHeight();
-    if (!natural) return;
-    aiViewport.style.height = Math.min(natural, aiMaxHeight()) + 'px';
-  }
   function aiShowPane() {
     if (!aiScan) return;
-    aiViewport.style.height = 'auto';
-    var h = aiPaneSummary.offsetHeight;
-    if (h) aiViewport.style.height = h + 'px';
     summaryCard.setAttribute('data-ai-pane', 'ai');
     summaryCard.setAttribute('aria-labelledby', 'ai-title');
     aiPaneSummary.setAttribute('inert', '');
@@ -609,7 +568,6 @@
     aiPaneSummary.removeAttribute('inert');
     aiPaneSummary.removeAttribute('aria-hidden');
     aiOpenBtn.setAttribute('aria-expanded', 'false');
-    aiViewport.style.height = '';
     if (focusBack) {
       try { aiOpenBtn.focus({ preventScroll: true }); } catch (e) { aiOpenBtn.focus(); }
     }
@@ -620,7 +578,6 @@
     aiSetDetails(false);
     aiSetView('idle');
     if (summaryCard.getAttribute('data-ai-pane') === 'ai') aiShowSummary(false);
-    aiViewport.style.height = '';
     if (hideButton) aiHideButton();
   }
   function aiItemPayload(res) {
@@ -761,7 +718,6 @@
     aiDetails.setAttribute('data-open', open ? 'true' : 'false');
     aiMoreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
     if (aiMoreLabel) aiMoreLabel.textContent = open ? 'Hide explanation' : 'Show full explanation';
-    aiSyncHeight();
   }
   function aiRender(res) {
     aiHeadline.textContent = res.headline || '';
@@ -787,14 +743,12 @@
     aiVia.title = res.model ? ('Model: ' + res.model) : '';
     aiSetView('ready');
     aiSetDetails(false);
-    requestAnimationFrame(aiSyncHeight);
   }
   function aiShowError(err) {
     aiErrorMsg.textContent = aiFriendly(err);
     aiVia.hidden = true;
     aiErrorBox.hidden = false;
     aiSetView('error');
-    requestAnimationFrame(aiSyncHeight);
   }
   function aiRun() {
     if (!AI || !aiScan) return;
@@ -872,14 +826,8 @@
         aiSetDetails(aiDetails.getAttribute('data-open') !== 'true');
       });
     }
-    if (aiContent && typeof ResizeObserver === 'function') {
-      new ResizeObserver(function () { aiSyncHeight(); }).observe(aiContent);
-    }
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && summaryCard.getAttribute('data-ai-pane') === 'ai') aiShowSummary(true);
-    });
-    window.addEventListener('resize', function () {
-      if (summaryCard.getAttribute('data-ai-pane') === 'ai') aiSyncHeight();
     });
   }
   function aiRefreshAvailability() {
@@ -1028,6 +976,7 @@
   function startBatchTauri(name) {
     batchActive = true;
     cancelRequested = false; /* this run has not been asked to cancel */
+    activeBatchId = null; /* the new batch id arrives with the start reply */
     aiReset(true);
     counts = { low: 0, medium: 0, high: 0, unverified: 0, error: 0 };
     batchRows = []; /* [T2b] fresh verdict list per batch */
