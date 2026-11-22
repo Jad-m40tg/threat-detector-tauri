@@ -684,23 +684,17 @@
     var texts = aiFindingTexts(res);
     if (scan.scope === 'batch') {
       var c = (scan.payload && scan.payload.counts) || {};
+      /* every level that actually occurred keeps its own count row */
       var rows = [
         { level: 'high', count: c.high || 0 },
         { level: 'medium', count: c.medium || 0 },
         { level: 'unverified', count: c.notVerified || 0 },
         { level: 'low', count: c.low || 0 }
       ].filter(function (r) { return r.count > 0; });
-      var shown = rows.slice(0, 3);
-      shown.forEach(function (r, i) {
-        var text = texts[r.level] || '';
-        if (i === shown.length - 1) {
-          rows.slice(3).forEach(function (rest) {
-            if (texts[rest.level]) text += (text ? ' ' : '') + texts[rest.level];
-          });
-        }
-        aiAddFinding(r.level, r.count + ' ' + AI_LEVEL[r.level].label + ':', text);
+      rows.forEach(function (r) {
+        aiAddFinding(r.level, r.count + ' ' + AI_LEVEL[r.level].label + ':', texts[r.level] || '');
       });
-      aiFindings.hidden = shown.length === 0;
+      aiFindings.hidden = rows.length === 0;
       return;
     }
     var scanLevel = aiLevelOf(scan.payload && scan.payload.riskLevel) || 'unverified';
