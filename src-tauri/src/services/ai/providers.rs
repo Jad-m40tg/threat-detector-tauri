@@ -242,6 +242,22 @@ fn chat_body(id: &str, model: &str, user_prompt: &str) -> Value {
                 "thinkingConfig": { "thinkingBudget": 0 }
             }
         })
+    } else if id == PROVIDER_GROQ && model.contains("gpt-oss") {
+        /* gpt-oss are reasoning models: with json_object and a 400-token cap
+        Groq spends the budget on reasoning and fails JSON validation
+        (400 json_validate_failed). Low effort plus a larger completion
+        budget leaves room for the answer. */
+        json!({
+            "model": model,
+            "messages": [
+                { "role": "system", "content": SYSTEM_PROMPT },
+                { "role": "user", "content": user_prompt }
+            ],
+            "temperature": 0.2,
+            "reasoning_effort": "low",
+            "max_completion_tokens": 800,
+            "response_format": { "type": "json_object" }
+        })
     } else {
         json!({
             "model": model,
@@ -453,6 +469,54 @@ mod tests {
         assert!(headers
             .iter()
             .any(|(k, v)| k == "Authorization" && v == "Bearer test-key"));
+    }
+
+    #[tokio::test]
+    async fn groq_gpt_oss_gets_low_reasoning_effort_and_larger_budget() {
+        let fake = Fake {
+            status: 200,
+            body: json!({ "choices": [{ "message": { "content": "{\"ok\":1}" } }] }),
+            ..Fake::default()
+        };
+        chat(
+            &fake,
+            PROVIDER_GROQ,
+            &cfg(),
+            "openai/gpt-oss-20b",
+            "hello",
+            Duration::from_secs(1),
+        )
+        .await
+        .expect("ok");
+        let body = fake.last_body.lock().expect("lock").clone().expect("body");
+        assert_eq!(
+            body.get("reasoning_effort").and_then(Value::as_str),
+            Some("low")
+        );
+        assert_eq!(
+            body.get("max_completion_tokens").and_then(Value::as_u64),
+            Some(800)
+        );
+        assert!(body.get("max_tokens").is_none());
+
+        let plain = Fake {
+            status: 200,
+            body: json!({ "choices": [{ "message": { "content": "{\"ok\":1}" } }] }),
+            ..Fake::default()
+        };
+        chat(
+            &plain,
+            PROVIDER_GROQ,
+            &cfg(),
+            "qwen/qwen3.8-27b",
+            "hello",
+            Duration::from_secs(1),
+        )
+        .await
+        .expect("ok");
+        let body = plain.last_body.lock().expect("lock").clone().expect("body");
+        assert!(body.get("reasoning_effort").is_none());
+        assert_eq!(body.get("max_tokens").and_then(Value::as_u64), Some(400));
     }
 
     #[tokio::test]

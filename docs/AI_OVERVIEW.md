@@ -59,7 +59,9 @@ first; Gemini Flash-Lite first) and can be overridden. Settings has a
 Show models button that lists the chat-capable models for the saved key so
 one can be picked instead of typed. If an override returns HTTP 404, the
 model is marked stale, rediscovered from `/models` and the call is retried
-once.
+once. Groq `gpt-oss` models are reasoning models: they are called with
+`reasoning_effort: low` and an 800-token completion budget because JSON mode
+fails with a small budget (`json_validate_failed`).
 
 - One overview at a time; at least 4 s between calls.
 - 8 s per attempt, 15 s total, at most 2 providers attempted.
