@@ -7,7 +7,7 @@ use crate::sink::TauriSink;
 use crate::state::BatchRegistry;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
 use threat_core::csv_parser::{parse_csv_file, parse_csv_text};
 use threat_core::models::{AnalysisRequest, InputType, IpcAnalysisResult};
 use threat_core::{analyze_item as core_analyze_item, run_batch};
@@ -55,17 +55,19 @@ fn parse_input_type(raw: Option<String>) -> Option<InputType> {
     }
 }
 
-/// Spawns and streams one batch; shared by the file and content commands.
-async fn run_csv_batch(
+/// Starts one batch and returns its identity before any item runs. The batch
+/// itself is spawned on the async runtime so the invoke reply (batch id and
+/// total) reaches the frontend while progress events are still streaming.
+fn run_csv_batch(
     app: AppHandle,
-    registry: &BatchRegistry,
     items: Vec<threat_core::csv_parser::CsvRowItem>,
     options: Option<BatchOptions>,
 ) -> Result<BatchStartInfo, String> {
     let total = items.len();
     let batch_id = format!("batch-{}", now_ms());
     let token = CancellationToken::new();
-    registry.insert(batch_id.clone(), token.clone());
+    app.state::<BatchRegistry>()
+        .insert(batch_id.clone(), token.clone());
 
     // Demo knob (decision D4): keeps batch progress visually inspectable.
     let min_item_duration_ms = options
@@ -79,14 +81,14 @@ async fn run_csv_batch(
         .map(|c| c.min(32))
         .unwrap_or(8);
 
-    let sink = Arc::new(TauriSink::new(app, batch_id.clone()));
-    let result = run_batch(items, sink, token, concurrency, min_item_duration_ms).await;
-    registry.remove(&batch_id);
+    let sink = Arc::new(TauriSink::new(app.clone(), batch_id.clone()));
+    let done_id = batch_id.clone();
+    tauri::async_runtime::spawn(async move {
+        let _ = run_batch(items, sink, token, concurrency, min_item_duration_ms).await;
+        app.state::<BatchRegistry>().remove(&done_id);
+    });
 
-    match result {
-        Ok(_) => Ok(BatchStartInfo { batch_id, total }),
-        Err(err) => Err(err.to_string()),
-    }
+    Ok(BatchStartInfo { batch_id, total })
 }
 
 /// 1.1 `analyze_item` — analyzes a single URL or message. Analysis errors are
@@ -105,7 +107,6 @@ pub async fn analyze_item(request: ItemRequest) -> IpcAnalysisResult {
 #[tauri::command]
 pub async fn analyze_csv(
     app: AppHandle,
-    registry: State<'_, BatchRegistry>,
     path: String,
     options: Option<BatchOptions>,
 ) -> Result<BatchStartInfo, String> {
@@ -113,7 +114,7 @@ pub async fn analyze_csv(
         .await
         .map_err(|e| format!("Analysis task failed: {}", e))?;
     let items = parsed.map_err(|e| e.to_string())?;
-    run_csv_batch(app, &registry, items, options).await
+    run_csv_batch(app, items, options)
 }
 
 /// 1.5 `analyze_csv_content` — drag-and-drop path (decision D7): the bytes are
@@ -122,7 +123,6 @@ pub async fn analyze_csv(
 #[tauri::command]
 pub async fn analyze_csv_content(
     app: AppHandle,
-    registry: State<'_, BatchRegistry>,
     name: String,
     content: String,
     options: Option<BatchOptions>,
@@ -131,7 +131,7 @@ pub async fn analyze_csv_content(
         .await
         .map_err(|e| format!("Analysis task failed: {}", e))?;
     let items = parsed.map_err(|e| e.to_string())?;
-    run_csv_batch(app, &registry, items, options).await
+    run_csv_batch(app, items, options)
 }
 
 /// 1.3 `cancel_batch` — cooperative cancellation signal for an in-flight batch.
