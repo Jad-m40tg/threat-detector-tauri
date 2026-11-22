@@ -2,12 +2,13 @@
 
 use serde_json::Value;
 
-use super::types::AiError;
+use super::types::{AiError, Finding};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParsedOverview {
     pub headline: String,
     pub summary: String,
+    pub findings: Vec<Finding>,
     pub explanation: String,
     pub tips: Vec<String>,
 }
@@ -80,6 +81,27 @@ pub fn parse_overview(raw: &str) -> Result<ParsedOverview, AiError> {
         return Err(bad("The AI answer was incomplete."));
     }
 
+    let mut findings = Vec::new();
+    if let Some(items) = value.get("findings").and_then(Value::as_array) {
+        for item in items.iter().take(4) {
+            let raw_level = text_of(item, "level").trim().to_ascii_lowercase();
+            let level = match raw_level.as_str() {
+                "high" => "high",
+                "medium" => "medium",
+                "low" => "low",
+                "unverified" | "not_verified" => "unverified",
+                _ => continue,
+            };
+            let text = clean(text_of(item, "text"), 90);
+            if !text.is_empty() {
+                findings.push(Finding {
+                    level: level.to_string(),
+                    text,
+                });
+            }
+        }
+    }
+
     let mut tips = Vec::new();
     if let Some(items) = value.get("tips").and_then(Value::as_array) {
         for item in items.iter().take(3) {
@@ -98,6 +120,7 @@ pub fn parse_overview(raw: &str) -> Result<ParsedOverview, AiError> {
     Ok(ParsedOverview {
         headline,
         summary,
+        findings,
         explanation,
         tips,
     })
@@ -143,6 +166,7 @@ pub fn enforce_consistency(
         overview.explanation.as_str(),
     ]
     .into_iter()
+    .chain(overview.findings.iter().map(|f| f.text.as_str()))
     .chain(overview.tips.iter().map(String::as_str))
     .any(claims_risk_free);
     if all_text {
@@ -162,6 +186,10 @@ mod tests {
         ParsedOverview {
             headline: "High-risk indicators".into(),
             summary: "Strong phishing patterns were found.".into(),
+            findings: vec![Finding {
+                level: "high".into(),
+                text: "The link imitates a login page.".into(),
+            }],
             explanation: "The scanner rated this item High.".into(),
             tips: vec!["Do not open it.".into()],
         }
@@ -169,10 +197,28 @@ mod tests {
 
     #[test]
     fn accepts_valid_json() {
-        let raw = r#"{"headline":"High-risk indicators","summary":"Strong patterns.","explanation":"The scanner rated this High.","tips":["Avoid it.","Report it."],"extra":"ignored"}"#;
+        let raw = r#"{"headline":"High-risk indicators","summary":"Strong patterns.","findings":[{"level":"high","text":"The link imitates a login page."},{"level":"unknown","text":"ignored"}],"explanation":"The scanner rated this High.","tips":["Avoid it.","Report it."],"extra":"ignored"}"#;
         let p = parse_overview(raw).expect("valid");
         assert_eq!(p.tips.len(), 2);
         assert_eq!(p.headline, "High-risk indicators");
+        assert_eq!(p.findings.len(), 1);
+        assert_eq!(p.findings[0].level, "high");
+    }
+
+    #[test]
+    fn findings_are_optional_but_truncated() {
+        let raw = r#"{"headline":"h","summary":"s","explanation":"e","tips":["t"]}"#;
+        let p = parse_overview(raw).expect("valid without findings");
+        assert!(p.findings.is_empty());
+
+        let raw = format!(
+            r#"{{"headline":"h","summary":"s","explanation":"e","tips":["t"],"findings":[{{"level":"not_verified","text":"{}"}}]}}"#,
+            "F".repeat(150)
+        );
+        let p = parse_overview(&raw).expect("valid findings");
+        assert_eq!(p.findings.len(), 1);
+        assert_eq!(p.findings[0].level, "unverified");
+        assert_eq!(p.findings[0].text.chars().count(), 90);
     }
 
     #[test]
@@ -220,6 +266,13 @@ mod tests {
         p.explanation = "Overall this looks safe to open.".into();
         let err = enforce_consistency(&p, "high", "verified").expect_err("must reject");
         assert_eq!(err.code, "Rejected");
+    }
+
+    #[test]
+    fn guard_rejects_safe_claim_in_findings() {
+        let mut p = parsed();
+        p.findings[0].text = "This looks safe to open.".into();
+        assert!(enforce_consistency(&p, "high", "verified").is_err());
     }
 
     #[test]

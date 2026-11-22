@@ -60,8 +60,12 @@
       aiErrorBox = $('ai-error'),
       aiErrorMsg = $('ai-error-msg'),
       aiContent = $('ai-content'),
+      aiScroll = $('ai-scroll'),
       aiHeadline = $('ai-headline'),
-      aiSummaryText = $('ai-summary'),
+      aiFindings = $('ai-findings'),
+      aiMoreBtn = $('btn-ai-more'),
+      aiMoreLabel = $('ai-more-label'),
+      aiDetails = $('ai-details'),
       aiExplanation = $('ai-explanation'),
       aiTips = $('ai-tips'),
       aiVia = $('ai-via'),
@@ -506,6 +510,23 @@
     s = String(s == null ? '' : s);
     return s.length > n ? s.slice(0, n - 1) + '\u2026' : s;
   }
+  var AI_LEVEL = {
+    high: { label: 'high risk', title: 'High risk' },
+    medium: { label: 'medium risk', title: 'Medium risk' },
+    unverified: { label: 'not verified', title: 'Not verified' },
+    low: { label: 'low risk', title: 'Low risk' }
+  };
+  var AI_GLYPHS = {
+    high: [{ d: 'M12 3.8 21 19.4H3Z' }, { d: 'M12 9.4v4.4' }, { d: 'M12 16.6h.01' }],
+    medium: [{ tag: 'circle', cx: '12', cy: '12', r: '8.2' }, { d: 'M12 7.4v5.6' }, { d: 'M12 16.2h.01' }],
+    unverified: [{ tag: 'circle', cx: '12', cy: '12', r: '8.2' }, { d: 'M9.6 9a2.4 2.4 0 0 1 4.7.7c0 1.6-2.3 2-2.3 3.3' }, { d: 'M12 16.6h.01' }],
+    low: [{ tag: 'circle', cx: '12', cy: '12', r: '8.2' }, { d: 'm8.6 12.2 2.3 2.3 4.5-4.9' }],
+    tip: [{ tag: 'circle', cx: '12', cy: '12', r: '8.2' }, { d: 'm8.6 12.2 2.3 2.3 4.5-4.9' }]
+  };
+  function aiIcon(kind) {
+    if (!window.DAC || typeof DAC.svgGlyph !== 'function' || !AI_GLYPHS[kind]) return null;
+    return DAC.svgGlyph(AI_GLYPHS[kind]);
+  }
   function aiSetDot(state) {
     if (!aiDot) return;
     aiDot.hidden = (aiMode() !== 'auto');
@@ -528,12 +549,41 @@
     if (aiErrorBox) aiErrorBox.hidden = (v !== 'error');
     if (aiContent) aiContent.hidden = (v !== 'ready');
   }
+  function aiNaturalHeight() {
+    var total = 0;
+    var head = aiPaneAi.querySelector('.ai-head');
+    if (head) total += head.offsetHeight;
+    if (aiAbout) {
+      var am = window.getComputedStyle(aiAbout);
+      total += aiAbout.offsetHeight + (parseFloat(am.marginTop) || 0) + (parseFloat(am.marginBottom) || 0);
+    }
+    if (aiScroll) {
+      var active = aiView === 'error' ? aiErrorBox : (aiView === 'loading' ? aiLoading : aiContent);
+      var sc = window.getComputedStyle(aiScroll);
+      var pad = (parseFloat(sc.paddingTop) || 0) + (parseFloat(sc.paddingBottom) || 0);
+      total += (active ? active.offsetHeight : 0) + pad;
+    }
+    var foot = aiPaneAi.querySelector('.ai-foot');
+    if (foot) total += foot.offsetHeight;
+    return total;
+  }
+  function aiMaxHeight() {
+    var cap = window.innerHeight;
+    var aside = summaryCard.closest ? summaryCard.closest('.dash-aside') : null;
+    if (aside) {
+      var asideMax = parseFloat(window.getComputedStyle(aside).maxHeight);
+      if (asideMax > 0) cap = asideMax;
+    }
+    var cs = window.getComputedStyle(summaryCard);
+    var chrome = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0) +
+      (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0);
+    return Math.max(160, cap - chrome - 2);
+  }
   function aiSyncHeight() {
     if (summaryCard.getAttribute('data-ai-pane') !== 'ai') return;
-    var prev = aiViewport.style.height;
-    aiViewport.style.height = 'auto';
-    var h = aiPaneSummary.offsetHeight;
-    aiViewport.style.height = (h || 0) + 'px' || prev;
+    var natural = aiNaturalHeight();
+    if (!natural) return;
+    aiViewport.style.height = Math.min(natural, aiMaxHeight()) + 'px';
   }
   function aiShowPane() {
     if (!aiScan) return;
@@ -567,6 +617,7 @@
   function aiReset(hideButton) {
     aiToken++;
     aiScan = null;
+    aiSetDetails(false);
     aiSetView('idle');
     if (summaryCard.getAttribute('data-ai-pane') === 'ai') aiShowSummary(false);
     aiViewport.style.height = '';
@@ -633,26 +684,117 @@
     }
     return 'AI overview is unavailable right now.';
   }
+  function aiLevelOf(value) {
+    var lv = String(value || '').toLowerCase();
+    if (lv === 'not_verified') return 'unverified';
+    return AI_LEVEL[lv] ? lv : '';
+  }
+  function aiAddFinding(level, lead, text) {
+    if (!aiFindings) return;
+    var li = document.createElement('li');
+    li.className = 'ai-finding';
+    li.setAttribute('data-level', level);
+    var ico = document.createElement('span');
+    ico.className = 'ai-finding-ico';
+    ico.setAttribute('aria-hidden', 'true');
+    var glyph = aiIcon(level);
+    if (glyph) ico.appendChild(glyph);
+    var body = document.createElement('p');
+    body.className = 'ai-finding-text';
+    var strong = document.createElement('strong');
+    strong.textContent = lead;
+    body.appendChild(strong);
+    if (text) body.appendChild(document.createTextNode(' ' + text));
+    li.appendChild(ico);
+    li.appendChild(body);
+    aiFindings.appendChild(li);
+  }
+  function aiFindingTexts(res) {
+    var map = {};
+    (Array.isArray(res.findings) ? res.findings : []).forEach(function (f) {
+      if (!f || typeof f.text !== 'string') return;
+      var lv = aiLevelOf(f.level);
+      var text = f.text.trim();
+      if (!lv || !text) return;
+      map[lv] = map[lv] ? map[lv] + ' ' + text : text;
+    });
+    return map;
+  }
+  function aiRenderFindings(res) {
+    if (!aiFindings) return;
+    aiFindings.textContent = '';
+    var scan = aiScan || {};
+    var texts = aiFindingTexts(res);
+    if (scan.scope === 'batch') {
+      var c = (scan.payload && scan.payload.counts) || {};
+      var rows = [
+        { level: 'high', count: c.high || 0 },
+        { level: 'medium', count: c.medium || 0 },
+        { level: 'unverified', count: c.notVerified || 0 },
+        { level: 'low', count: c.low || 0 }
+      ].filter(function (r) { return r.count > 0; });
+      var shown = rows.slice(0, 3);
+      shown.forEach(function (r, i) {
+        var text = texts[r.level] || '';
+        if (i === shown.length - 1) {
+          rows.slice(3).forEach(function (rest) {
+            if (texts[rest.level]) text += (text ? ' ' : '') + texts[rest.level];
+          });
+        }
+        aiAddFinding(r.level, r.count + ' ' + AI_LEVEL[r.level].label + ':', text);
+      });
+      aiFindings.hidden = shown.length === 0;
+      return;
+    }
+    var scanLevel = aiLevelOf(scan.payload && scan.payload.riskLevel) || 'unverified';
+    var items = Array.isArray(res.findings) ? res.findings : [];
+    items.slice(0, 3).forEach(function (f) {
+      if (!f || typeof f.text !== 'string') return;
+      var text = f.text.trim();
+      if (!text) return;
+      aiAddFinding(scanLevel, AI_LEVEL[scanLevel].title + ':', text);
+    });
+    aiFindings.hidden = aiFindings.children.length === 0;
+  }
+  function aiSetDetails(open) {
+    if (!aiDetails || !aiMoreBtn) return;
+    aiDetails.setAttribute('data-open', open ? 'true' : 'false');
+    aiMoreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (aiMoreLabel) aiMoreLabel.textContent = open ? 'Hide explanation' : 'Show full explanation';
+    aiSyncHeight();
+  }
   function aiRender(res) {
     aiHeadline.textContent = res.headline || '';
-    aiSummaryText.textContent = res.summary || '';
+    aiRenderFindings(res);
     aiExplanation.textContent = res.explanation || '';
     aiTips.textContent = '';
-    (res.tips || []).slice(0, 3).forEach(function (t) {
+    (res.tips || []).slice(0, 4).forEach(function (t) {
       var li = document.createElement('li');
-      li.textContent = t;
+      li.className = 'ai-tip';
+      var ico = document.createElement('span');
+      ico.className = 'ai-tip-ico';
+      ico.setAttribute('aria-hidden', 'true');
+      var glyph = aiIcon('tip');
+      if (glyph) ico.appendChild(glyph);
+      var txt = document.createElement('span');
+      txt.textContent = t;
+      li.appendChild(ico);
+      li.appendChild(txt);
       aiTips.appendChild(li);
     });
     aiVia.hidden = false;
     aiVia.textContent = 'via ' + (res.providerName || res.provider || 'AI provider');
     aiVia.title = res.model ? ('Model: ' + res.model) : '';
     aiSetView('ready');
+    aiSetDetails(false);
+    requestAnimationFrame(aiSyncHeight);
   }
   function aiShowError(err) {
     aiErrorMsg.textContent = aiFriendly(err);
     aiVia.hidden = true;
     aiErrorBox.hidden = false;
     aiSetView('error');
+    requestAnimationFrame(aiSyncHeight);
   }
   function aiRun() {
     if (!AI || !aiScan) return;
@@ -725,6 +867,14 @@
     aiBackBtn.addEventListener('click', function () { aiShowSummary(true); });
     aiCloseBtn.addEventListener('click', function () { aiShowSummary(true); });
     aiRetryBtn.addEventListener('click', function () { aiRun(); });
+    if (aiMoreBtn) {
+      aiMoreBtn.addEventListener('click', function () {
+        aiSetDetails(aiDetails.getAttribute('data-open') !== 'true');
+      });
+    }
+    if (aiContent && typeof ResizeObserver === 'function') {
+      new ResizeObserver(function () { aiSyncHeight(); }).observe(aiContent);
+    }
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && summaryCard.getAttribute('data-ai-pane') === 'ai') aiShowSummary(true);
     });

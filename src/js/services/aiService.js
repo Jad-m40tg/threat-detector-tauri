@@ -77,8 +77,24 @@
         mock: true
       };
     }
+    function finding(level, text) { return { level: level, text: text }; }
     function fixture(payload) {
       payload = payload || {};
+      if (payload.counts && typeof payload.counts === "object") {
+        var c = payload.counts;
+        var batchFindings = [];
+        if ((c.high || 0) > 0) batchFindings.push(finding("high", "Most items match known phishing structure and should not be trusted."));
+        if ((c.medium || 0) > 0) batchFindings.push(finding("medium", "Some items use wording or domains that deserve a closer look."));
+        if ((c.notVerified || 0) > 0) batchFindings.push(finding("unverified", "Several items could not be fully assessed by the rules."));
+        if ((c.low || 0) > 0) batchFindings.push(finding("low", "The remaining items fired few risk rules."));
+        return {
+          headline: "Batch scan overview",
+          summary: "Counts and the strongest signals across the batch.",
+          findings: batchFindings,
+          explanation: "The batch was scanned with the same local rules as a single scan. The counts show how many items reached each risk level after the rules ran. Items that could not be verified are not safe; they simply reached no verdict. Use the per-item results when you need the exact reasons.",
+          tips: ["Start with the high-risk items and do not open them.", "Retry unverified items with a full URL or plain message.", "Continue with medium items once the high ones are handled."]
+        };
+      }
       var risk = String(payload.riskLevel || "not_verified").toLowerCase();
       var verified = payload.status === "verified" || payload.verified === true;
       var score = (typeof payload.score === "number") ? payload.score : null;
@@ -86,6 +102,10 @@
         return {
           headline: "High-risk indicators found",
           summary: "Several strong phishing patterns are present.",
+          findings: [
+            finding("high", "The destination and wording match common credential phishing."),
+            finding("high", "Multiple independent rule signals fired on this item.")
+          ],
           explanation: "The rule-based scanner rated this item High" + (score != null ? " with a score of " + score : "") +
             ". Its strongest signals are the ones listed in the result card. Treat the item as hostile and avoid interacting with it. This overview only explains the scanner result and cannot change it.",
           tips: ["Do not open the link or reply to the message.", "Report and delete it, then verify through an official channel."]
@@ -95,6 +115,7 @@
         return {
           headline: "Some risk signals found",
           summary: "A few suspicious patterns were detected.",
+          findings: [finding("medium", "Some structure or wording resembles known phishing.")],
           explanation: "The scanner rated this item Medium" + (score != null ? " with a score of " + score : "") +
             ". Some structure or wording resembles known phishing. Check the sender and destination independently before you trust it. The scanner verdict remains final.",
           tips: ["Verify the sender through a separate channel.", "Avoid entering credentials from a link in this item."]
@@ -104,6 +125,7 @@
         return {
           headline: "No major indicators detected",
           summary: "The scanner rated this item Low risk and verified it.",
+          findings: [finding("low", "Few risk rules fired on the address or wording.")],
           explanation: "The rule-based scanner assessed this item and found few risk indicators" +
             (score != null ? " (score " + score + ")" : "") + ". That is not a guarantee: stay alert for unusual requests and check unexpected links before opening them.",
           tips: ["Confirm unexpected requests through a known contact.", "Keep the scanner verdict as the final decision."]
@@ -112,6 +134,7 @@
       return {
         headline: "This item could not be verified",
         summary: "The scanner did not reach a risk assessment.",
+        findings: [finding("unverified", "No risk level was reached, so the item needs a manual check.")],
         explanation: "The item was Not Verified, so no Low or High judgement exists. This overview cannot fill that gap. Open the item only if you trust where it came from, and prefer a manual check over guessing.",
         tips: ["Treat an unverified item with caution.", "Use a full URL or a plain message when you retry."]
       };
@@ -175,11 +198,26 @@
             if (mode === "ratelimit") { reject(makeError("AllProvidersFailed", "All providers are busy. Try again in 45 s.", 45)); return; }
             if (mode === "nokey") { reject(makeError("NoKey", "Add a provider key in Settings to use the AI overview.")); return; }
             var chosen = providerForMode();
+            var f = fixture(request.payload);
+            if (mode === "longtext") {
+              f.explanation = "The scanner reached its verdict by combining several independent string and structure checks. " +
+                "The first checks look at the address or sender shape and compare it with patterns that commonly appear in phishing campaigns. " +
+                "The next checks look at wording choices, urgency cues, and mismatched destinations that often signal an attempt to move you somewhere unexpected. " +
+                "None of this changes the scanner verdict, which stays final no matter what this explanation says. " +
+                "Treat the explanation as context for the verdict, not as a second opinion that can override it.";
+              f.tips = [
+                "Do not open the link or reply to the message.",
+                "Report and delete it, then verify through an official channel.",
+                "Check the sender address separately before you trust any request.",
+                "Keep the scanner verdict as the final decision."
+              ];
+            }
             resolve({
-              headline: fixture(request.payload).headline,
-              summary: fixture(request.payload).summary,
-              explanation: fixture(request.payload).explanation,
-              tips: fixture(request.payload).tips,
+              headline: f.headline,
+              summary: f.summary,
+              findings: f.findings,
+              explanation: f.explanation,
+              tips: f.tips,
               provider: chosen.id,
               providerName: chosen.label,
               model: chosen.model

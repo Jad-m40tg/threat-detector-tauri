@@ -101,11 +101,20 @@ pub struct OverviewRequest {
     pub payload: Value,
 }
 
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct Finding {
+    /// high | medium | low | unverified
+    pub level: String,
+    pub text: String,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Overview {
     pub headline: String,
     pub summary: String,
+    pub findings: Vec<Finding>,
     pub explanation: String,
     pub tips: Vec<String>,
     pub provider: String,

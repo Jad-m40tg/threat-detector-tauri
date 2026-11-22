@@ -789,6 +789,7 @@ fn into_overview(parsed: ParsedOverview, provider: &str, model: String) -> Overv
     Overview {
         headline: parsed.headline,
         summary: parsed.summary,
+        findings: parsed.findings,
         explanation: parsed.explanation,
         tips: parsed.tips,
         provider: provider.to_string(),
