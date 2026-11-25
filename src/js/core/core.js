@@ -57,6 +57,7 @@
     reduceAnimations: false,
     showHero: true,
     showHardware: true,
+    devMode: false,
     sensitivity: "balanced",
     detectors: {
       httpInsecure: true,
@@ -374,6 +375,11 @@
       { d: "M10.5 10.5V9.4a1.5 1.5 0 0 1 3 0v1.1" }
     ],
     check: [{ d: "M20 6.6 9.7 17 4.2 11.5" }],
+    download: [
+      { d: "M12 4.2v9.4" },
+      { d: "M7.7 9.8 12 14.1l4.3-4.3" },
+      { d: "M5 19h14" }
+    ],
     alert: [
       { d: "M12 3.8 21 19.4H3Z" },
       { d: "M12 9.4v4.4" },
@@ -1369,6 +1375,17 @@
     srInfo.textContent = "Risk Levels";
     info.appendChild(srInfo);
     actions.appendChild(info);
+
+    /* Update button: first in the icon group, present only when a newer release
+       was found (or the dev "Force show" preview is on). Registered by
+       js/services/updateService.js; optional, so a missing service is ignored. */
+    try {
+      if (window.TD && TD.services && TD.services.update &&
+          typeof TD.services.update.mount === "function") {
+        TD.services.update.mount(actions);
+      }
+    } catch (eUpdate) { /* the update button must never block the shell */ }
+
     nav.appendChild(actions);
 
     /* --- Risk Levels legend panel (D4) --- */
@@ -2357,15 +2374,24 @@ function addDeferred(result) {
      ============================================================ */
   var RING_R = 52; /* viewBox 0 0 120 120 */
 
-  function riskColor(risk) {
+  function riskColor(risk, verdictShade) {
     var name = String(risk || '').toLowerCase();
+    if (verdictShade) {
+      if (name === 'low') return 'var(--vs-low)';
+      if (name === 'medium') return 'var(--vs-medium)';
+      if (name === 'high') return 'var(--vs-high)';
+      return 'var(--vs-unverified)';
+    }
     if (name === 'low') return 'var(--low)';
     if (name === 'medium') return 'var(--medium)';
     if (name === 'high') return 'var(--high)';
     return 'var(--na)'; /* unverified | error | missing */
   }
 
-  function scoreRing(container, score, risk) {
+  /* verdictShade: score wheels on the dashboard result and batch rows follow
+     the Settings verdict-color overrides. Other rings (Hardware, history
+     details) keep the engine risk colors. */
+  function scoreRing(container, score, risk, verdictShade) {
     var host = resolveHost(container);
     var handle = { destroy: noop };
 
@@ -2376,7 +2402,7 @@ function addDeferred(result) {
 
     var s = Math.round(Number(score) || 0);
     s = Math.max(0, Math.min(100, s));
-    var color = riskColor(risk);
+    var color = riskColor(risk, verdictShade === true);
 
     var reuseWrap = host.nodeType === 1 && host.classList.contains('ring-wrap');
     var owner = reuseWrap ? host : document.createElement('div');

@@ -327,7 +327,40 @@ html[data-motion="reduced"] .vs-modal *, html[data-motion="reduced"] .vs-swatch 
 .ai-test-msg.is-error{color:var(--high)}
 .ai-consent{display:flex;align-items:flex-start;gap:var(--space-2);font-size:.88rem;color:var(--text);cursor:pointer}
 .ai-consent input{margin-top:.2em;accent-color:var(--accent)}
+
+/* --- Developer card reveal ---
+   Same shared .reveal grid-rows technique as the dark-background field. The
+   collapsed block eats the flex gap; the inner padding keeps focus outlines
+   and swatch highlights from clipping at the animated edge. */
+.dev-reveal {
+  margin-top: calc(-1 * var(--space-4));
+  transition: grid-template-rows var(--dur-reveal-out, .25s) var(--ease-out),
+              opacity var(--dur-reveal-out, .25s) var(--ease-out),
+              margin-top var(--dur-reveal-out, .25s) var(--ease-out);
+}
+.dev-reveal[data-open="true"] {
+  margin-top: 0;
+  transition: grid-template-rows var(--dur-reveal-in, .4s) var(--ease-out),
+              opacity var(--dur-reveal-in, .4s) var(--ease-out),
+              margin-top var(--dur-reveal-in, .4s) var(--ease-out);
+}
+.dev-reveal-inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: 3px;
+  margin: -3px;
+}
+.dev-group { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+.dev-group + .dev-group { border-top: 1px solid var(--border); padding-top: var(--space-5); }
+.dev-title { margin: 0; font-size: .95rem; font-weight: 700; letter-spacing: .01em; color: var(--text); }
 .ai-consent-hint{color:var(--medium)}
 .ai-remove{background:#bc0207;color:#fff;border-color:#bc0207}
 .ai-remove:hover:not(:disabled){background:#980106;border-color:#980106;color:#fff}
 .ai-remove[hidden]{display:none}
+
+/* Update button dev controls */
+.upd-range { width: 100%; max-width: 420px; accent-color: var(--accent); cursor: pointer; }
+.upd-val { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.upd-status { align-self: center; }
+.upd-status:empty { display: none; }

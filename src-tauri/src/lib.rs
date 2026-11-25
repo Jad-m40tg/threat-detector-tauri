@@ -24,6 +24,8 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
             commands::analyze_csv_content,
             commands::cancel_batch,
             commands::pick_csv,
+            commands::check_update,
+            commands::open_installer,
             services::ai::commands::ai_get_status,
             services::ai::commands::ai_save_settings,
             services::ai::commands::ai_clear_key,

@@ -39,7 +39,14 @@
     "vs.dark.high":        { store: "td.vs.dark.high",        hex: true, def: null },
     "vs.dark.medium":      { store: "td.vs.dark.medium",      hex: true, def: null },
     "vs.dark.low":         { store: "td.vs.dark.low",         hex: true, def: null },
-    "vs.dark.unverified":  { store: "td.vs.dark.unverified",  hex: true, def: null }
+    "vs.dark.unverified":  { store: "td.vs.dark.unverified",  hex: true, def: null },
+    /* Update button (dev "Update button" group). force: "true" | "false";
+       animMs / width: integer strings within range; repo: "owner/name" or ""
+       (empty = backend default). Read by js/services/updateService.js. */
+    "upd.force":  { store: "td.upd.force",  bool: true, def: "false" },
+    "upd.animMs": { store: "td.upd.animMs", num: { min: 150, max: 1500 }, def: "550" },
+    "upd.width":  { store: "td.upd.width",  num: { min: 150, max: 320 }, def: "249" },
+    "upd.repo":   { store: "td.upd.repo",   text: true, def: "" }
   };
   /* Higher multiplier = slower progress animation. Exact decimals. */
   var MULTIPLIER = { fast: 1.0, normal: 1.4, slow: 2.2 };
@@ -72,9 +79,17 @@
   }
 
   var HEX_RE = /^#?[0-9a-f]{6}$/i;
+  var INT_RE = /^\d+$/;
   function isValid(key, value) {
     var def = KEY_DEFS[key];
     if (!def || typeof value !== "string") { return false; }
+    if (def.bool) { return value === "true" || value === "false"; }
+    if (def.num) {
+      if (!INT_RE.test(value)) { return false; }
+      var n = parseInt(value, 10);
+      return n >= def.num.min && n <= def.num.max;
+    }
+    if (def.text) { return value.length <= 120 && value.indexOf("\n") === -1; }
     if (def.hex) { return value === "" || HEX_RE.test(value); } /* "" = unset */
     return def.values.indexOf(value) !== -1;
   }
@@ -127,9 +142,11 @@
   }
 
   function set(key, value) {
+    var def = KEY_DEFS[key];
+    if (def && def.bool && typeof value === "boolean") { value = value ? "true" : "false"; }
+    else if (def && def.num && typeof value === "number") { value = String(Math.round(value)); }
     var v = normalize(key, value); /* a legacy alias in → canonical value stored */
     if (!isValid(key, v)) { return false; /* no writes on invalid input */ }
-    var def = KEY_DEFS[key];
     writeRaw(def.store, v);
     applyAttr(key, v);
     fire(key, v); /* exactly one event per successful set */

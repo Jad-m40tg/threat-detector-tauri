@@ -27,7 +27,9 @@
     never: 'Never', '12h': '12-hour', '24h': '24-hour'
   };
   var SWITCH_TXT = {
-    reduceAnimations: 'Reduce animations', showHero: 'Hero banner', autoOpenDetails: 'Auto-open details',
+    reduceAnimations: 'Reduce animations', showHero: 'Hero banner', showHardware: 'Hardware monitor link',
+    devMode: 'Developer settings',
+    autoOpenDetails: 'Auto-open details',
     saveHistory: 'Save history', maskSensitive: 'Mask sensitive data', notifyHighRisk: 'High-risk alerts',
     soundAlert: 'Sound alerts', dailySummary: 'Daily summary'
   };
@@ -308,6 +310,7 @@
     ['set-reduce', 'reduceAnimations'],
     ['set-hero', 'showHero'],
     ['set-hardware', 'showHardware'],
+    ['set-devmode', 'devMode'],
     ['set-autoopen', 'autoOpenDetails'],
     ['set-savehistory', 'saveHistory'],
     ['set-mask', 'maskSensitive'],
@@ -565,6 +568,27 @@
     if (darkOpt) { darkOpt.setAttribute('aria-expanded', expanded ? 'true' : 'false'); }
   }
 
+  /* Developer reveal: collapsed, inert and aria-hidden unless devMode is on. */
+  function syncDevReveal() {
+    var wrap = $('dev-reveal');
+    if (!wrap) return;
+    var open = S.get('devMode') === true;
+    if (open) {
+      wrap.setAttribute('data-open', 'true');
+      wrap.removeAttribute('inert');
+      wrap.removeAttribute('aria-hidden');
+    } else {
+      var activeInside = !!(document.activeElement && wrap.contains(document.activeElement));
+      wrap.setAttribute('data-open', 'false');
+      wrap.setAttribute('inert', '');
+      wrap.setAttribute('aria-hidden', 'true');
+      if (activeInside) {
+        var sw = $('set-devmode');
+        if (sw) sw.focus();
+      }
+    }
+  }
+
   /* Set data-open only after the theme switch ended (promise/event driven). */
   document.addEventListener('td:theme-switch-end', function (e) {
     var d = (e && e.detail) || {};
@@ -605,7 +629,9 @@
         if (b) b.setAttribute('aria-checked', dets[def[1]] ? 'true' : 'false');
       });
     }
-    syncDarkReveal();
+    if (key === '*') { syncEverything(); syncDarkReveal(); }
+    syncDevReveal();
+    if (key === 'devMode' && value === true) aiRefresh();
   });
 
   /* ---------- Verdict colors (Phase 3 — docs/VERDICT_COLORS.md) ----------
@@ -753,7 +779,7 @@
       push(V.unverifiedRing(refs.ringHost));
     } else if (typeof V.scoreRing === 'function') {
       var score = VS_SAMPLES[key] && typeof VS_SAMPLES[key].score === 'number' ? VS_SAMPLES[key].score : 0;
-      push(V.scoreRing(refs.ringHost, Math.min(score, 99), key));
+      push(V.scoreRing(refs.ringHost, Math.min(score, 99), key, true));
     }
   }
 
@@ -1236,9 +1262,90 @@
         });
     });
   }
-  aiRefresh();
+  if (S.get('devMode')) aiRefresh();
+
+  /* ---------- Developer: update button (TDSettings td.upd.*) ---------- */
+  (function initUpdateDev() {
+    var TS = window.TDSettings;
+    var force = $('set-upd-force');
+    if (!TS || !force) { return; }
+    var ms = $('set-upd-ms');
+    var width = $('set-upd-w');
+    var repo = $('set-upd-repo');
+    var checkBtn = $('upd-check');
+    var resetBtn = $('upd-reset');
+    var statusEl = $('upd-status');
+    var msVal = $('upd-val-ms');
+    var widthVal = $('upd-val-w');
+
+    function truth(key) { return String(TS.get(key)) === 'true'; }
+    function numv(key, fallback) {
+      var n = parseInt(TS.get(key), 10);
+      return isFinite(n) ? n : fallback;
+    }
+    function paintRanges() {
+      var m = numv('upd.animMs', 550);
+      var w = numv('upd.width', 249);
+      if (ms) { ms.value = String(m); }
+      if (width) { width.value = String(w); }
+      if (msVal) { msVal.textContent = String(m); }
+      if (widthVal) { widthVal.textContent = String(w); }
+    }
+    function renderStatus(text) { if (statusEl) { statusEl.textContent = text; } }
+    function liveStatus() {
+      var U = window.TD && TD.services && TD.services.update;
+      if (U && typeof U.describe === 'function') { renderStatus(U.describe()); }
+    }
+    function paintForce() { force.setAttribute('aria-checked', truth('upd.force') ? 'true' : 'false'); }
+
+    force.addEventListener('click', function () {
+      TS.set('upd.force', truth('upd.force') ? 'false' : 'true');
+      paintForce();
+    });
+    if (ms) {
+      ms.addEventListener('input', function () {
+        TS.set('upd.animMs', parseInt(ms.value, 10));
+        if (msVal) { msVal.textContent = ms.value; }
+      });
+    }
+    if (width) {
+      width.addEventListener('input', function () {
+        TS.set('upd.width', parseInt(width.value, 10));
+        if (widthVal) { widthVal.textContent = width.value; }
+      });
+    }
+    if (repo) {
+      repo.addEventListener('change', function () { TS.set('upd.repo', repo.value.trim()); });
+    }
+    if (checkBtn) {
+      checkBtn.addEventListener('click', function () {
+        var U = window.TD && TD.services && TD.services.update;
+        if (!U) { renderStatus('Update service unavailable.'); return; }
+        renderStatus('Checking...');
+        U.checkNow().then(renderStatus).catch(function () { renderStatus('Check failed.'); });
+      });
+    }
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function () {
+        TS.set('upd.force', 'false');
+        TS.set('upd.animMs', '550');
+        TS.set('upd.width', '249');
+        TS.set('upd.repo', '');
+        paintForce();
+        paintRanges();
+        if (repo) { repo.value = ''; }
+      });
+    }
+    document.addEventListener('td:update-checked', liveStatus);
+
+    paintForce();
+    paintRanges();
+    if (repo) { repo.value = String(TS.get('upd.repo') || ''); }
+    liveStatus();
+  })();
 
   /* ---------- initial render from persisted settings ---------- */
   syncEverything();
   syncDarkReveal();
+  syncDevReveal();
 })();

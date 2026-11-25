@@ -145,42 +145,6 @@
         </div>
         <button type="button" class="switch" id="set-hero" role="switch" aria-labelledby="lb-set-hero" aria-checked="false" data-key="showHero"><span class="switch-knob" aria-hidden="true"></span></button>
       </div>
-
-      <div class="set-field set-row">
-        <div class="row-main">
-          <label class="set-label" id="lb-set-hardware" for="set-hardware">Show hardware monitor link</label>
-          <p class="set-help">Toggles the Hardware entry in the top navigation bar.</p>
-        </div>
-        <button type="button" class="switch" id="set-hardware" role="switch" aria-labelledby="lb-set-hardware" aria-checked="true" data-key="showHardware"><span class="switch-knob" aria-hidden="true"></span></button>
-      </div>
-    </section>
-
-    <!-- ===== Card: Verdict colors (Phase 3 — docs/VERDICT_COLORS.md) =====
-         Swatch buttons are built by pages/settings.js (aria-label carries the
-         effective hex, so it lives in JS). Clicking one opens the shared modal
-         shell with the real verdict card + shade picker; nothing is saved
-         until Apply. "Reset all" restores every override via verdictShade. -->
-    <section class="card set-card" aria-labelledby="hd-verdict">
-      <div class="set-card-head">
-        <h2 class="card-title" id="hd-verdict">Verdict colors</h2>
-        <p class="set-card-sub">Gradient tint of each verdict card, per theme. Ring, label and border colors are not affected.</p>
-      </div>
-
-      <div class="set-field">
-        <span class="set-label" id="lb-vs-light">Light mode</span>
-        <div class="vs-swatches" id="vs-row-light" role="group" aria-labelledby="lb-vs-light"></div>
-        <p class="set-help">Shade used by verdict cards while the light theme is active.</p>
-      </div>
-
-      <div class="set-field">
-        <span class="set-label" id="lb-vs-dark">Dark mode</span>
-        <div class="vs-swatches" id="vs-row-dark" role="group" aria-labelledby="lb-vs-dark"></div>
-        <p class="set-help">Shade used by verdict cards while a dark theme is active.</p>
-      </div>
-
-      <div class="set-actions">
-        <button type="button" class="btn btn-ghost" id="vs-reset-all">Reset all</button>
-      </div>
     </section>
 
     <!-- ===== Card: Detection ===== -->
@@ -265,27 +229,6 @@
         <p class="set-help">Pre-selected when the Dashboard opens.</p>
       </div>
 
-      <div class="set-field">
-        <span class="set-label" id="lb-scanspeed">Simulated scan speed</span>
-        <div class="seg" id="set-scanspeed" data-seg role="radiogroup" aria-labelledby="lb-scanspeed">
-          <span class="seg__thumb" aria-hidden="true"></span>
-          <button type="button" class="seg__opt" role="radio" data-value="fast" aria-checked="false" tabindex="-1">Fast</button>
-          <button type="button" class="seg__opt" role="radio" data-value="normal" aria-checked="true" tabindex="0">Normal</button>
-          <button type="button" class="seg__opt" role="radio" data-value="slow" aria-checked="false" tabindex="-1">Slow</button>
-        </div>
-        <p class="set-help">Fast ≈ 1 s · Normal ≈ 2 s · Slow ≈ 3.5 s</p>
-      </div>
-
-      <div class="set-field">
-        <span class="set-label" id="lb-resulttiming">Result timing</span>
-        <div class="seg" id="set-resulttiming" data-seg role="radiogroup" aria-labelledby="lb-resulttiming">
-          <span class="seg__thumb" aria-hidden="true"></span>
-          <button type="button" class="seg__opt" role="radio" data-value="fixed" aria-checked="true" tabindex="0">After animation</button>
-          <button type="button" class="seg__opt" role="radio" data-value="instant" aria-checked="false" tabindex="-1">Instant</button>
-        </div>
-        <p class="set-help">Show the result when the scan animation completes, or the moment the engine answers.</p>
-      </div>
-
       <div class="set-field set-row">
         <div class="row-main">
           <label class="set-label" id="lb-set-autoopen" for="set-autoopen">Auto-open details after scan</label>
@@ -346,107 +289,6 @@
       </div>
     </section>
 
-    <!-- ===== Card: AI overview ===== -->
-    <section class="card set-card" aria-labelledby="hd-ai">
-      <div class="set-card-head">
-        <h2 class="card-title" id="hd-ai">AI overview</h2>
-        <p class="set-card-sub">An optional plain-English explanation of the scan. It is a secondary assessment and never changes the scanner verdict.</p>
-      </div>
-
-      <div class="set-field">
-        <span class="set-label" id="lb-aimode">When to use AI</span>
-        <div class="seg" id="set-aimode" data-seg role="radiogroup" aria-labelledby="lb-aimode">
-          <span class="seg__thumb" aria-hidden="true"></span>
-          <button type="button" class="seg__opt" role="radio" data-value="off" aria-checked="false" tabindex="-1">Off</button>
-          <button type="button" class="seg__opt" role="radio" data-value="click" aria-checked="false" tabindex="-1">On click</button>
-          <button type="button" class="seg__opt" role="radio" data-value="auto" aria-checked="true" tabindex="0">Automatic</button>
-        </div>
-        <p class="set-help">Automatic runs one overview after each scan or batch. On click waits for the button.</p>
-      </div>
-
-      <div class="ai-providers">
-        <div class="ai-provider" data-provider="groq">
-          <div class="ai-provider-head">
-            <span class="ai-provider-name">Groq</span>
-            <span class="ai-state" id="ai-state-groq" data-state="no_key">No key</span>
-          </div>
-          <p class="set-help ai-keyhint" id="ai-hint-groq">Free key: console.groq.com/keys</p>
-          <form class="ai-form" id="ai-form-groq" data-provider="groq" novalidate>
-            <input class="input" type="password" id="ai-key-groq" placeholder="Paste API key" autocomplete="off" spellcheck="false" aria-label="Groq API key">
-            <div class="ai-model-row">
-              <input class="input" type="text" id="ai-model-groq" placeholder="Model, empty = auto" autocomplete="off" spellcheck="false" aria-label="Groq model override">
-              <button class="btn btn-secondary ai-models-btn" type="button" data-ai-models="groq">Show models</button>
-            </div>
-            <select class="input ai-model-select" id="ai-models-groq" aria-label="Available Groq models" hidden></select>
-            <p class="ai-test-msg" id="ai-models-msg-groq" role="status" aria-live="polite" hidden></p>
-            <div class="ai-actions">
-              <button class="btn btn-primary" type="submit">Save key</button>
-              <button class="btn btn-secondary" type="button" data-ai-test="groq">Test connection</button>
-              <button class="btn btn-ghost ai-remove" type="button" data-ai-remove="groq" hidden>Remove key</button>
-            </div>
-            <p class="ai-test-msg" id="ai-test-groq" role="status" aria-live="polite" hidden></p>
-          </form>
-        </div>
-
-        <div class="ai-provider" data-provider="gemini">
-          <div class="ai-provider-head">
-            <span class="ai-provider-name">Google Gemini</span>
-            <span class="ai-state" id="ai-state-gemini" data-state="no_key">No key</span>
-          </div>
-          <p class="set-help ai-keyhint" id="ai-hint-gemini">Free key: aistudio.google.com</p>
-          <form class="ai-form" id="ai-form-gemini" data-provider="gemini" novalidate>
-            <input class="input" type="password" id="ai-key-gemini" placeholder="Paste API key" autocomplete="off" spellcheck="false" aria-label="Google Gemini API key">
-            <div class="ai-model-row">
-              <input class="input" type="text" id="ai-model-gemini" placeholder="Model, empty = auto" autocomplete="off" spellcheck="false" aria-label="Gemini model override">
-              <button class="btn btn-secondary ai-models-btn" type="button" data-ai-models="gemini">Show models</button>
-            </div>
-            <select class="input ai-model-select" id="ai-models-gemini" aria-label="Available Gemini models" hidden></select>
-            <p class="ai-test-msg" id="ai-models-msg-gemini" role="status" aria-live="polite" hidden></p>
-            <div class="ai-actions">
-              <button class="btn btn-primary" type="submit">Save key</button>
-              <button class="btn btn-secondary" type="button" data-ai-test="gemini">Test connection</button>
-              <button class="btn btn-ghost ai-remove" type="button" data-ai-remove="gemini" hidden>Remove key</button>
-            </div>
-            <p class="ai-test-msg" id="ai-test-gemini" role="status" aria-live="polite" hidden></p>
-          </form>
-        </div>
-
-        <div class="ai-provider" data-provider="custom">
-          <div class="ai-provider-head">
-            <span class="ai-provider-name">Custom OpenAI-compatible</span>
-            <span class="ai-state" id="ai-state-custom" data-state="no_key">No key</span>
-          </div>
-          <p class="set-help ai-keyhint" id="ai-hint-custom">Works with OpenRouter, Cerebras and similar. Base URL example: https://openrouter.ai/api/v1</p>
-          <form class="ai-form" id="ai-form-custom" data-provider="custom" novalidate>
-            <input class="input" type="url" id="ai-base-custom" placeholder="Base URL, e.g. https://openrouter.ai/api/v1" autocomplete="off" spellcheck="false" aria-label="Custom provider base URL">
-            <input class="input" type="password" id="ai-key-custom" placeholder="Paste API key" autocomplete="off" spellcheck="false" aria-label="Custom provider API key">
-            <div class="ai-model-row">
-              <input class="input" type="text" id="ai-model-custom" placeholder="Model, empty = auto" autocomplete="off" spellcheck="false" aria-label="Custom provider model override">
-              <button class="btn btn-secondary ai-models-btn" type="button" data-ai-models="custom">Show models</button>
-            </div>
-            <select class="input ai-model-select" id="ai-models-custom" aria-label="Available custom provider models" hidden></select>
-            <p class="ai-test-msg" id="ai-models-msg-custom" role="status" aria-live="polite" hidden></p>
-            <div class="ai-actions">
-              <button class="btn btn-primary" type="submit">Save key</button>
-              <button class="btn btn-secondary" type="button" data-ai-test="custom">Test connection</button>
-              <button class="btn btn-ghost ai-remove" type="button" data-ai-remove="custom" hidden>Remove key</button>
-            </div>
-            <p class="ai-test-msg" id="ai-test-custom" role="status" aria-live="polite" hidden></p>
-          </form>
-        </div>
-      </div>
-
-      <div class="set-field">
-        <label class="ai-consent" for="ai-consent-input">
-          <input type="checkbox" id="ai-consent-input">
-          <span>I understand and agree to the privacy notice below.</span>
-        </label>
-        <p class="set-help ai-consent-hint" id="ai-consent-hint" hidden>Consent is required before the AI overview can run.</p>
-        <p class="set-help" id="ai-privacy">When enabled, the scanned text and the scan result are sent to the selected provider. Free tiers may use this data to improve their products. Do not use this feature with private or confidential content.</p>
-        <p class="set-help">Free keys come from console.groq.com/keys (Groq) and aistudio.google.com (Gemini). Free tiers are rate-limited and sometimes busy, so adding two providers makes the feature much more reliable.</p>
-      </div>
-    </section>
-
     <!-- ===== Card: Notifications ===== -->
     <section class="card set-card" aria-labelledby="hd-notifications">
       <div class="set-card-head">
@@ -494,6 +336,222 @@
       </div>
     </section>
 
+    <!-- ===== Card: Developer =====
+         Master switch gates every advanced control. The reveal stays collapsed,
+         inert and aria-hidden while off; pages/settings.js drives data-open and
+         the visibility attributes from the persisted devMode setting. -->
+    <section class="card set-card" aria-labelledby="hd-dev">
+      <div class="set-card-head">
+        <h2 class="card-title" id="hd-dev">Developer</h2>
+        <p class="set-card-sub">Advanced controls for simulation, verdict colors and AI providers. Off by default.</p>
+      </div>
+
+      <div class="set-field set-row">
+        <div class="row-main">
+          <label class="set-label" id="lb-set-devmode" for="set-devmode">Enable developer settings</label>
+          <p class="set-help">Shows the controls below. Saved on this device.</p>
+        </div>
+        <button type="button" class="switch" id="set-devmode" role="switch" aria-labelledby="lb-set-devmode" aria-checked="false" data-key="devMode"><span class="switch-knob" aria-hidden="true"></span></button>
+      </div>
+
+      <div class="dev-reveal reveal" id="dev-reveal" inert aria-hidden="true">
+        <div class="reveal-inner dev-reveal-inner">
+
+          <div class="dev-group" aria-labelledby="hd-dev-sim">
+            <h3 class="dev-title" id="hd-dev-sim">Simulation</h3>
+
+            <div class="set-field set-row">
+              <div class="row-main">
+                <label class="set-label" id="lb-set-hardware" for="set-hardware">Show hardware monitor link</label>
+                <p class="set-help">Toggles the Hardware entry in the top navigation bar.</p>
+              </div>
+              <button type="button" class="switch" id="set-hardware" role="switch" aria-labelledby="lb-set-hardware" aria-checked="true" data-key="showHardware"><span class="switch-knob" aria-hidden="true"></span></button>
+            </div>
+
+            <div class="set-field">
+              <span class="set-label" id="lb-scanspeed">Simulated scan speed</span>
+              <div class="seg" id="set-scanspeed" data-seg role="radiogroup" aria-labelledby="lb-scanspeed">
+                <span class="seg__thumb" aria-hidden="true"></span>
+                <button type="button" class="seg__opt" role="radio" data-value="fast" aria-checked="false" tabindex="-1">Fast</button>
+                <button type="button" class="seg__opt" role="radio" data-value="normal" aria-checked="true" tabindex="0">Normal</button>
+                <button type="button" class="seg__opt" role="radio" data-value="slow" aria-checked="false" tabindex="-1">Slow</button>
+              </div>
+              <p class="set-help">Fast ≈ 1 s · Normal ≈ 2 s · Slow ≈ 3.5 s</p>
+            </div>
+
+            <div class="set-field">
+              <span class="set-label" id="lb-resulttiming">Result timing</span>
+              <div class="seg" id="set-resulttiming" data-seg role="radiogroup" aria-labelledby="lb-resulttiming">
+                <span class="seg__thumb" aria-hidden="true"></span>
+                <button type="button" class="seg__opt" role="radio" data-value="fixed" aria-checked="true" tabindex="0">After animation</button>
+                <button type="button" class="seg__opt" role="radio" data-value="instant" aria-checked="false" tabindex="-1">Instant</button>
+              </div>
+              <p class="set-help">Show the result when the scan animation completes, or the moment the engine answers.</p>
+            </div>
+          </div>
+
+          <div class="dev-group" aria-labelledby="hd-upd">
+            <h3 class="dev-title" id="hd-upd">Update button</h3>
+            <p class="set-card-sub">Previews the navbar "Download and install" button. It only appears for real when a newer GitHub release with a Windows installer exists.</p>
+
+            <div class="set-field set-row">
+              <div class="row-main">
+                <label class="set-label" id="lb-upd-force" for="set-upd-force">Force show</label>
+                <p class="set-help">Show the button with a fake version 9.9.9 even when no update exists.</p>
+              </div>
+              <button type="button" class="switch" id="set-upd-force" role="switch" aria-labelledby="lb-upd-force" aria-checked="false"><span class="switch-knob" aria-hidden="true"></span></button>
+            </div>
+
+            <div class="set-field">
+              <label class="set-label" for="set-upd-ms">Animation time</label>
+              <input class="upd-range" type="range" id="set-upd-ms" min="150" max="1500" step="10" value="550" aria-describedby="upd-hint-ms">
+              <p class="set-help" id="upd-hint-ms"><span class="upd-val" id="upd-val-ms">550</span> ms for the pill to open.</p>
+            </div>
+
+            <div class="set-field">
+              <label class="set-label" for="set-upd-w">Pill length</label>
+              <input class="upd-range" type="range" id="set-upd-w" min="150" max="320" step="1" value="249" aria-describedby="upd-hint-w">
+              <p class="set-help" id="upd-hint-w"><span class="upd-val" id="upd-val-w">249</span> px. The label is never clipped.</p>
+            </div>
+
+            <div class="set-field">
+              <label class="set-label" for="set-upd-repo">GitHub repository</label>
+              <input class="input" type="text" id="set-upd-repo" placeholder="owner/name" autocomplete="off" spellcheck="false" aria-describedby="upd-hint-repo">
+              <p class="set-help" id="upd-hint-repo">Used by the update check. Empty uses the project default.</p>
+            </div>
+
+            <div class="set-actions">
+              <button type="button" class="btn btn-secondary" id="upd-check">Check now</button>
+              <span class="set-help upd-status" id="upd-status" role="status" aria-live="polite"></span>
+            </div>
+            <div class="set-actions">
+              <button type="button" class="btn btn-ghost" id="upd-reset">Reset to defaults</button>
+            </div>
+          </div>
+
+          <div class="dev-group" aria-labelledby="hd-verdict">
+            <h3 class="dev-title" id="hd-verdict">Verdict colors</h3>
+            <p class="set-card-sub">Gradient tint of each verdict card and the score wheel, per theme. Label and border colors are not affected.</p>
+
+            <div class="set-field">
+              <span class="set-label" id="lb-vs-light">Light mode</span>
+              <div class="vs-swatches" id="vs-row-light" role="group" aria-labelledby="lb-vs-light"></div>
+              <p class="set-help">Shade used by verdict cards and score wheels while the light theme is active.</p>
+            </div>
+
+            <div class="set-field">
+              <span class="set-label" id="lb-vs-dark">Dark mode</span>
+              <div class="vs-swatches" id="vs-row-dark" role="group" aria-labelledby="lb-vs-dark"></div>
+              <p class="set-help">Shade used by verdict cards and score wheels while a dark theme is active.</p>
+            </div>
+
+            <div class="set-actions">
+              <button type="button" class="btn btn-ghost" id="vs-reset-all">Reset all</button>
+            </div>
+          </div>
+
+          <div class="dev-group" aria-labelledby="hd-ai">
+            <h3 class="dev-title" id="hd-ai">AI overview</h3>
+            <p class="set-card-sub">An optional plain-English explanation of the scan. It is a secondary assessment and never changes the scanner verdict.</p>
+
+            <div class="set-field">
+              <span class="set-label" id="lb-aimode">When to use AI</span>
+              <div class="seg" id="set-aimode" data-seg role="radiogroup" aria-labelledby="lb-aimode">
+                <span class="seg__thumb" aria-hidden="true"></span>
+                <button type="button" class="seg__opt" role="radio" data-value="off" aria-checked="false" tabindex="-1">Off</button>
+                <button type="button" class="seg__opt" role="radio" data-value="click" aria-checked="false" tabindex="-1">On click</button>
+                <button type="button" class="seg__opt" role="radio" data-value="auto" aria-checked="true" tabindex="0">Automatic</button>
+              </div>
+              <p class="set-help">Automatic runs one overview after each scan or batch. On click waits for the button.</p>
+            </div>
+
+            <div class="ai-providers">
+              <div class="ai-provider" data-provider="groq">
+                <div class="ai-provider-head">
+                  <span class="ai-provider-name">Groq</span>
+                  <span class="ai-state" id="ai-state-groq" data-state="no_key">No key</span>
+                </div>
+                <p class="set-help ai-keyhint" id="ai-hint-groq">Free key: console.groq.com/keys</p>
+                <form class="ai-form" id="ai-form-groq" data-provider="groq" novalidate>
+                  <input class="input" type="password" id="ai-key-groq" placeholder="Paste API key" autocomplete="off" spellcheck="false" aria-label="Groq API key">
+                  <div class="ai-model-row">
+                    <input class="input" type="text" id="ai-model-groq" placeholder="Model, empty = auto" autocomplete="off" spellcheck="false" aria-label="Groq model override">
+                    <button class="btn btn-secondary ai-models-btn" type="button" data-ai-models="groq">Show models</button>
+                  </div>
+                  <select class="input ai-model-select" id="ai-models-groq" aria-label="Available Groq models" hidden></select>
+                  <p class="ai-test-msg" id="ai-models-msg-groq" role="status" aria-live="polite" hidden></p>
+                  <div class="ai-actions">
+                    <button class="btn btn-primary" type="submit">Save key</button>
+                    <button class="btn btn-secondary" type="button" data-ai-test="groq">Test connection</button>
+                    <button class="btn btn-ghost ai-remove" type="button" data-ai-remove="groq" hidden>Remove key</button>
+                  </div>
+                  <p class="ai-test-msg" id="ai-test-groq" role="status" aria-live="polite" hidden></p>
+                </form>
+              </div>
+
+              <div class="ai-provider" data-provider="gemini">
+                <div class="ai-provider-head">
+                  <span class="ai-provider-name">Google Gemini</span>
+                  <span class="ai-state" id="ai-state-gemini" data-state="no_key">No key</span>
+                </div>
+                <p class="set-help ai-keyhint" id="ai-hint-gemini">Free key: aistudio.google.com</p>
+                <form class="ai-form" id="ai-form-gemini" data-provider="gemini" novalidate>
+                  <input class="input" type="password" id="ai-key-gemini" placeholder="Paste API key" autocomplete="off" spellcheck="false" aria-label="Google Gemini API key">
+                  <div class="ai-model-row">
+                    <input class="input" type="text" id="ai-model-gemini" placeholder="Model, empty = auto" autocomplete="off" spellcheck="false" aria-label="Gemini model override">
+                    <button class="btn btn-secondary ai-models-btn" type="button" data-ai-models="gemini">Show models</button>
+                  </div>
+                  <select class="input ai-model-select" id="ai-models-gemini" aria-label="Available Gemini models" hidden></select>
+                  <p class="ai-test-msg" id="ai-models-msg-gemini" role="status" aria-live="polite" hidden></p>
+                  <div class="ai-actions">
+                    <button class="btn btn-primary" type="submit">Save key</button>
+                    <button class="btn btn-secondary" type="button" data-ai-test="gemini">Test connection</button>
+                    <button class="btn btn-ghost ai-remove" type="button" data-ai-remove="gemini" hidden>Remove key</button>
+                  </div>
+                  <p class="ai-test-msg" id="ai-test-gemini" role="status" aria-live="polite" hidden></p>
+                </form>
+              </div>
+
+              <div class="ai-provider" data-provider="custom">
+                <div class="ai-provider-head">
+                  <span class="ai-provider-name">Custom OpenAI-compatible</span>
+                  <span class="ai-state" id="ai-state-custom" data-state="no_key">No key</span>
+                </div>
+                <p class="set-help ai-keyhint" id="ai-hint-custom">Works with OpenRouter, Cerebras and similar. Base URL example: https://openrouter.ai/api/v1</p>
+                <form class="ai-form" id="ai-form-custom" data-provider="custom" novalidate>
+                  <input class="input" type="url" id="ai-base-custom" placeholder="Base URL, e.g. https://openrouter.ai/api/v1" autocomplete="off" spellcheck="false" aria-label="Custom provider base URL">
+                  <input class="input" type="password" id="ai-key-custom" placeholder="Paste API key" autocomplete="off" spellcheck="false" aria-label="Custom provider API key">
+                  <div class="ai-model-row">
+                    <input class="input" type="text" id="ai-model-custom" placeholder="Model, empty = auto" autocomplete="off" spellcheck="false" aria-label="Custom provider model override">
+                    <button class="btn btn-secondary ai-models-btn" type="button" data-ai-models="custom">Show models</button>
+                  </div>
+                  <select class="input ai-model-select" id="ai-models-custom" aria-label="Available custom provider models" hidden></select>
+                  <p class="ai-test-msg" id="ai-models-msg-custom" role="status" aria-live="polite" hidden></p>
+                  <div class="ai-actions">
+                    <button class="btn btn-primary" type="submit">Save key</button>
+                    <button class="btn btn-secondary" type="button" data-ai-test="custom">Test connection</button>
+                    <button class="btn btn-ghost ai-remove" type="button" data-ai-remove="custom" hidden>Remove key</button>
+                  </div>
+                  <p class="ai-test-msg" id="ai-test-custom" role="status" aria-live="polite" hidden></p>
+                </form>
+              </div>
+            </div>
+
+            <div class="set-field">
+              <label class="ai-consent" for="ai-consent-input">
+                <input type="checkbox" id="ai-consent-input">
+                <span>I understand and agree to the privacy notice below.</span>
+              </label>
+              <p class="set-help ai-consent-hint" id="ai-consent-hint" hidden>Consent is required before the AI overview can run.</p>
+              <p class="set-help" id="ai-privacy">When enabled, the scanned text and the scan result are sent to the selected provider. Free tiers may use this data to improve their products. Do not use this feature with private or confidential content.</p>
+              <p class="set-help">Free keys come from console.groq.com/keys (Groq) and aistudio.google.com (Gemini). Free tiers are rate-limited and sometimes busy, so adding two providers makes the feature much more reliable.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
     <!-- ===== Card: About ===== -->
     <section class="card set-card" aria-labelledby="hd-about">
       <div class="set-card-head">
@@ -512,6 +570,7 @@
 <script src="js/core/events.js"></script>
 <script src="js/services/bridge.js"></script>
 <script src="js/services/analysisService.js"></script>
+<script src="js/services/updateService.js"></script>
 <script src="js/services/aiService.js"></script>
 <script src="js/components/verdictCard.js"></script>
 <script src="js/components/shadePicker.js"></script>

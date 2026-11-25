@@ -51,6 +51,80 @@ html[data-nav-style="invert"] .navlink.is-current {
               box-shadow 180ms var(--ease-out);
 }
 
+/* ===== Update button — a navbar circle that opens into a labelled pill =====
+   Same 44px footprint as .navlink; --upd-ms (width + fill timing) and --upd-w
+   (open pill width) are written on <html> by js/services/updateService.js, so the
+   dev "Update button" sliders change them live. --upd-min is a measured floor so
+   the label is never clipped. Opening animates width (not scale) so the resting
+   shape is a true circle and the open shape a true pill: radius = half height. */
+.update-btn {
+  /* --upd-ms / --upd-w are inherited from <html> (written by updateService);
+     the fallbacks here apply only before the service has run. */
+  --upd-min: 208px;
+  width: 44px;
+  padding: 0 12px 0 11px;
+  gap: 10px;
+  justify-content: flex-start;
+  overflow: hidden;
+  border-radius: 22px;                  /* half of the 44px height */
+  background: var(--navlink-icon);      /* solid dark fill (light on dark themes) */
+  color: var(--navlink-bg);
+  box-shadow: 0 0 0 2px var(--navlink-ring-current), 0 0 12px var(--glow);
+  transition: width var(--upd-ms, 550ms) cubic-bezier(.22, 1, .36, 1),
+              background-color calc(var(--upd-ms, 550ms) * .73) ease,
+              color calc(var(--upd-ms, 550ms) * .73) ease,
+              box-shadow calc(var(--upd-ms, 550ms) * .73) ease;
+}
+.update-btn .update-btn__ico,
+.update-btn .update-btn__label { flex: 0 0 auto; }
+.update-btn .update-btn__ico { display: inline-flex; }
+.update-btn .update-btn__label {
+  white-space: nowrap;
+  font-size: .92rem;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: opacity calc(var(--upd-ms, 550ms) * .45) ease,
+              transform calc(var(--upd-ms, 550ms) * .45) ease;
+}
+.update-btn:active {
+  background: var(--navlink-icon);
+  color: var(--navlink-bg);
+  transform: none;
+}
+@media (hover: hover) {
+  .update-btn:hover {
+    width: max(var(--upd-w, 249px), var(--upd-min));
+    background: var(--accent);
+    color: var(--accent-contrast);
+    transform: none;
+  }
+  .update-btn:hover .update-btn__label {
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: calc(var(--upd-ms, 550ms) * .25);
+  }
+}
+.update-btn:focus-visible {
+  width: max(var(--upd-w, 249px), var(--upd-min));
+  background: var(--accent);
+  color: var(--accent-contrast);
+  transform: none;
+}
+.update-btn:focus-visible .update-btn__label {
+  opacity: 1;
+  transform: translateX(0);
+  transition-delay: calc(var(--upd-ms, 550ms) * .25);
+}
+
+/* Reduced motion (OS preference or the app's motion setting): instant state. */
+@media (prefers-reduced-motion: reduce) {
+  .update-btn,
+  .update-btn .update-btn__label { transition: none; }
+}
+html[data-motion="reduced"] .update-btn,
+html[data-motion="reduced"] .update-btn .update-btn__label { transition: none; }
+
 /* Keyboard focus stays distinguishable in contrast mode: the global
    :focus-visible rule below would be shadowed by the outline: none above,
    so the cyan/blue --focus-ring is re-added for focus-visible only. */
