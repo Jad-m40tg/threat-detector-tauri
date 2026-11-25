@@ -61,7 +61,11 @@ html[data-nav-style="invert"] .navlink.is-current {
   /* --upd-ms / --upd-w are inherited from <html> (written by updateService);
      the fallbacks here apply only before the service has run. */
   --upd-min: 208px;
+  /* Neutral ring: the grey a navlink shows while pressed, so the closed button
+     never reads as the accent-ringed current page. */
+  --upd-ring: var(--navlink-bg-active);
   width: 44px;
+  margin-right: var(--space-2);         /* extra gap from Home: own control, not a navlink */
   padding: 0 12px 0 11px;
   gap: 10px;
   justify-content: flex-start;
@@ -69,7 +73,7 @@ html[data-nav-style="invert"] .navlink.is-current {
   border-radius: 22px;                  /* half of the 44px height */
   background: var(--navlink-icon);      /* solid dark fill (light on dark themes) */
   color: var(--navlink-bg);
-  box-shadow: 0 0 0 2px var(--navlink-ring-current), 0 0 12px var(--glow);
+  box-shadow: 0 0 0 2px var(--upd-ring);
   transition: width var(--upd-ms, 550ms) cubic-bezier(.22, 1, .36, 1),
               background-color calc(var(--upd-ms, 550ms) * .73) ease,
               color calc(var(--upd-ms, 550ms) * .73) ease,
@@ -98,6 +102,7 @@ html[data-nav-style="invert"] .navlink.is-current {
     background: var(--accent);
     color: var(--accent-contrast);
     transform: none;
+    box-shadow: 0 0 0 2px var(--accent), 0 0 12px var(--glow);
   }
   .update-btn:hover .update-btn__label {
     opacity: 1;
@@ -110,6 +115,7 @@ html[data-nav-style="invert"] .navlink.is-current {
   background: var(--accent);
   color: var(--accent-contrast);
   transform: none;
+  box-shadow: 0 0 0 2px var(--accent), 0 0 12px var(--glow);
 }
 .update-btn:focus-visible .update-btn__label {
   opacity: 1;
