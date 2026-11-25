@@ -61,9 +61,9 @@ html[data-nav-style="invert"] .navlink.is-current {
   /* --upd-ms / --upd-w are inherited from <html> (written by updateService);
      the fallbacks here apply only before the service has run. */
   --upd-min: 208px;
-  /* Neutral ring: the grey a navlink shows while pressed, so the closed button
-     never reads as the accent-ringed current page. */
-  --upd-ring: var(--navlink-bg-active);
+  /* Neutral ring: the grey ring of a pressed/selected navlink (contrast style,
+     #4A5750), so the closed button never reads as the accent-ringed current page. */
+  --upd-ring: #4A5750;
   width: 44px;
   margin-right: var(--space-2);         /* extra gap from Home: own control, not a navlink */
   padding: 0 12px 0 11px;
