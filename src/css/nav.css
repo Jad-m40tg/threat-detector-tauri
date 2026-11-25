@@ -65,7 +65,7 @@ html[data-nav-style="invert"] .navlink.is-current {
      #4A5750), so the closed button never reads as the accent-ringed current page. */
   --upd-ring: #4A5750;
   width: 44px;
-  margin-right: var(--space-6);         /* extra gap from Home: own control, not a navlink */
+  margin-right: calc(var(--space-5) + var(--space-1)); /* extra gap from Home: own control, not a navlink */
   padding: 0 12px 0 11px;
   gap: 10px;
   justify-content: flex-start;
