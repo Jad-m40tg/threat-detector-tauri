@@ -97,10 +97,12 @@
   - [x] Task 5: "Demo mode" notice hidden on real backend (`usingTauri()`).
   - [x] Task 6: Threat Summary definitions:
         - 1 scan = 1 analyzed entry (single input or CSV row);
-        - "Scans today" = entries since local midnight (including Not Verified and errors);
-        - "High risk" / "Medium risk" = today's entries verified at that risk;
+        - the window is the current app session, so a relaunch returns to the
+          secure default like the static idle card;
+        - "Scans" = entries analyzed this session (including Not Verified and errors);
+        - "High risk" / "Medium risk" = this session's entries verified at that risk;
         - Demo seeds excluded via `DAC.history.userScans()`.
-  - [x] Task 7: Threat Summary stat labels fit without truncation ("Scans today", "High risk", "Medium risk").
+  - [x] Task 7: Threat Summary stat labels fit without truncation ("Scans", "High risk", "Medium risk").
 
 - [ ] **Phase 5b/6/6b/9** — not started. `docs/MANUAL_TEST.md` already written and
       corrected this session (rule listings now match the code; new-rule tests added).

@@ -346,6 +346,107 @@
       </div>
     </section>
 
+    <!-- ===== Card: AI overview ===== -->
+    <section class="card set-card" aria-labelledby="hd-ai">
+      <div class="set-card-head">
+        <h2 class="card-title" id="hd-ai">AI overview</h2>
+        <p class="set-card-sub">An optional plain-English explanation of the scan. It is a secondary assessment and never changes the scanner verdict.</p>
+      </div>
+
+      <div class="set-field">
+        <span class="set-label" id="lb-aimode">When to use AI</span>
+        <div class="seg" id="set-aimode" data-seg role="radiogroup" aria-labelledby="lb-aimode">
+          <span class="seg__thumb" aria-hidden="true"></span>
+          <button type="button" class="seg__opt" role="radio" data-value="off" aria-checked="false" tabindex="-1">Off</button>
+          <button type="button" class="seg__opt" role="radio" data-value="click" aria-checked="false" tabindex="-1">On click</button>
+          <button type="button" class="seg__opt" role="radio" data-value="auto" aria-checked="true" tabindex="0">Automatic</button>
+        </div>
+        <p class="set-help">Automatic runs one overview after each scan or batch. On click waits for the button.</p>
+      </div>
+
+      <div class="ai-providers">
+        <div class="ai-provider" data-provider="groq">
+          <div class="ai-provider-head">
+            <span class="ai-provider-name">Groq</span>
+            <span class="ai-state" id="ai-state-groq" data-state="no_key">No key</span>
+          </div>
+          <p class="set-help ai-keyhint" id="ai-hint-groq">Free key: console.groq.com/keys</p>
+          <form class="ai-form" id="ai-form-groq" data-provider="groq" novalidate>
+            <input class="input" type="password" id="ai-key-groq" placeholder="Paste API key" autocomplete="off" spellcheck="false" aria-label="Groq API key">
+            <div class="ai-model-row">
+              <input class="input" type="text" id="ai-model-groq" placeholder="Model, empty = auto" autocomplete="off" spellcheck="false" aria-label="Groq model override">
+              <button class="btn btn-secondary ai-models-btn" type="button" data-ai-models="groq">Show models</button>
+            </div>
+            <select class="input ai-model-select" id="ai-models-groq" aria-label="Available Groq models" hidden></select>
+            <p class="ai-test-msg" id="ai-models-msg-groq" role="status" aria-live="polite" hidden></p>
+            <div class="ai-actions">
+              <button class="btn btn-primary" type="submit">Save key</button>
+              <button class="btn btn-secondary" type="button" data-ai-test="groq">Test connection</button>
+              <button class="btn btn-ghost ai-remove" type="button" data-ai-remove="groq" hidden>Remove key</button>
+            </div>
+            <p class="ai-test-msg" id="ai-test-groq" role="status" aria-live="polite" hidden></p>
+          </form>
+        </div>
+
+        <div class="ai-provider" data-provider="gemini">
+          <div class="ai-provider-head">
+            <span class="ai-provider-name">Google Gemini</span>
+            <span class="ai-state" id="ai-state-gemini" data-state="no_key">No key</span>
+          </div>
+          <p class="set-help ai-keyhint" id="ai-hint-gemini">Free key: aistudio.google.com</p>
+          <form class="ai-form" id="ai-form-gemini" data-provider="gemini" novalidate>
+            <input class="input" type="password" id="ai-key-gemini" placeholder="Paste API key" autocomplete="off" spellcheck="false" aria-label="Google Gemini API key">
+            <div class="ai-model-row">
+              <input class="input" type="text" id="ai-model-gemini" placeholder="Model, empty = auto" autocomplete="off" spellcheck="false" aria-label="Gemini model override">
+              <button class="btn btn-secondary ai-models-btn" type="button" data-ai-models="gemini">Show models</button>
+            </div>
+            <select class="input ai-model-select" id="ai-models-gemini" aria-label="Available Gemini models" hidden></select>
+            <p class="ai-test-msg" id="ai-models-msg-gemini" role="status" aria-live="polite" hidden></p>
+            <div class="ai-actions">
+              <button class="btn btn-primary" type="submit">Save key</button>
+              <button class="btn btn-secondary" type="button" data-ai-test="gemini">Test connection</button>
+              <button class="btn btn-ghost ai-remove" type="button" data-ai-remove="gemini" hidden>Remove key</button>
+            </div>
+            <p class="ai-test-msg" id="ai-test-gemini" role="status" aria-live="polite" hidden></p>
+          </form>
+        </div>
+
+        <div class="ai-provider" data-provider="custom">
+          <div class="ai-provider-head">
+            <span class="ai-provider-name">Custom OpenAI-compatible</span>
+            <span class="ai-state" id="ai-state-custom" data-state="no_key">No key</span>
+          </div>
+          <p class="set-help ai-keyhint" id="ai-hint-custom">Works with OpenRouter, Cerebras and similar. Base URL example: https://openrouter.ai/api/v1</p>
+          <form class="ai-form" id="ai-form-custom" data-provider="custom" novalidate>
+            <input class="input" type="url" id="ai-base-custom" placeholder="Base URL, e.g. https://openrouter.ai/api/v1" autocomplete="off" spellcheck="false" aria-label="Custom provider base URL">
+            <input class="input" type="password" id="ai-key-custom" placeholder="Paste API key" autocomplete="off" spellcheck="false" aria-label="Custom provider API key">
+            <div class="ai-model-row">
+              <input class="input" type="text" id="ai-model-custom" placeholder="Model, empty = auto" autocomplete="off" spellcheck="false" aria-label="Custom provider model override">
+              <button class="btn btn-secondary ai-models-btn" type="button" data-ai-models="custom">Show models</button>
+            </div>
+            <select class="input ai-model-select" id="ai-models-custom" aria-label="Available custom provider models" hidden></select>
+            <p class="ai-test-msg" id="ai-models-msg-custom" role="status" aria-live="polite" hidden></p>
+            <div class="ai-actions">
+              <button class="btn btn-primary" type="submit">Save key</button>
+              <button class="btn btn-secondary" type="button" data-ai-test="custom">Test connection</button>
+              <button class="btn btn-ghost ai-remove" type="button" data-ai-remove="custom" hidden>Remove key</button>
+            </div>
+            <p class="ai-test-msg" id="ai-test-custom" role="status" aria-live="polite" hidden></p>
+          </form>
+        </div>
+      </div>
+
+      <div class="set-field">
+        <label class="ai-consent" for="ai-consent-input">
+          <input type="checkbox" id="ai-consent-input">
+          <span>I understand and agree to the privacy notice below.</span>
+        </label>
+        <p class="set-help ai-consent-hint" id="ai-consent-hint" hidden>Consent is required before the AI overview can run.</p>
+        <p class="set-help" id="ai-privacy">When enabled, the scanned text and the scan result are sent to the selected provider. Free tiers may use this data to improve their products. Do not use this feature with private or confidential content.</p>
+        <p class="set-help">Free keys come from console.groq.com/keys (Groq) and aistudio.google.com (Gemini). Free tiers are rate-limited and sometimes busy, so adding two providers makes the feature much more reliable.</p>
+      </div>
+    </section>
+
     <!-- ===== Card: Notifications ===== -->
     <section class="card set-card" aria-labelledby="hd-notifications">
       <div class="set-card-head">
@@ -398,8 +499,7 @@
       <div class="set-card-head">
         <h2 class="card-title" id="hd-about">About</h2>
       </div>
-      <p class="about-line">Threat Detector · Demo v0.1.0</p>
-      <p class="about-copy">This is a demonstration interface. No real scanning or protection is performed.</p>
+      <p class="about-line">Threat Detector · v1.0.3</p>
       <div class="set-actions">
         <button type="button" class="btn btn-danger" id="btn-reset-all">Reset all settings to defaults</button>
       </div>
@@ -412,6 +512,7 @@
 <script src="js/core/events.js"></script>
 <script src="js/services/bridge.js"></script>
 <script src="js/services/analysisService.js"></script>
+<script src="js/services/aiService.js"></script>
 <script src="js/components/verdictCard.js"></script>
 <script src="js/components/shadePicker.js"></script>
 <script src="js/features/motion-governor.js"></script>

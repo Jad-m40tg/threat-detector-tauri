@@ -266,13 +266,15 @@
       var d = e && e.detail ? e.detail : null;
       if (!d) return;
       var el = d.key === 'progressSpeed' ? $('set-speed')
-        : d.key === 'navStyle' ? $('set-navstyle') : null;
+        : d.key === 'navStyle' ? $('set-navstyle')
+        : d.key === 'aiMode' ? $('set-aimode') : null;
       if (el && typeof el._segSet === 'function') { el._segSet(String(d.value)); }
     });
   }
 
   initTdSeg('set-speed', 'progressSpeed', 'Progress speed');
   initTdSeg('set-navstyle', 'navStyle', 'Navbar selected style');
+  initTdSeg('set-aimode', 'aiMode', 'AI mode');
 
   /* ---------- Task 4: navbar-style preview icons ----------
      The five .nav-preview__btn spans mirror the real navbar links in real order
@@ -1049,6 +1051,192 @@
     vsSyncHeight(card);
     vsMountVisual(key, card.__refs);
   }
+
+  /* ---------- AI overview settings (keys stay in the Rust backend) ----------
+     Write-only keys: this page only ever sees hasKey / keyHint / model / state.
+     In browser mock mode the same controls drive the mock adapter. */
+  var AI = (window.TD && window.TD.services && window.TD.services.ai) || null;
+  var aiStatus = null;
+  var AI_PROVIDERS = ['groq', 'gemini', 'custom'];
+
+  function aiHintBase(id) {
+    if (id === 'groq') return 'Free key: console.groq.com/keys';
+    if (id === 'gemini') return 'Free key: aistudio.google.com';
+    return 'Works with OpenRouter, Cerebras and similar. Base URL example: https://openrouter.ai/api/v1';
+  }
+  function aiStateInfo(p) {
+    if (!p || !p.hasKey) return ['no_key', 'No key'];
+    if (p.state === 'invalid_key') return ['invalid', 'Invalid key'];
+    if (p.state === 'daily_cap') return ['cooling', 'Daily limit reached'];
+    if (p.state === 'cooling') {
+      var until = Number(p.cooldownUntil) || 0;
+      var sec = Math.max(0, Math.ceil((until - Date.now()) / 1000));
+      return ['cooling', 'Cooling down ' + sec + ' s'];
+    }
+    return ['ready', 'Ready'];
+  }
+  function aiRender() {
+    if (!aiStatus || !aiStatus.providers) return;
+    aiStatus.providers.forEach(function (p) {
+      var id = p.id;
+      var info = aiStateInfo(p);
+      var stateEl = $('ai-state-' + id);
+      if (stateEl) { stateEl.setAttribute('data-state', info[0]); stateEl.textContent = info[1]; }
+      var hint = $('ai-hint-' + id);
+      if (hint) hint.textContent = aiHintBase(id) + (p.hasKey && p.keyHint ? ' - Key saved ...' + p.keyHint : '');
+      var keyInput = $('ai-key-' + id);
+      if (keyInput) keyInput.placeholder = p.hasKey ? 'Key saved ...' + (p.keyHint || '????') + ' - paste to replace' : 'Paste API key';
+      var modelInput = $('ai-model-' + id);
+      if (modelInput && document.activeElement !== modelInput) modelInput.value = p.model || '';
+      if (id === 'custom') {
+        var baseInput = $('ai-base-custom');
+        if (baseInput && document.activeElement !== baseInput) baseInput.value = p.baseUrl || '';
+      }
+      var rm = document.querySelector('[data-ai-remove="' + id + '"]');
+      if (rm) rm.hidden = !p.hasKey;
+    });
+    var consent = $('ai-consent-input');
+    if (consent) consent.checked = !!aiStatus.consentGiven;
+    var consentHint = $('ai-consent-hint');
+    if (consentHint) {
+      consentHint.hidden = !(aiStatus.providers.some(function (p) { return p.hasKey; }) && !aiStatus.consentGiven);
+    }
+  }
+  function aiRefresh() {
+    if (!AI) return;
+    AI.refreshStatus().then(function (st) { aiStatus = st; aiRender(); })
+      .catch(function () { /* status unavailable: leave the last render */ });
+  }
+  function aiToast(msg, type) {
+    if (DAC.ui && typeof DAC.ui.toast === 'function') DAC.ui.toast(msg, { type: type || 'success', key: 'settings', timeout: 4000 });
+  }
+  AI_PROVIDERS.forEach(function (id) {
+    var form = $('ai-form-' + id);
+    if (!form) return;
+    form.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      if (!AI) return;
+      var key = String($('ai-key-' + id).value || '').trim();
+      var model = String($('ai-model-' + id).value || '').trim();
+      var base = id === 'custom' ? String($('ai-base-custom').value || '').trim() : null;
+      AI.saveSettings({ provider: id, apiKey: key || null, model: model, baseUrl: base })
+        .then(function () {
+          $('ai-key-' + id).value = '';
+          aiToast('AI provider saved', 'success');
+          aiRefresh();
+        })
+        .catch(function (err) { aiToast(String((err && err.message) || err || 'Could not save the key.'), 'error'); });
+    });
+    var test = document.querySelector('[data-ai-test="' + id + '"]');
+    if (test) {
+      test.addEventListener('click', function () {
+        if (!AI) return;
+        var msg = $('ai-test-' + id);
+        test.disabled = true;
+        if (msg) { msg.hidden = false; msg.className = 'ai-test-msg'; msg.textContent = 'Testing...'; }
+        AI.testConnection(id).then(function (res) {
+          if (!msg) return;
+          msg.hidden = false;
+          msg.className = 'ai-test-msg ' + (res && res.ok ? 'is-ok' : 'is-error');
+          msg.textContent = (res && res.ok ? 'Connected' : 'Not connected') +
+            (res && res.model ? ' - model ' + res.model : '') +
+            (res && res.message ? ' - ' + res.message : '');
+        }).catch(function (err) {
+          if (!msg) return;
+          msg.hidden = false;
+          msg.className = 'ai-test-msg is-error';
+          msg.textContent = String((err && err.message) || err || 'Connection failed.');
+        }).then(function () { test.disabled = false; });
+      });
+    }
+    var rm = document.querySelector('[data-ai-remove="' + id + '"]');
+    if (rm) {
+      rm.addEventListener('click', function () {
+        if (!AI) return;
+        DAC.ui.confirm.open({
+          title: 'Remove provider key',
+          message: 'Remove the saved key for this provider? You can paste it again at any time.',
+          confirmLabel: 'Remove key',
+          cancelLabel: 'Cancel',
+          danger: true
+        }).then(function (ok) {
+          if (!ok) return;
+          AI.clearKey(id).then(function () { aiToast('Provider key removed', 'success'); aiRefresh(); })
+            .catch(function (err) { aiToast(String((err && err.message) || err || 'Could not remove the key.'), 'error'); });
+        });
+      });
+    }
+    var modelsBtn = document.querySelector('[data-ai-models="' + id + '"]');
+    if (modelsBtn) {
+      modelsBtn.addEventListener('click', function () {
+        if (!AI) return;
+        var select = $('ai-models-' + id);
+        var msg = $('ai-models-msg-' + id);
+        modelsBtn.disabled = true;
+        if (msg) { msg.hidden = false; msg.className = 'ai-test-msg'; msg.textContent = 'Loading models...'; }
+        AI.listModels(id).then(function (models) {
+          models = Array.isArray(models) ? models : [];
+          if (select) {
+            select.textContent = '';
+            var placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = models.length ? 'Choose a model...' : 'No models';
+            select.appendChild(placeholder);
+            models.forEach(function (name) {
+              var option = document.createElement('option');
+              option.value = name;
+              option.textContent = name;
+              select.appendChild(option);
+            });
+            var current = String($('ai-model-' + id).value || '');
+            if (models.indexOf(current) >= 0) select.value = current;
+            select.hidden = models.length === 0;
+          }
+          if (msg) {
+            msg.hidden = false;
+            msg.className = 'ai-test-msg is-ok';
+            msg.textContent = models.length + ' models available for this key. Pick one below.';
+          }
+        }).catch(function (err) {
+          if (!msg) return;
+          msg.hidden = false;
+          msg.className = 'ai-test-msg is-error';
+          msg.textContent = String((err && err.message) || err || 'Could not load models.');
+        }).then(function () { modelsBtn.disabled = false; });
+      });
+    }
+    var modelSelect = $('ai-models-' + id);
+    if (modelSelect) {
+      modelSelect.addEventListener('change', function () {
+        var chosen = modelSelect.value;
+        if (!chosen || !AI) return;
+        $('ai-model-' + id).value = chosen;
+        AI.saveSettings({
+          provider: id,
+          apiKey: null,
+          model: chosen,
+          baseUrl: id === 'custom' ? String($('ai-base-custom').value || '').trim() : null
+        }).then(function () {
+          aiToast('Model set to ' + chosen, 'success');
+          aiRefresh();
+        }).catch(function (err) {
+          aiToast(String((err && err.message) || err || 'Could not save the model.'), 'error');
+        });
+      });
+    }
+  });
+  var aiConsent = $('ai-consent-input');
+  if (aiConsent && AI) {
+    aiConsent.addEventListener('change', function () {
+      var want = aiConsent.checked;
+      AI.saveSettings({ consent: want }).then(function () { aiRefresh(); })
+        .catch(function (err) {
+          aiConsent.checked = !want;
+          aiToast(String((err && err.message) || err || 'Could not save consent.'), 'error');
+        });
+    });
+  }
+  aiRefresh();
 
   /* ---------- initial render from persisted settings ---------- */
   syncEverything();

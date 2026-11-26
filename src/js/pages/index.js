@@ -47,13 +47,37 @@
       scanCount = $('scan-progress-count'),
       tableBody = $('table-results-body'),
       summaryCard = $('summary-card'),
-      reviewLink = $('summary-review');
+      reviewLink = $('summary-review'),
+      aiPaneSummary = summaryCard.querySelector('[data-pane="summary"]'),
+      aiPaneAi = summaryCard.querySelector('[data-pane="ai"]'),
+      aiOpenBtn = $('btn-ai-open'),
+      aiDot = $('ai-dot'),
+      aiBackBtn = $('btn-ai-back'),
+      aiCloseBtn = $('btn-ai-close'),
+      aiAbout = $('ai-about'),
+      aiLoading = $('ai-loading'),
+      aiErrorBox = $('ai-error'),
+      aiErrorMsg = $('ai-error-msg'),
+      aiContent = $('ai-content'),
+      aiHeadline = $('ai-headline'),
+      aiFindings = $('ai-findings'),
+      aiMoreBtn = $('btn-ai-more'),
+      aiMoreLabel = $('ai-more-label'),
+      aiDetails = $('ai-details'),
+      aiExplanation = $('ai-explanation'),
+      aiTips = $('ai-tips'),
+      aiVia = $('ai-via'),
+      aiRetryBtn = $('btn-ai-retry'),
+      aiTitle = $('ai-title');
 
   var stateEls = {};
   var stateDivs = statesWrap.querySelectorAll('.result-state');
   for (var i = 0; i < stateDivs.length; i++) stateEls[stateDivs[i].getAttribute('data-state')] = stateDivs[i];
 
   /* ---- module state ---- */
+  /* The Threat Summary covers this app session only. Persisted history stays
+     on the History page; without this a relaunch would replay an old verdict. */
+  var sessionStart = Date.now();
   var curState = null,
       scanTimer = null, subTimer = null, batchTimer = null,
       scannerH = null, ringT = null, ringU = null, checkH = null,
@@ -204,6 +228,7 @@
        stale result cannot overwrite a newer one (mock path had no guard before). */
     var run = ++scanRun;
     clearTimers();
+    aiReset(true); /* a new scan always returns the card to Threat Summary */
 
     setBusy(true);
     setPanelRisk(null); /* T2a: no stale verdict tint while the new scan runs */
@@ -264,6 +289,7 @@
     presentResult(res);
     pushRow(res);
     updateSummary();
+    aiStartForItem(res); /* one overview per finished single scan */
     announce('Analysis complete — ' + (res.risk === 'low' ? 'no issues detected' : RISK_LABEL[res.risk]));
     if ((res.risk === 'medium' || res.risk === 'high') && S.get('autoOpenDetails') !== false && !reducedMotion()) {
       panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -431,28 +457,27 @@
   function updateSummary() {
     /* Definitions (kept in sync with docs/PROGRESS.md):
        - one "scan" = one analyzed entry (a single input, or one CSV row);
-       - "Scans today" counts every entry analyzed since local midnight —
-         Not Verified and errored entries included, they were still analyzed;
-       - High/Medium risk count today's entries that were verified at that
-         risk level (Not Verified is neither — it was never risk-assessed);
-       - the window is "today" everywhere (the old last-10 slice under-counted
-         long batches); demo seed rows are excluded via history.userScans(). */
+       - the window is the current app session: a relaunch starts at zero, so
+         the idle card always defaults to "No active threats detected";
+       - "Scans" counts every entry analyzed this session, Not Verified and
+         errored entries included, they were still analyzed;
+       - High/Medium risk count this session's entries verified at that risk
+         level (Not Verified is neither — it was never risk-assessed);
+       - demo seed rows are excluded via history.userScans(). */
     var src = (DAC.history && typeof DAC.history.userScans === 'function') ? DAC.history.userScans()
             : (DAC.history && typeof DAC.history.all === 'function' ? DAC.history.all() : []);
     var high = 0, med = 0, today = 0;
-    var midnight = new Date(); midnight.setHours(0, 0, 0, 0);
-    var mt = midnight.getTime();
     for (var j = 0; j < src.length; j++) {
       var r = src[j];
-      if (r.ts >= mt) {
+      if (r.ts >= sessionStart) {
         today++;
         if (r.risk === 'high') high++;
         else if (r.risk === 'medium') med++;
       }
     }
     var state, title, desc, href;
-    if (high > 0) { state = 'threat'; title = 'Threat detected'; desc = high + ' high-risk results today'; href = 'history.html#risk=high'; }
-    else if (med > 0) { state = 'caution'; title = 'Use caution'; desc = med + ' medium-risk results today'; href = 'history.html#risk=medium'; }
+    if (high > 0) { state = 'threat'; title = 'Threat detected'; desc = high + ' high-risk results this session'; href = 'history.html#risk=high'; }
+    else if (med > 0) { state = 'caution'; title = 'Use caution'; desc = med + ' medium-risk results this session'; href = 'history.html#risk=medium'; }
     else { state = 'secure'; title = 'Your system is secure'; desc = 'No active threats detected'; href = 'history.html#risk=low'; }
     var tEl = $('summary-state-title');
     tEl.textContent = title;
@@ -466,10 +491,365 @@
     countUpEl($('stat-medium'), med);
   }
   summaryCard.addEventListener('click', function (e) {
-    if (e.target && e.target.closest && e.target.closest('a')) return; /* link clicks navigate natively */
+    if (e.target && e.target.closest && e.target.closest('a,button')) return; /* links and AI controls keep their own behavior */
+    if (summaryCard.getAttribute('data-ai-pane') === 'ai') return; /* the AI pane is not a shortcut */
     var href = reviewLink.getAttribute('href');
     if (href) window.location.href = href;
   });
+
+  /* ============ AI OVERVIEW (Threat Summary card, pane 2) ============ */
+  var AI = (window.TD && TD.services && TD.services.ai) || null;
+  var aiStatus = null, aiAvailable = false, aiScan = null, aiToken = 0, aiView = 'idle', aiBatchSeq = 0;
+
+  function aiMode() {
+    try { return (window.TDSettings && TDSettings.get('aiMode')) || 'auto'; } catch (e) { return 'auto'; }
+  }
+  function aiTrunc(s, n) {
+    s = String(s == null ? '' : s);
+    return s.length > n ? s.slice(0, n - 1) + '\u2026' : s;
+  }
+  var AI_LEVEL = {
+    high: { label: 'high risk', title: 'High risk' },
+    medium: { label: 'medium risk', title: 'Medium risk' },
+    unverified: { label: 'not verified', title: 'Not verified' },
+    low: { label: 'low risk', title: 'Low risk' }
+  };
+  var AI_GLYPHS = {
+    high: [{ d: 'M12 3.8 21 19.4H3Z' }, { d: 'M12 9.4v4.4' }, { d: 'M12 16.6h.01' }],
+    medium: [{ tag: 'circle', cx: '12', cy: '12', r: '8.2' }, { d: 'M12 7.4v5.6' }, { d: 'M12 16.2h.01' }],
+    unverified: [{ tag: 'circle', cx: '12', cy: '12', r: '8.2' }, { d: 'M9.6 9a2.4 2.4 0 0 1 4.7.7c0 1.6-2.3 2-2.3 3.3' }, { d: 'M12 16.6h.01' }],
+    low: [{ tag: 'circle', cx: '12', cy: '12', r: '8.2' }, { d: 'm8.6 12.2 2.3 2.3 4.5-4.9' }],
+    tip: [{ tag: 'circle', cx: '12', cy: '12', r: '8.2' }, { d: 'm8.6 12.2 2.3 2.3 4.5-4.9' }]
+  };
+  function aiIcon(kind) {
+    if (!window.DAC || typeof DAC.svgGlyph !== 'function' || !AI_GLYPHS[kind]) return null;
+    return DAC.svgGlyph(AI_GLYPHS[kind]);
+  }
+  function aiSetDot(state) {
+    if (!aiDot) return;
+    aiDot.hidden = (aiMode() !== 'auto');
+    if (state) aiDot.setAttribute('data-state', state);
+  }
+  function aiShowButton(state) {
+    if (!aiOpenBtn) return;
+    aiOpenBtn.hidden = false;
+    aiOpenBtn.setAttribute('aria-expanded', summaryCard.getAttribute('data-ai-pane') === 'ai' ? 'true' : 'false');
+    aiSetDot(state);
+  }
+  function aiHideButton() {
+    if (!aiOpenBtn) return;
+    aiOpenBtn.hidden = true;
+    if (aiDot) aiDot.hidden = true;
+  }
+  function aiSetView(v) {
+    aiView = v;
+    if (aiLoading) aiLoading.hidden = (v !== 'loading');
+    if (aiErrorBox) aiErrorBox.hidden = (v !== 'error');
+    if (aiContent) aiContent.hidden = (v !== 'ready');
+  }
+  function aiShowPane() {
+    if (!aiScan) return;
+    summaryCard.setAttribute('data-ai-pane', 'ai');
+    summaryCard.setAttribute('aria-labelledby', 'ai-title');
+    aiPaneSummary.setAttribute('inert', '');
+    aiPaneSummary.setAttribute('aria-hidden', 'true');
+    aiPaneAi.removeAttribute('inert');
+    aiPaneAi.removeAttribute('aria-hidden');
+    aiOpenBtn.setAttribute('aria-expanded', 'true');
+    aiAbout.textContent = aiScan.about;
+    aiAbout.title = aiScan.about;
+    try { aiTitle.focus({ preventScroll: true }); } catch (e) { aiTitle.focus(); }
+  }
+  function aiShowSummary(focusBack) {
+    summaryCard.setAttribute('data-ai-pane', 'summary');
+    summaryCard.setAttribute('aria-labelledby', 'summary-title');
+    aiPaneAi.setAttribute('inert', '');
+    aiPaneAi.setAttribute('aria-hidden', 'true');
+    aiPaneSummary.removeAttribute('inert');
+    aiPaneSummary.removeAttribute('aria-hidden');
+    aiOpenBtn.setAttribute('aria-expanded', 'false');
+    if (focusBack) {
+      try { aiOpenBtn.focus({ preventScroll: true }); } catch (e) { aiOpenBtn.focus(); }
+    }
+  }
+  function aiReset(hideButton) {
+    aiToken++;
+    aiScan = null;
+    aiSetDetails(false);
+    aiSetView('idle');
+    if (summaryCard.getAttribute('data-ai-pane') === 'ai') aiShowSummary(false);
+    if (hideButton) aiHideButton();
+  }
+  function aiItemPayload(res) {
+    var risk = (res.risk === 'error') ? 'not_verified' : res.risk;
+    return {
+      type: res.type === 'message' ? 'message' : 'url',
+      content: aiTrunc(res.input, 600),
+      riskLevel: risk,
+      status: (res.status === 'verified') ? 'verified' : 'not_verified',
+      score: (typeof res.score === 'number') ? res.score : null,
+      statusReason: aiTrunc(res.details, 200),
+      rules: (res.reasons || []).slice(0, 10).map(function (d, i) {
+        return { id: 'rule-' + (i + 1), description: aiTrunc(d, 120) };
+      })
+    };
+  }
+  function aiBatchPayload(total) {
+    var c = counts || {};
+    var freq = {}, order = [];
+    (batchRows || []).forEach(function (r) {
+      if (r.risk !== 'medium' && r.risk !== 'high') return;
+      (r.reasons || []).forEach(function (x) {
+        var k = String(x);
+        if (!(k in freq)) { freq[k] = 0; order.push(k); }
+        freq[k]++;
+      });
+    });
+    var topRules = order.map(function (k) {
+      return { id: 'rule-' + aiTrunc(k, 16), description: aiTrunc(k, 120), count: freq[k] };
+    }).sort(function (a, b) { return b.count - a.count; }).slice(0, 5);
+    var nv = {}, nvOrder = [];
+    (batchRows || []).forEach(function (r) {
+      if (r.risk !== 'unverified' && r.risk !== 'error') return;
+      var d = aiTrunc(r.details || 'This item could not be verified.', 140);
+      if (!(d in nv)) { nv[d] = 0; nvOrder.push(d); }
+      nv[d]++;
+    });
+    var notVerifiedReasons = nvOrder.map(function (d) {
+      return { reason: d, count: nv[d] };
+    }).sort(function (a, b) { return b.count - a.count; }).slice(0, 3);
+    return {
+      total: total,
+      counts: {
+        low: c.low || 0, medium: c.medium || 0, high: c.high || 0,
+        notVerified: (c.unverified || 0) + (c.error || 0)
+      },
+      notVerifiedReasons: notVerifiedReasons,
+      topRules: topRules
+    };
+  }
+  function aiFriendly(err) {
+    var code = err && err.code;
+    if (code === 'Unauthorized') return 'The saved provider key was rejected. Update it in Settings.';
+    if (code === 'NoKey' || code === 'Disabled' || code === 'NoConsent') return 'AI overview is unavailable. Check the AI settings.';
+    if (code === 'DailyCap') return 'The local daily AI limit was reached. Try again tomorrow.';
+    if (code === 'Timeout' || code === 'Network') return 'The AI provider did not answer in time. Try again.';
+    if (code === 'Rejected' || code === 'BadResponse') return 'The AI answer did not pass the safety check.';
+    if (code === 'AllProvidersFailed') {
+      var s = err.retryAfterSeconds;
+      return s ? 'All free providers are busy. Try again in ' + s + ' s.' : 'All AI providers are unavailable right now.';
+    }
+    return 'AI overview is unavailable right now.';
+  }
+  function aiLevelOf(value) {
+    var lv = String(value || '').toLowerCase();
+    if (lv === 'not_verified') return 'unverified';
+    return AI_LEVEL[lv] ? lv : '';
+  }
+  function aiAddFinding(level, lead, text) {
+    if (!aiFindings) return;
+    var li = document.createElement('li');
+    li.className = 'ai-finding';
+    li.setAttribute('data-level', level);
+    var ico = document.createElement('span');
+    ico.className = 'ai-finding-ico';
+    ico.setAttribute('aria-hidden', 'true');
+    var glyph = aiIcon(level);
+    if (glyph) ico.appendChild(glyph);
+    var body = document.createElement('p');
+    body.className = 'ai-finding-text';
+    var strong = document.createElement('strong');
+    strong.textContent = lead;
+    body.appendChild(strong);
+    if (text) body.appendChild(document.createTextNode(' ' + text));
+    li.appendChild(ico);
+    li.appendChild(body);
+    aiFindings.appendChild(li);
+  }
+  function aiFindingTexts(res) {
+    var map = {};
+    (Array.isArray(res.findings) ? res.findings : []).forEach(function (f) {
+      if (!f || typeof f.text !== 'string') return;
+      var lv = aiLevelOf(f.level);
+      var text = f.text.trim();
+      if (!lv || !text) return;
+      map[lv] = map[lv] ? map[lv] + ' ' + text : text;
+    });
+    return map;
+  }
+  function aiRenderFindings(res) {
+    if (!aiFindings) return;
+    aiFindings.textContent = '';
+    var scan = aiScan || {};
+    var texts = aiFindingTexts(res);
+    if (scan.scope === 'batch') {
+      var c = (scan.payload && scan.payload.counts) || {};
+      /* every level that actually occurred keeps its own count row */
+      var rows = [
+        { level: 'high', count: c.high || 0 },
+        { level: 'medium', count: c.medium || 0 },
+        { level: 'unverified', count: c.notVerified || 0 },
+        { level: 'low', count: c.low || 0 }
+      ].filter(function (r) { return r.count > 0; });
+      rows.forEach(function (r) {
+        aiAddFinding(r.level, r.count + ' ' + AI_LEVEL[r.level].label + ':', texts[r.level] || '');
+      });
+      aiFindings.hidden = rows.length === 0;
+      return;
+    }
+    var scanLevel = aiLevelOf(scan.payload && scan.payload.riskLevel) || 'unverified';
+    var items = Array.isArray(res.findings) ? res.findings : [];
+    items.slice(0, 3).forEach(function (f) {
+      if (!f || typeof f.text !== 'string') return;
+      var text = f.text.trim();
+      if (!text) return;
+      aiAddFinding(scanLevel, AI_LEVEL[scanLevel].title + ':', text);
+    });
+    aiFindings.hidden = aiFindings.children.length === 0;
+  }
+  function aiSetDetails(open) {
+    if (!aiDetails || !aiMoreBtn) return;
+    aiDetails.setAttribute('data-open', open ? 'true' : 'false');
+    aiMoreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (aiMoreLabel) aiMoreLabel.textContent = open ? 'Hide explanation' : 'Show full explanation';
+  }
+  function aiRender(res) {
+    aiHeadline.textContent = res.headline || '';
+    aiRenderFindings(res);
+    aiExplanation.textContent = res.explanation || '';
+    aiTips.textContent = '';
+    (res.tips || []).slice(0, 4).forEach(function (t) {
+      var li = document.createElement('li');
+      li.className = 'ai-tip';
+      var ico = document.createElement('span');
+      ico.className = 'ai-tip-ico';
+      ico.setAttribute('aria-hidden', 'true');
+      var glyph = aiIcon('tip');
+      if (glyph) ico.appendChild(glyph);
+      var txt = document.createElement('span');
+      txt.textContent = t;
+      li.appendChild(ico);
+      li.appendChild(txt);
+      aiTips.appendChild(li);
+    });
+    aiVia.hidden = false;
+    aiVia.textContent = 'via ' + (res.providerName || res.provider || 'AI provider');
+    aiVia.title = res.model ? ('Model: ' + res.model) : '';
+    aiSetView('ready');
+    aiSetDetails(false);
+  }
+  function aiShowError(err) {
+    aiErrorMsg.textContent = aiFriendly(err);
+    aiVia.hidden = true;
+    aiErrorBox.hidden = false;
+    aiSetView('error');
+  }
+  function aiRun() {
+    if (!AI || !aiScan) return;
+    var t = aiToken, scan = aiScan;
+    aiSetView('loading');
+    aiShowButton('loading');
+    AI.overview({ scope: scan.scope, payload: scan.payload, cacheKey: scan.cacheKey }).then(function (res) {
+      if (t !== aiToken) return; /* a newer scan owns the card now */
+      aiRender(res);
+      aiShowButton('ready');
+    }, function (err) {
+      if (t !== aiToken) return;
+      aiShowError(err);
+      aiShowButton('error');
+    });
+  }
+  function aiStartScanCall(makeScan) {
+    if (!AI) { aiHideButton(); return; }
+    aiReset(true);
+    if (aiMode() === 'off') return;
+    var t = aiToken;
+    AI.getStatus().then(function (st) {
+      if (t !== aiToken) return;
+      aiStatus = st;
+      aiAvailable = !!(st && st.available && aiMode() !== 'off');
+      if (!aiAvailable) { aiHideButton(); return; }
+      aiScan = makeScan();
+      if (aiMode() === 'auto') {
+        aiShowButton('loading');
+        aiRun(); /* background: the summary pane stays visible */
+      } else {
+        aiShowButton('ready');
+      }
+    }).catch(function () {
+      aiAvailable = false;
+      aiHideButton();
+    });
+  }
+  function aiStartForItem(res) {
+    var run = scanRun;
+    aiStartScanCall(function () {
+      return {
+        scope: 'item',
+        payload: aiItemPayload(res),
+        cacheKey: 'item:' + run,
+        about: 'About: ' + aiTrunc(String(res.input == null ? '' : res.input), 64)
+      };
+    });
+  }
+  function aiStartForBatch(total) {
+    aiBatchSeq++;
+    var id = activeBatchId || ('mock-batch-' + aiBatchSeq);
+    aiStartScanCall(function () {
+      return {
+        scope: 'batch',
+        payload: aiBatchPayload(total),
+        cacheKey: 'batch:' + id,
+        about: 'About: batch of ' + total
+      };
+    });
+  }
+  function aiOpen() {
+    if (!aiScan || !aiAvailable || aiMode() === 'off') return;
+    aiShowPane();
+    if (aiView === 'ready' || aiView === 'loading') return;
+    aiRun();
+  }
+  if (aiOpenBtn) {
+    aiOpenBtn.addEventListener('click', aiOpen);
+    aiBackBtn.addEventListener('click', function () { aiShowSummary(true); });
+    aiCloseBtn.addEventListener('click', function () { aiShowSummary(true); });
+    aiRetryBtn.addEventListener('click', function () { aiRun(); });
+    if (aiMoreBtn) {
+      aiMoreBtn.addEventListener('click', function () {
+        aiSetDetails(aiDetails.getAttribute('data-open') !== 'true');
+      });
+    }
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && summaryCard.getAttribute('data-ai-pane') === 'ai') aiShowSummary(true);
+    });
+  }
+  function aiRefreshAvailability() {
+    if (!AI) { aiHideButton(); return; }
+    AI.getStatus().then(function (st) {
+      aiStatus = st;
+      aiAvailable = !!(st && st.available && aiMode() !== 'off');
+      if (!aiAvailable) {
+        aiHideButton();
+        if (summaryCard.getAttribute('data-ai-pane') === 'ai') aiShowSummary(false);
+      } else if (aiScan && summaryCard.getAttribute('data-ai-pane') !== 'ai') {
+        aiShowButton(aiView === 'error' ? 'error' : (aiView === 'loading' ? 'loading' : 'ready'));
+      }
+    }).catch(function () { aiAvailable = false; aiHideButton(); });
+  }
+  if (window.TDSettings && typeof TDSettings.onChange === 'function') {
+    TDSettings.onChange(function (e) {
+      var d = e && e.detail;
+      if (!d || d.key !== 'aiMode') return;
+      if (d.value === 'off') {
+        aiAvailable = false;
+        aiHideButton();
+        if (summaryCard.getAttribute('data-ai-pane') === 'ai') aiShowSummary(false);
+      } else {
+        aiRefreshAvailability();
+      }
+    });
+  }
 
   /* ============ CSV BATCH (SPEC 7.2) ============ */
   function analyzeSafe(text) {
@@ -590,6 +970,8 @@
   function startBatchTauri(name) {
     batchActive = true;
     cancelRequested = false; /* this run has not been asked to cancel */
+    activeBatchId = null; /* the new batch id arrives with the start reply */
+    aiReset(true);
     counts = { low: 0, medium: 0, high: 0, unverified: 0, error: 0 };
     batchRows = []; /* [T2b] fresh verdict list per batch */
     setBusy(true);
@@ -617,6 +999,7 @@
     batchActive = true;
     batchEntries = entries;
     cancelRequested = false; /* this run has not been asked to cancel */
+    aiReset(true);
     counts = { low: 0, medium: 0, high: 0, unverified: 0, error: 0 };
     batchRows = []; /* [T2b] fresh verdict list per batch */
     setBusy(true);
@@ -637,6 +1020,7 @@
     batchEntries = null;
     setBusy(false);
     updateSummary();
+    aiStartForBatch(total); /* ONE overview for the whole batch, after it ends */
     /* compact risk tally (replaces the old count-pill list) */
     if (batchTallyEl) { batchTallyEl.textContent = ''; }
     renderTally(counts);
@@ -963,6 +1347,7 @@
       A.cancelBatch().catch(function () {}); /* SPEC 7.2: Clear = cancel (best effort) */
     }
     scanRun++; /* invalidate any in-flight single-scan answer */
+    aiReset(true); /* and any in-flight AI answer for the cleared scan */
     activeBatchId = null; /* events of the cleared batch can no longer match */
     clearTimers();
     batchActive = false;
@@ -1090,6 +1475,7 @@
   setMode(S.get('defaultInputMode') || 'single', false);
   rebuildTable();
   updateSummary();
+  aiRefreshAvailability();
   growInput();
   /* Adopt the shared verdict-card builder as the single markup source for the
      three verdict states: replaces the static shells with identical builder

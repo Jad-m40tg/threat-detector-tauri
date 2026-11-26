@@ -27,6 +27,9 @@ $RECYCLE.BIN/
 wt-*/
 ../wt-*/
 
+# Local AI provider settings (keys live outside the repo; never commit copies)
+ai-overview.json
+**/ai-overview.json
 # Installers and build artifacts
 *.exe
 *.msi

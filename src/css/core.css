@@ -549,8 +549,7 @@ html[data-motion="reduced"] .skip-link { transition: none; }
   align-items: flex-end;
   gap: var(--space-2);
   width: min(360px, calc(100vw - var(--space-6)));
-  max-height: calc(100vh - var(--space-5) - env(safe-area-inset-bottom, 0px));
-  overflow: auto;
+  overflow: visible;
   pointer-events: none;
 }
 .toast {
