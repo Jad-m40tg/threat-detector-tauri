@@ -46,7 +46,12 @@
     "upd.force":  { store: "td.upd.force",  bool: true, def: "false" },
     "upd.animMs": { store: "td.upd.animMs", num: { min: 150, max: 1500 }, def: "550" },
     "upd.width":  { store: "td.upd.width",  num: { min: 150, max: 320 }, def: "249" },
-    "upd.repo":   { store: "td.upd.repo",   text: true, def: "" }
+    "upd.repo":   { store: "td.upd.repo",   text: true, def: "" },
+    /* Accent text ink (dev "Accent text" group). "true" flips the label color
+       inside accent fills for that theme only; the attribute drives the CSS
+       override in css/core.css. "false" keeps the theme's default ink. */
+    "accentInk.dark":  { store: "td.accentInk.dark",  bool: true, def: "false", attr: "data-accent-ink-dark" },
+    "accentInk.light": { store: "td.accentInk.light", bool: true, def: "false", attr: "data-accent-ink-light" }
   };
   /* Higher multiplier = slower progress animation. Exact decimals. */
   var MULTIPLIER = { fast: 1.0, normal: 1.4, slow: 2.2 };

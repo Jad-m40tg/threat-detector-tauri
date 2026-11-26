@@ -100,7 +100,7 @@ html[data-nav-style="invert"] .navlink.is-current {
   .update-btn:hover {
     width: max(var(--upd-w, 249px), var(--upd-min));
     background: var(--accent);
-    color: var(--accent-contrast);
+    color: var(--accent-ink);
     transform: none;
     box-shadow: 0 0 0 2px var(--accent), 0 0 12px var(--glow);
   }
@@ -113,7 +113,7 @@ html[data-nav-style="invert"] .navlink.is-current {
 .update-btn:focus-visible {
   width: max(var(--upd-w, 249px), var(--upd-min));
   background: var(--accent);
-  color: var(--accent-contrast);
+  color: var(--accent-ink);
   transform: none;
   box-shadow: 0 0 0 2px var(--accent), 0 0 12px var(--glow);
 }

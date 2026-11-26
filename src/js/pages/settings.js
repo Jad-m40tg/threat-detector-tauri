@@ -1344,6 +1344,26 @@
     liveStatus();
   })();
 
+  /* ---------- Developer: accent text ink (TDSettings accentInk.*) ---------- */
+  (function initAccentInkDev() {
+    var TS = window.TDSettings;
+    if (!TS) { return; }
+    [
+      { el: $('set-ink-dark'), key: 'accentInk.dark' },
+      { el: $('set-ink-light'), key: 'accentInk.light' }
+    ].forEach(function (p) {
+      var el = p.el;
+      if (!el) { return; }
+      function on() { return String(TS.get(p.key)) === 'true'; }
+      function paint() { el.setAttribute('aria-checked', on() ? 'true' : 'false'); }
+      el.addEventListener('click', function () {
+        TS.set(p.key, on() ? 'false' : 'true');
+        paint();
+      });
+      paint();
+    });
+  })();
+
   /* ---------- initial render from persisted settings ---------- */
   syncEverything();
   syncDarkReveal();

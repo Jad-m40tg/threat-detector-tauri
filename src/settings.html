@@ -343,7 +343,7 @@
     <section class="card set-card" aria-labelledby="hd-dev">
       <div class="set-card-head">
         <h2 class="card-title" id="hd-dev">Developer</h2>
-        <p class="set-card-sub">Advanced controls for simulation, verdict colors and AI providers. Off by default.</p>
+        <p class="set-card-sub">Advanced controls for simulation, accent text, verdict colors and AI providers. Off by default.</p>
       </div>
 
       <div class="set-field set-row">
@@ -447,6 +447,27 @@
 
             <div class="set-actions">
               <button type="button" class="btn btn-ghost" id="vs-reset-all">Reset all</button>
+            </div>
+          </div>
+
+          <div class="dev-group" aria-labelledby="hd-accentink">
+            <h3 class="dev-title" id="hd-accentink">Accent text</h3>
+            <p class="set-card-sub">Label color inside accent-filled selected controls, primary buttons and the update pill, per theme. The near-monochrome White accent keeps its default so its label stays readable.</p>
+
+            <div class="set-field set-row">
+              <div class="row-main">
+                <label class="set-label" id="lb-set-ink-dark" for="set-ink-dark">Dark mode: white labels</label>
+                <p class="set-help">Accent fills use white text instead of the default near-black ink.</p>
+              </div>
+              <button type="button" class="switch" id="set-ink-dark" role="switch" aria-labelledby="lb-set-ink-dark" aria-checked="false"><span class="switch-knob" aria-hidden="true"></span></button>
+            </div>
+
+            <div class="set-field set-row">
+              <div class="row-main">
+                <label class="set-label" id="lb-set-ink-light" for="set-ink-light">Light mode: black labels</label>
+                <p class="set-help">Accent fills use near-black text instead of the default white.</p>
+              </div>
+              <button type="button" class="switch" id="set-ink-light" role="switch" aria-labelledby="lb-set-ink-light" aria-checked="false"><span class="switch-knob" aria-hidden="true"></span></button>
             </div>
           </div>
 
