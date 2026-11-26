@@ -12,7 +12,7 @@
       "view details" modal, both share DAC.ui.detailsCard): UI pass 1 adds
       a SUBTLE tint (Task 2c, per approved sketch) in the ENGINE risk color.
       It deliberately does NOT follow the --vs-* verdict shades: the shade
-      targets only the dashboard result card.
+      targets the dashboard result card and its score wheels.
    Deliberately NEVER matches: bare [data-risk], .risk-label pills, or the
    batch mini-pills (data-risk="na") — those keep their existing rules.
    All colors are rgb(var(--risk-rgb) / ALPHA): --risk-rgb is mapped per state
@@ -63,14 +63,16 @@
 }
 
 /* --- Verdict shade tokens (Phase 1 — docs/VERDICT_COLORS.md) ---------------
-   --vs-<verdict> is the gradient TINT of each verdict state (High / Medium /
-   Low / Not verified); ring, label, border and text colors are untouched.
-   Defaults equal today's colors, so nothing changes visually. The
-   --vs-<verdict>-<theme>-o fallback variables are JS overrides written by
-   DAC.verdictShade (stored in TDSettings as td.vs.<theme>.<verdict>); an
-   absent/removed property falls back to the default, so default theme
-   switching needs no JS. Dark defaults are shared by every dark variant
-   (oled / grey). Keep in sync with the table in docs/VERDICT_COLORS.md. */
+   --vs-<verdict> is the TINT of each verdict state (High / Medium / Low /
+   Not verified). It drives the verdict-card gradient and the dashboard score
+   wheels (result ring + batch % rings, via DAC.visuals.scoreRing). Label,
+   border and text colors are untouched. Defaults equal today's colors, so
+   nothing changes visually. The --vs-<verdict>-<theme>-o fallback variables
+   are JS overrides written by DAC.verdictShade (stored in TDSettings as
+   td.vs.<theme>.<verdict>); an absent/removed property falls back to the
+   default, so default theme switching needs no JS. Dark defaults are shared
+   by every dark variant (oled / grey). Keep in sync with the table in
+   docs/VERDICT_COLORS.md. */
 :root {
   --vs-high:       var(--vs-high-dark-o,       #ff5a5f);
   --vs-medium:     var(--vs-medium-dark-o,     #ffb020);

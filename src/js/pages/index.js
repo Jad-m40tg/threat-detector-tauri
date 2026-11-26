@@ -187,7 +187,7 @@
       if (card && typeof card.render === 'function') card.render(stateEls.threat, res.risk, res);
       setState('threat');
       if (typeof V.scoreRing === 'function') {
-        ringT = V.scoreRing($('vis-ring-threat'), clampN(res.score, 99), res.risk);
+        ringT = V.scoreRing($('vis-ring-threat'), clampN(res.score, 99), res.risk, true);
       }
     } else if (res.risk === 'unverified') {
       setPanelRisk('unverified');
@@ -199,7 +199,7 @@
       if (typeof V.unverifiedRing === 'function') {
         ringU = V.unverifiedRing($('vis-ring-unv'));
       } else if (typeof V.scoreRing === 'function') {
-        ringU = V.scoreRing($('vis-ring-unv'), null, res.risk);
+        ringU = V.scoreRing($('vis-ring-unv'), null, res.risk, true);
       }
     } else if (res.risk === 'error') {
       setPanelRisk(null); /* contract §2.2: error rows carry NO data-risk */
@@ -1121,7 +1121,7 @@
           rowRingIO.unobserve(en.target);
           var r = rowRingRecs.get(en.target) || null;
           rowRingRecs.delete(en.target);
-          if (r && typeof V.scoreRing === 'function') V.scoreRing(en.target, r.score, r.risk);
+          if (r && typeof V.scoreRing === 'function') V.scoreRing(en.target, r.score, r.risk, true);
           if (rowCheckRecs.has(en.target)) { /* low row scrolled in: draw the check on */
             rowCheckRecs.delete(en.target);
             en.target.classList.add('is-drawn');
@@ -1135,7 +1135,7 @@
     rowRingRecs.set(host, rec);
     var io = ensureRowIO();
     if (io) io.observe(host);
-    else if (typeof V.scoreRing === 'function') V.scoreRing(host, rec.score, rec.risk); /* no IO support: draw now */
+    else if (typeof V.scoreRing === 'function') V.scoreRing(host, rec.score, rec.risk, true); /* no IO support: draw now */
   }
   function batchRowDom(rec, i) {
     var risk = rec.risk;

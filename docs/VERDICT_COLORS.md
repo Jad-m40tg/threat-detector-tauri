@@ -1,7 +1,8 @@
 # Verdict colors — Phase 1 (data layer)
 
-Controls the gradient tint only of the 4 verdict states. Ring, label, border and
-text colors are NOT affected. UI picker comes in Phases 2–3.
+Controls the tint of the 4 verdict states. The verdict-card gradient and the
+dashboard score wheels (result ring and batch % rings) follow the shade. Label,
+border and text colors are NOT affected. UI picker comes in Phases 2–3.
 
 ## The shared verdict card (verdict-colors FIX)
 One markup source for every result card: `js/components/verdictCard.js`
