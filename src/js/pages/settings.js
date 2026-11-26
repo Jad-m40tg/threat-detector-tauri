@@ -38,8 +38,48 @@
     credentialRequests: 'Credential requests', ipHostname: 'IP hostnames',
     shorteners: 'URL shorteners', lookalikes: 'Lookalike domains'
   };
+  /* Subtitles for the settings toast variant (circle badge + ring). They explain
+     what the changed preference affects; the title keeps the existing message. */
+  var SWITCH_DESC = {
+    reduceAnimations: 'Motion across the interface',
+    showHero: 'Hero banner on the dashboard',
+    showHardware: 'Hardware link in the navbar',
+    devMode: 'Developer sections in Settings',
+    autoOpenDetails: 'Result details expand automatically',
+    saveHistory: 'Keep scans between sessions',
+    maskSensitive: 'Hide sensitive values in results',
+    notifyHighRisk: 'Alerts when a high-risk result appears',
+    soundAlert: 'Sound for high-risk results',
+    dailySummary: 'Daily summary of scan activity'
+  };
 
   function capFirst(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  function saveDescription(key, value) {
+    if (SWITCH_DESC[key]) return SWITCH_DESC[key];
+    if (key === 'theme') {
+      if (value === 'system') {
+        var now = document.documentElement.getAttribute('data-theme');
+        return 'Follows your device (currently ' + capFirst(String(now || 'dark')) + ')';
+      }
+      return value === 'dark' ? 'Dark palette across every page' : 'Light palette across every page';
+    }
+    if (key === 'darkBg') return value === 'grey' ? 'Soft grey dashboard and card surfaces' : 'Pure black dashboard and card surfaces';
+    if (key === 'accent') return 'Recolors buttons, links and highlights';
+    if (key === 'textSize') return 'Scales text on every page';
+    if (key === 'density') return 'Spacing between interface elements';
+    if (key === 'sensitivity') return 'How strictly results are scored';
+    if (key === 'defaultInputMode') return 'What the Analyze panel starts with';
+    if (key === 'scanSpeed') return 'Pace of the live scan animation';
+    if (key === 'resultTiming') return 'When results appear after a scan';
+    if (key === 'maxCsvEntries') return 'Rows allowed per CSV upload';
+    if (key === 'autoDeleteDays') return 'Older history entries are removed automatically';
+    if (key === 'timeFormat') return 'Clock format in scans and history';
+    if (key === 'detectors') return 'Used by the next analysis';
+    if (key === 'trustedDomains') return 'Domains trusted in every scan';
+    if (key === 'blockedDomains') return 'Domains blocked in every scan';
+    return '';
+  }
 
   function saveMessage(key, value) {
     if (SWITCH_TXT[key]) return SWITCH_TXT[key] + ' turned ' + (value ? 'on' : 'off');
@@ -134,7 +174,10 @@
 
     function showToast() {
       DAC.ui.toast((opts && opts.toastText) || saveMessage(key, value),
-        { type: 'success', key: 'settings', timeout: 4000 });
+        {
+          type: 'success', key: 'settings', timeout: 4000, variant: 'settings',
+          description: (opts && opts.toastDesc) || saveDescription(key, value)
+        });
     }
 
     if (morphName !== null) {
@@ -242,7 +285,7 @@
      window.TDSettings. Without the module these controls are a safe no-op. */
   var TD = window.TDSettings || null;
 
-  function initTdSeg(segId, key, label) {
+  function initTdSeg(segId, key, label, desc) {
     var el = $(segId);
     if (!el || typeof el._segSet !== 'function') return;
     el.addEventListener('seg-change', function (e) {
@@ -253,7 +296,7 @@
       try { ok = TD.set(key, val) === true; } catch (e2) { ok = false; }
       if (ok) {
         DAC.ui.toast(label + ' set to ' + capFirst(String(val)),
-          { type: 'success', key: 'settings', timeout: 4000 });
+          { type: 'success', key: 'settings', timeout: 4000, variant: 'settings', description: desc });
       } else {
         el._segSet(String(TD.get(key))); /* snap the UI back to the stored value */
       }
@@ -274,9 +317,9 @@
     });
   }
 
-  initTdSeg('set-speed', 'progressSpeed', 'Progress speed');
-  initTdSeg('set-navstyle', 'navStyle', 'Navbar selected style');
-  initTdSeg('set-aimode', 'aiMode', 'AI mode');
+  initTdSeg('set-speed', 'progressSpeed', 'Progress speed', 'How fast progress bars advance');
+  initTdSeg('set-navstyle', 'navStyle', 'Navbar selected style', 'Look of the selected navbar link');
+  initTdSeg('set-aimode', 'aiMode', 'AI mode', 'How the AI overview runs');
 
   /* ---------- Task 4: navbar-style preview icons ----------
      The five .nav-preview__btn spans mirror the real navbar links in real order
@@ -504,7 +547,8 @@
           }
         }
       }
-      DAC.ui.toast('Settings reset to defaults', 'success');
+      DAC.ui.toast('Settings reset to defaults',
+        { type: 'success', variant: 'settings', description: 'Every preference returned to its default' });
     });
   });
 
@@ -733,7 +777,8 @@
     }).then(function (ok) {
       if (!ok) return;
       DAC.verdictShade.resetAll();
-      DAC.ui.toast('Verdict colors reset to defaults', 'success');
+      DAC.ui.toast('Verdict colors reset to defaults',
+        { type: 'success', variant: 'settings', description: 'All overrides returned to defaults' });
     });
   });
 
@@ -924,7 +969,8 @@
     });
     if (changed.length) {
       for (var i = 0; i < changed.length; i++) DAC.verdictShade.set(theme, changed[i][0], changed[i][1]);
-      DAC.ui.toast('Verdict colors applied', { type: 'success', key: 'settings', timeout: 4000 });
+      DAC.ui.toast('Verdict colors applied',
+        { type: 'success', key: 'settings', timeout: 4000, variant: 'settings', description: 'Result tint and score rings updated' });
     }
     DAC.ui.modal.close();
   }
@@ -1133,8 +1179,10 @@
     AI.refreshStatus().then(function (st) { aiStatus = st; aiRender(); })
       .catch(function () { /* status unavailable: leave the last render */ });
   }
-  function aiToast(msg, type) {
-    if (DAC.ui && typeof DAC.ui.toast === 'function') DAC.ui.toast(msg, { type: type || 'success', key: 'settings', timeout: 4000 });
+  function aiToast(msg, type, desc) {
+    if (DAC.ui && typeof DAC.ui.toast === 'function') {
+      DAC.ui.toast(msg, { type: type || 'success', key: 'settings', timeout: 4000, variant: 'settings', description: desc });
+    }
   }
   AI_PROVIDERS.forEach(function (id) {
     var form = $('ai-form-' + id);
@@ -1148,10 +1196,10 @@
       AI.saveSettings({ provider: id, apiKey: key || null, model: model, baseUrl: base })
         .then(function () {
           $('ai-key-' + id).value = '';
-          aiToast('AI provider saved', 'success');
+          aiToast('AI provider saved', 'success', 'Key stored on this device');
           aiRefresh();
         })
-        .catch(function (err) { aiToast(String((err && err.message) || err || 'Could not save the key.'), 'error'); });
+        .catch(function (err) { aiToast(String((err && err.message) || err || 'Could not save the key.'), 'error', 'AI provider settings unchanged'); });
     });
     var test = document.querySelector('[data-ai-test="' + id + '"]');
     if (test) {
@@ -1187,8 +1235,8 @@
           danger: true
         }).then(function (ok) {
           if (!ok) return;
-          AI.clearKey(id).then(function () { aiToast('Provider key removed', 'success'); aiRefresh(); })
-            .catch(function (err) { aiToast(String((err && err.message) || err || 'Could not remove the key.'), 'error'); });
+          AI.clearKey(id).then(function () { aiToast('Provider key removed', 'success', 'Stored key deleted from this device'); aiRefresh(); })
+            .catch(function (err) { aiToast(String((err && err.message) || err || 'Could not remove the key.'), 'error', 'Stored key was not changed'); });
         });
       });
     }
@@ -1243,10 +1291,10 @@
           model: chosen,
           baseUrl: id === 'custom' ? String($('ai-base-custom').value || '').trim() : null
         }).then(function () {
-          aiToast('Model set to ' + chosen, 'success');
+          aiToast('Model set to ' + chosen, 'success', 'Used for the next AI overview');
           aiRefresh();
         }).catch(function (err) {
-          aiToast(String((err && err.message) || err || 'Could not save the model.'), 'error');
+          aiToast(String((err && err.message) || err || 'Could not save the model.'), 'error', 'Model selection unchanged');
         });
       });
     }
@@ -1258,7 +1306,7 @@
       AI.saveSettings({ consent: want }).then(function () { aiRefresh(); })
         .catch(function (err) {
           aiConsent.checked = !want;
-          aiToast(String((err && err.message) || err || 'Could not save consent.'), 'error');
+          aiToast(String((err && err.message) || err || 'Could not save consent.'), 'error', 'Consent setting unchanged');
         });
     });
   }
@@ -1297,15 +1345,24 @@
       if (U && typeof U.describe === 'function') { renderStatus(U.describe()); }
     }
     function paintForce() { force.setAttribute('aria-checked', truth('upd.force') ? 'true' : 'false'); }
+    function devToast(title, desc) {
+      DAC.ui.toast(title, { type: 'success', key: 'settings', timeout: 4000, variant: 'settings', description: desc });
+    }
 
     force.addEventListener('click', function () {
       TS.set('upd.force', truth('upd.force') ? 'false' : 'true');
       paintForce();
+      devToast('Force show turned ' + (truth('upd.force') ? 'on' : 'off'),
+        'Preview button uses a fake version 9.9.9');
     });
     if (ms) {
       ms.addEventListener('input', function () {
         TS.set('upd.animMs', parseInt(ms.value, 10));
         if (msVal) { msVal.textContent = ms.value; }
+      });
+      /* one toast on release: dragging only updates the live value label */
+      ms.addEventListener('change', function () {
+        devToast('Animation time set to ' + ms.value + ' ms', 'How long the pill takes to open');
       });
     }
     if (width) {
@@ -1313,9 +1370,16 @@
         TS.set('upd.width', parseInt(width.value, 10));
         if (widthVal) { widthVal.textContent = width.value; }
       });
+      width.addEventListener('change', function () {
+        devToast('Pill length set to ' + width.value + ' px', 'Width of the Download and install pill');
+      });
     }
     if (repo) {
-      repo.addEventListener('change', function () { TS.set('upd.repo', repo.value.trim()); });
+      repo.addEventListener('change', function () {
+        var v = repo.value.trim();
+        TS.set('upd.repo', v);
+        devToast(v ? 'GitHub repository set to ' + v : 'GitHub repository cleared', 'Used by the update check');
+      });
     }
     if (checkBtn) {
       checkBtn.addEventListener('click', function () {
@@ -1334,6 +1398,7 @@
         paintForce();
         paintRanges();
         if (repo) { repo.value = ''; }
+        devToast('Update button settings reset', 'Preview button restored to defaults');
       });
     }
     document.addEventListener('td:update-checked', liveStatus);
@@ -1349,8 +1414,8 @@
     var TS = window.TDSettings;
     if (!TS) { return; }
     [
-      { el: $('set-ink-dark'), key: 'accentInk.dark' },
-      { el: $('set-ink-light'), key: 'accentInk.light' }
+      { el: $('set-ink-dark'), key: 'accentInk.dark', label: 'Dark mode white labels', desc: 'Label color inside accent fills in dark mode' },
+      { el: $('set-ink-light'), key: 'accentInk.light', label: 'Light mode black labels', desc: 'Label color inside accent fills in light mode' }
     ].forEach(function (p) {
       var el = p.el;
       if (!el) { return; }
@@ -1359,6 +1424,9 @@
       el.addEventListener('click', function () {
         TS.set(p.key, on() ? 'false' : 'true');
         paint();
+        DAC.ui.toast(p.label + ' turned ' + (on() ? 'on' : 'off'), {
+          type: 'success', key: 'settings', timeout: 4000, variant: 'settings', description: p.desc
+        });
       });
       paint();
     });

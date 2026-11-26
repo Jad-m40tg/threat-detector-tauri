@@ -409,7 +409,12 @@
   /* ---------------- toast [E]: bottom-right stack, ≤3 visible, key-dedupe ----------------
      Signature (legacy-compatible):
        DAC.ui.toast(message, typeString)                     e.g. "success" | "error"
-       DAC.ui.toast(message, { type, key, description, action: { label, onClick }, timeout })
+       DAC.ui.toast(message, { type, key, description, action: { label, onClick }, timeout,
+                               variant: "settings" | "alert" })
+     variant: "settings" opts into the circle-badge card with a countdown ring; the
+     ring shares --toast-dur with the dismissal timer and pauses with the toast.
+     variant: "alert" is the same card without a ring (persistent alerts) and an
+     optional full-width action row. Every other caller keeps the base look.
      A toast created with the same key replaces a still-visible sibling in place: the
      message refreshes, a "x2" counter bumps, and the timer resets. At most 3 toasts are
      visible at once (the oldest is dismissed first). Countdown timers: success/info 4s,
@@ -429,6 +434,10 @@
     }
     var valid = { success: 1, warn: 1, error: 1, info: 1 };
     var t = valid[opts.type] ? opts.type : "info";
+    var variant = (opts.variant === "settings" || opts.variant === "alert") ? opts.variant : "";
+    var isCard = variant !== "";
+    var isSettings = variant === "settings"; /* only the settings card drains a ring */
+    var outMs = isCard ? 320 : 140; /* card exit runs 260ms; base exit 140ms */
     var region = document.getElementById("toast-region");
     if (!region || !message) return null;
 
@@ -460,7 +469,7 @@
     }
 
     var el = document.createElement("div");
-    el.className = "toast toast--" + t;
+    el.className = "toast toast--" + t + (isCard ? " toast--" + variant : "");
     el.setAttribute("role", (t === "error" || t === "warn") ? "alert" : "status"); /* info+success=polite status; failures alert */
 
     var ico = document.createElement("span");
@@ -468,6 +477,26 @@
     ico.setAttribute("aria-hidden", "true");
     var glyphKind = t === "success" ? "check" : (t === "warn" || t === "error") ? "alert" : "info";
     ico.appendChild(svgGlyph(GLYPH[glyphKind], null));
+
+    /* Settings variant: thin countdown ring around the icon. The circumference
+       comes from the radius (2πr), never a literal from the sketch. */
+    var ringSvg = null;
+    var ringPg = null;
+    if (isSettings) {
+      var RING_R = 17.5;
+      var RING_C = 2 * Math.PI * RING_R;
+      ringSvg = svgGlyph([
+        { tag: "circle", cx: "19", cy: "19", r: String(RING_R), class: "toast-ring__track" },
+        { tag: "circle", cx: "19", cy: "19", r: String(RING_R), class: "toast-ring__pg" }
+      ], null, { viewBox: "0 0 38 38", class: "toast-ring" });
+      ringPg = ringSvg.querySelector(".toast-ring__pg");
+      if (ringPg) {
+        ringPg.setAttribute("stroke-dasharray", String(RING_C));
+        ringPg.setAttribute("stroke-dashoffset", "0");
+      }
+      el.style.setProperty("--ring-c", String(RING_C));
+      ico.appendChild(ringSvg);
+    }
 
     var body = document.createElement("div");
     body.className = "toast-body";
@@ -477,11 +506,17 @@
     var desc = document.createElement("span");
     desc.className = "toast-desc";
     desc.hidden = true;
-    if (opts.description) desc.textContent = String(opts.description);
+    if (opts.description) {
+      desc.textContent = String(opts.description);
+      /* Only the card variants reveal subtitles; base toasts keep the
+         existing hidden default so unrelated notifications look unchanged. */
+      if (isCard) desc.hidden = false;
+    }
     body.appendChild(titleEl);
     body.appendChild(desc);
+    var act = null;
     if (opts.action && opts.action.label) {
-      var act = document.createElement("button");
+      act = document.createElement("button");
       act.type = "button";
       act.className = "toast-action";
       act.textContent = String(opts.action.label);
@@ -489,7 +524,6 @@
         dismiss();
         if (typeof opts.action.onClick === "function") opts.action.onClick();
       });
-      body.appendChild(act);
     }
 
     var closeBtn = document.createElement("button");
@@ -505,6 +539,17 @@
     el.appendChild(ico);
     el.appendChild(body);
     el.appendChild(closeBtn);
+    if (act) {
+      if (isCard) {
+        /* card variants: the action runs in a full-width footer row */
+        var actions = document.createElement("div");
+        actions.className = "toast-actions";
+        actions.appendChild(act);
+        el.appendChild(actions);
+      } else {
+        body.appendChild(act);
+      }
+    }
     el.appendChild(bar);
     region.appendChild(el);
 
@@ -534,7 +579,7 @@
       /* fallback timer covers transition:none (reduced motion) */
       setTimeout(function () {
         if (el.parentNode) el.parentNode.removeChild(el);
-      }, 140);
+      }, outMs);
     };
     var escDismiss = function (ev) {
       if (ev.key === "Escape" && el.contains(document.activeElement)) dismiss();
@@ -563,8 +608,10 @@
       if (rec.base > 0) {
         el.style.setProperty("--toast-dur", rec.base + "ms");
         bar.style.display = "";
+        if (ringSvg) ringSvg.style.display = "";
       } else {
         bar.style.display = "none";
+        if (ringSvg) ringSvg.style.display = "none"; /* no timer: no ring to drain */
       }
     };
     var restartackBar = function () {
@@ -572,8 +619,14 @@
       void bar.offsetWidth; /* restart the CSS animation deterministically */
       bar.style.animation = "";
     };
+    var restartRing = function () {
+      if (!ringPg) return;
+      ringPg.style.animation = "none";
+      void el.getBoundingClientRect(); /* force a style flush so the restart takes */
+      ringPg.style.animation = "";
+    };
     rec.applyBar = applyBar;
-    rec.refresh = function () { restartackBar(); startTimer(); };
+    rec.refresh = function () { restartackBar(); restartRing(); startTimer(); };
     rec.dismiss = dismiss;
 
     closeBtn.addEventListener("click", dismiss);
@@ -586,6 +639,8 @@
 
     applyBar();
     startTimer();
+    /* created while the tab is hidden: no timer runs, so hold the ring too */
+    if (isSettings && document.hidden) pause();
 
     /* cap: at most 3 visible — dismiss the oldest first */
     DAC.ui._toasts.push(rec);

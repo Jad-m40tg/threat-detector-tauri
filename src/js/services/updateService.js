@@ -171,7 +171,11 @@
     b.addEventListener("click", function () {
       if (!state.result) {
         if (DAC.ui && typeof DAC.ui.toast === "function") {
-          DAC.ui.toast("Preview only", { type: "info" });
+          DAC.ui.toast("Preview only", {
+            type: "info",
+            variant: "settings",
+            description: "Shown only when a newer release exists"
+          });
         }
         return;
       }

@@ -295,8 +295,11 @@
       panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     if (res.risk === 'high' && S.get('notifyHighRisk') !== false && DAC.ui && typeof DAC.ui.toast === 'function') {
-      DAC.ui.toast('High-risk result detected', { type: 'error', key: 'highrisk',
-        action: { label: 'View', onClick: function () { window.location.href = 'history.html#risk=high'; } } });
+      DAC.ui.toast('High-risk result detected', {
+        type: 'error', key: 'highrisk', variant: 'alert',
+        description: 'Flagged link is saved in History',
+        action: { label: 'View in History', onClick: function () { window.location.href = 'history.html#risk=high'; } }
+      });
     }
   }
 
