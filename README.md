@@ -1,4 +1,4 @@
-# Threat Detector (Tauri)
+# Threat Detector - Rust version (Using Tauri framework)
 
 Offline desktop threat inspection for suspicious URLs, messages and CSV batches.
 The Rust core (`crates/threat-core`) validates and scores input; the Tauri v2 shell
@@ -9,10 +9,12 @@ This is the Tauri/Rust edition. Two sibling projects use the same front-end with
 Java backend: `threat-detector-java-webkit` (JavaFX WebKit) and
 `threat-detector-java-jcef` (JavaFX + Chromium via JCEF).
 
-## Download
+## Download (Windows version only)
 
-Windows x64 installer:
+Windows x64 installer v1.0.0:
 [ThreatDetector-Tauri-x64-Setup.exe](https://github.com/Jad-m40tg/threat-detector-tauri/releases/latest/download/ThreatDetector-Tauri-x64-Setup.exe)
+
+(A new Updatable version is coming soon which turns the older version to legacy version)
 
 The installer is unsigned, so Windows SmartScreen shows "Unknown publisher".
 Click **More info**, then **Run anyway**. Windows 10/11 with the WebView2 runtime
